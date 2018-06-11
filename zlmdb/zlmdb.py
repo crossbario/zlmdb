@@ -196,34 +196,50 @@ class MapOidPickle(PersistentMap):
         return pickle.loads(data)
 
 
+class TransactionStats(object):
+
+    def __init__(self):
+        self.puts = 0
+        self.dels = 0
+
+
 class BaseTransaction(object):
 
     PUT = 1
     DEL = 2
 
-    def __init__(self, env, write=False):
+    def __init__(self, env, write=False, stats=None):
         self._env = env
         self._write = write
         self._txn = None
-        self._log = []
-        self._puts = 0
-        self._dels = 0
+        self._log = None
+        self._stats = stats
 
     def get(self, key):
         return self._txn.get(key)
 
-    def put(self, key, data):
-        self._puts += 1
-        self._log.append((BaseTransaction.PUT, key))
-        return self._txn.put(key, data)
+    def put(self, key, data, overwrite=True):
+        # store the record, returning True if it was written, or False to indicate the key
+        # was already present and overwrite=False.
+        was_written = self._txn.put(key, data, overwrite=overwrite)
+        if was_written:
+            if self._stats:
+                self._stats.puts += 1
+            if self._log:
+                self._log.append((BaseTransaction.PUT, key))
+        return was_written
 
     def delete(self, key):
-        self._dels += 1
-        self._log.append((BaseTransaction.DEL, key))
-        return self._txn.delete(key)
+        was_deleted = self._txn.delete(key)
+        if was_deleted:
+            if self._stats:
+                self._stats.dels += 1
+            if self._log:
+                self._log.append((BaseTransaction.DEL, key))
+        return was_deleted
 
     def attach(self):
-        raise Exception('not implemented')
+        pass
 
     def __enter__(self):
         assert(self._txn is None)
@@ -236,14 +252,15 @@ class BaseTransaction(object):
         # https://docs.python.org/3/reference/datamodel.html#object.__exit__
         # If the context was exited without an exception, all three arguments will be None.
         if exc_type is None:
-            cnt = 0
-            for op, key in self._log:
-                _key = struct.pack('<H', 0)
-                _data = struct.pack('<H', op) + key
-                self._txn.put(_key, _data)
-                cnt += 1
+            if self._log:
+                cnt = 0
+                for op, key in self._log:
+                    _key = struct.pack('<H', 0)
+                    _data = struct.pack('<H', op) + key
+                    self._txn.put(_key, _data)
+                    cnt += 1
             self._txn.commit()
-            print('LMDB transaction committed: {} logs records, {} puts, {} deletes'.format(cnt, self._puts, self._dels))
+            # print('LMDB transaction committed: {} logs records, {} puts, {} deletes'.format(cnt, self._puts, self._dels))
         else:
             self._txn.abort()
-            print('LMDB transaction aborted', exc_type, exc_value, traceback)
+            # print('LMDB transaction aborted', exc_type, exc_value, traceback)

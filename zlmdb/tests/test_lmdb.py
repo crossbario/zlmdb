@@ -9,7 +9,7 @@ DBNAME = '.test-db1'
 
 
 @pytest.fixture(scope='function')
-def dbenv():
+def env():
     if os.path.exists(DBNAME):
         if os.path.isdir(DBNAME):
             shutil.rmtree(DBNAME)
@@ -19,17 +19,17 @@ def dbenv():
     return env
 
 
-def test_create(dbenv):
-    assert isinstance(dbenv, lmdb.Environment)
-    with dbenv.begin() as txn:
+def test_create(env):
+    assert isinstance(env, lmdb.Environment)
+    with env.begin() as txn:
         assert txn.id() == 0
 
 
-def test_insert(dbenv):
+def test_insert(env):
     n = 100
     total1 = 0
 
-    with dbenv.begin(write=True) as txn:
+    with env.begin(write=True) as txn:
         for i in range(n):
             key = 'key-{}'.format(i).encode('utf8')
             # value = os.urandom(16)
@@ -38,7 +38,7 @@ def test_insert(dbenv):
             data = struct.pack('<L', value)
             txn.put(key, data)
 
-    with dbenv.begin() as txn:
+    with env.begin() as txn:
 
         cursor = txn.cursor()
         assert cursor.first()
@@ -54,20 +54,20 @@ def test_insert(dbenv):
         assert total1 == total2
 
 
-def test_delete(dbenv):
+def test_delete(env):
     n = 100
 
-    with dbenv.begin(write=True) as txn:
+    with env.begin(write=True) as txn:
         for i in range(n):
             key = 'key-{}'.format(i).encode('utf8')
             value = os.urandom(16)
             txn.put(key, value)
 
-    with dbenv.begin(write=True) as txn:
+    with env.begin(write=True) as txn:
         for i in range(n):
             key = 'key-{}'.format(i).encode('utf8')
             assert txn.delete(key)
 
-    with dbenv.begin() as txn:
+    with env.begin() as txn:
         cursor = txn.cursor()
         assert not cursor.first()

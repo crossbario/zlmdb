@@ -27,11 +27,12 @@
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
 from ._version import __version__
-from .zlmdb import BaseTransaction, MapStringOid, MapOidCbor, MapOidPickle
+from .zlmdb import BaseTransaction, TransactionStats, MapStringOid, MapOidCbor, MapOidPickle
 
 __all__ = (
     '__version__',
     'BaseTransaction',
+    'TransactionStats',
     'MapStringOid',
     'MapOidCbor',
     'MapOidPickle',
