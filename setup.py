@@ -32,6 +32,9 @@
 import os
 from setuptools import setup, find_packages
 
+with open('zlmdb/_version.py') as f:
+    exec(f.read())  # defines __version__
+
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
@@ -49,6 +52,7 @@ requirements = [
     'flatbuffers>=2015.12.22.1',
     'lmdb>=0.92',
     'pynacl>=1.1.2',
+    'cbor2>=4.1.0',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -87,6 +91,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/crossbario/zlmdb',
-    version='0.1.0',
+    version=__version__,
     zip_safe=False,
 )
