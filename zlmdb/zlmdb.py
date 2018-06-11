@@ -32,7 +32,6 @@ import struct
 import cbor2
 import pickle
 
-# https://github.com/google/flatbuffers/blob/master/docs/source/CppUsage.md#access-of-untrusted-buffers
 
 class PersistentMap(MutableMapping):
     """
@@ -44,14 +43,14 @@ class PersistentMap(MutableMapping):
         self._indexes = {}
 
     def attach_transaction(self, txn):
-        #print('LMDB transaction attached', dir(txn))
+        # print('LMDB transaction attached', dir(txn))
         self._txn = txn
 
     def attach_index(self, index_name, index_key, index_map):
         self._indexes[index_name] = (index_key, index_map)
 
     def truncate(self, rebuild_indexes=True):
-        #print('TRUNCATE on map')
+        # print('TRUNCATE on map')
         key_from = struct.pack('<H', self._slot)
         key_to = struct.pack('<H', self._slot + 1)
         cursor = self._txn._txn.cursor()

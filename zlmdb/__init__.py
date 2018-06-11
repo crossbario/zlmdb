@@ -27,6 +27,12 @@
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
 from ._version import __version__
+from .zlmdb import BaseTransaction, MapStringOid, MapOidCbor, MapOidPickle
 
-__author__ = """Crossbar.io Technologies GmbH"""
-__email__ = 'contact@crossbario.com'
+__all__ = (
+    '__version__',
+    'BaseTransaction',
+    'MapStringOid',
+    'MapOidCbor',
+    'MapOidPickle',
+)
