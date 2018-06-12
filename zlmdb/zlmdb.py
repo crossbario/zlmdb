@@ -29,6 +29,7 @@
 import struct
 import pickle
 import sys
+import uuid
 
 import cbor2
 import lmdb
@@ -57,7 +58,7 @@ class PersistentMap(MutableMapping):
         self._indexes[index_name] = (index_key, index_map)
 
     def count(self, prefix=None):
-        key_from = struct.pack('<H', self._slot)
+        key_from = struct.pack('>H', self._slot)
         if prefix:
             key_from += self._serialize_key(prefix)
 
@@ -76,8 +77,8 @@ class PersistentMap(MutableMapping):
         return cnt
 
     def truncate(self, rebuild_indexes=True):
-        key_from = struct.pack('<H', self._slot)
-        key_to = struct.pack('<H', self._slot + 1)
+        key_from = struct.pack('>H', self._slot)
+        key_to = struct.pack('>H', self._slot + 1)
         cursor = self._txn._txn.cursor()
         cnt = 0
         if cursor.set_range(key_from):
@@ -109,8 +110,8 @@ class PersistentMap(MutableMapping):
 
             deleted = index_map.truncate()
 
-            key_from = struct.pack('<H', self._slot)
-            key_to = struct.pack('<H', self._slot + 1)
+            key_from = struct.pack('>H', self._slot)
+            key_to = struct.pack('>H', self._slot + 1)
             cursor = self._txn._txn.cursor()
             inserted = 0
             if cursor.set_range(key_from):
@@ -119,7 +120,7 @@ class PersistentMap(MutableMapping):
                     if data:
                         value = self._deserialize_value(data)
 
-                        _key = struct.pack('<H', index_map._slot) + index_map._serialize_key(index_key(value))
+                        _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
                         _data = index_map._serialize_value(value.oid)
 
                         self._txn.put(_key, _data)
@@ -140,7 +141,7 @@ class PersistentMap(MutableMapping):
         raise Exception('not implemented')
 
     def __getitem__(self, key):
-        _key = struct.pack('<H', self._slot) + self._serialize_key(key)
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = self._txn.get(_key)
         if _data:
             return self._deserialize_value(_data)
@@ -148,17 +149,17 @@ class PersistentMap(MutableMapping):
             return None
 
     def __setitem__(self, key, value):
-        _key = struct.pack('<H', self._slot) + self._serialize_key(key)
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = self._serialize_value(value)
         self._txn.put(_key, _data)
 
         for index_key, index_map in self._indexes.values():
-            _key = struct.pack('<H', index_map._slot) + index_map._serialize_key(index_key(value))
+            _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
             _data = index_map._serialize_value(key)
             self._txn.put(_key, _data)
 
     def __delitem__(self, key):
-        _key = struct.pack('<H', self._slot) + self._serialize_key(key)
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         self._txn.delete(_key)
 
     def __iter__(self):
@@ -168,129 +169,168 @@ class PersistentMap(MutableMapping):
         raise Exception('not implemented')
 
 
-class MapStringString(PersistentMap):
+class _OidKeysMixin(object):
+
+    def _serialize_key(self, key):
+        return struct.pack('>Q', key)
+
+
+class _StringKeysMixin(object):
+
+    def _serialize_key(self, key):
+        return key.encode('utf8')
+
+
+class _UuidKeysMixin(object):
+
+    def _serialize_key(self, key):
+        # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
+        # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
+        return key.bytes
+
+
+class _OidValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return struct.pack('>Q', value)
+
+    def _deserialize_value(self, data):
+        return struct.unpack('>Q', data)[0]
+
+
+class _StringValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return value.encode('utf8')
+
+    def _deserialize_value(self, data):
+        return data.decode('utf8')
+
+
+class _UuidValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return value.bytes
+
+    def _deserialize_value(self, data):
+        return uuid.UUID(bytes=data)
+
+
+class _CborValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return cbor2.dumps(value)
+
+    def _deserialize_value(self, data):
+        return cbor2.loads(data)
+
+
+class _PickleValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return pickle.dumps(value, protocol=_PICKLE_PROTOCOL)
+
+    def _deserialize_value(self, data):
+        return pickle.loads(data)
+
+
+class MapUuidString(_UuidKeysMixin, _StringValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and string (utf8) values.
+    """
+
+
+class MapUuidOid(_UuidKeysMixin, _OidValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and OID (uint64) values.
+    """
+
+
+class MapUuidUuid(_UuidKeysMixin, _UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and UUID (16 bytes) values.
+    """
+
+
+class MapUuidCbor(_UuidKeysMixin, _CborValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and CBOR values.
+    """
+
+
+class MapUuidPickle(_UuidKeysMixin, _PickleValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and Python Pickle values.
+    """
+
+
+class MapStringString(_StringKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and string (utf8) values.
     """
 
-    def _serialize_key(self, key):
-        return key.encode('utf8')
 
-    def _serialize_value(self, value):
-        return value.encode('utf8')
-
-    def _deserialize_value(self, data):
-        return data.decode('utf8')
-
-
-class MapStringOid(PersistentMap):
+class MapStringOid(_StringKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and OID (uint64) values.
     """
 
-    def _serialize_key(self, key):
-        return key.encode('utf8')
 
-    def _serialize_value(self, value):
-        return struct.pack('<Q', value)
-
-    def _deserialize_value(self, data):
-        return struct.unpack('<Q', data)[0]
+class MapStringUuid(_StringKeysMixin, _UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with string (utf8) keys and UUID (16 bytes) values.
+    """
 
 
-class MapStringCbor(PersistentMap):
+class MapStringCbor(_StringKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and CBOR values.
     """
 
-    def _serialize_key(self, key):
-        return key.encode('utf8')
 
-    def _serialize_value(self, value):
-        return cbor2.dumps(value)
-
-    def _deserialize_value(self, data):
-        return cbor2.loads(data)
-
-
-class MapStringPickle(PersistentMap):
+class MapStringPickle(_StringKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and Python pickle values.
     """
 
-    def _serialize_key(self, key):
-        return key.encode('utf8')
 
-    def _serialize_value(self, value):
-        return pickle.dumps(value, protocol=_PICKLE_PROTOCOL)
-
-    def _deserialize_value(self, data):
-        return pickle.loads(data)
-
-
-class MapOidString(PersistentMap):
+class MapOidString(_OidKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and string (utf8) values.
     """
 
-    def _serialize_key(self, key):
-        return struct.pack('<Q', key)
 
-    def _serialize_value(self, value):
-        return value.encode('utf8')
-
-    def _deserialize_value(self, data):
-        return data.decode('utf8')
-
-
-class MapOidOid(PersistentMap):
+class MapOidOid(_OidKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and OID (uint64) values.
     """
 
-    def _serialize_key(self, key):
-        return struct.pack('<Q', key)
 
-    def _serialize_value(self, value):
-        return struct.pack('<Q', value)
-
-    def _deserialize_value(self, data):
-        return struct.unpack('<Q', data)
+class MapOidUuid(_OidKeysMixin, _UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with OID (uint64) keys and UUID (16 bytes) values.
+    """
 
 
-class MapOidCbor(PersistentMap):
+class MapOidCbor(_OidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and CBOR values.
     """
 
-    def _serialize_key(self, key):
-        return struct.pack('<Q', key)
 
-    def _serialize_value(self, value):
-        return cbor2.dumps(value)
-
-    def _deserialize_value(self, data):
-        return cbor2.loads(data)
-
-
-class MapOidPickle(PersistentMap):
+class MapOidPickle(_OidKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and Python pickle values.
     """
-
-    def _serialize_key(self, key):
-        return struct.pack('<Q', key)
-
-    def _serialize_value(self, value):
-        return pickle.dumps(value, protocol=_PICKLE_PROTOCOL)
-
-    def _deserialize_value(self, data):
-        return pickle.loads(data)
 
 
 class TransactionStats(object):
 
     def __init__(self):
+        self.puts = 0
+        self.dels = 0
+
+    def reset(self):
         self.puts = 0
         self.dels = 0
 
@@ -347,8 +387,8 @@ class BaseTransaction(object):
             if self._log:
                 cnt = 0
                 for op, key in self._log:
-                    _key = struct.pack('<H', 0)
-                    _data = struct.pack('<H', op) + key
+                    _key = struct.pack('>H', 0)
+                    _data = struct.pack('>H', op) + key
                     self._txn.put(_key, _data)
                     cnt += 1
             self._txn.commit()

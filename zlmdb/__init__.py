@@ -29,23 +29,39 @@
 from ._version import __version__
 from .zlmdb import BaseTransaction, \
                    TransactionStats, \
+                   MapUuidString, \
+                   MapUuidOid, \
+                   MapUuidUuid, \
+                   MapUuidCbor, \
+                   MapUuidPickle, \
+                   MapStringString, \
                    MapStringOid, \
+                   MapStringUuid, \
+                   MapStringCbor, \
+                   MapStringPickle, \
+                   MapOidString, \
+                   MapOidOid, \
+                   MapOidUuid, \
                    MapOidCbor, \
-                   MapOidPickle, \
-                   MapStringPickle
+                   MapOidPickle
 
 __all__ = (
     '__version__',
     'BaseTransaction',
     'TransactionStats',
-
+    'MapUuidString',
+    'MapUuidOid',
+    'MapUuidUuid',
+    'MapUuidCbor',
+    'MapUuidPickle',
     'MapStringString',
     'MapStringOid',
+    'MapStringUuid',
     'MapStringCbor',
     'MapStringPickle',
-
     'MapOidString',
     'MapOidOid',
+    'MapOidUuid',
     'MapOidCbor',
     'MapOidPickle',
 )
