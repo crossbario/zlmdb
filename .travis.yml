@@ -16,7 +16,9 @@ matrix:
   fast_finish: true
 
   include:
-    - env: TOX_ENV=flake8
+    - python: 3.6
+      env:
+      - TOX_ENV=flake8
 
     - python: 3.6
       env:
