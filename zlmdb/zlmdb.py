@@ -26,11 +26,19 @@
 
 """Main module."""
 
-import lmdb
-from collections.abc import MutableMapping
 import struct
-import cbor2
 import pickle
+import sys
+
+import cbor2
+import lmdb
+
+if sys.version_info < (3,):
+    from UserDict import DictMixin as MutableMapping
+    _PICKLE_PROTOCOL = 2
+else:
+    from collections.abc import MutableMapping
+    _PICKLE_PROTOCOL = 4
 
 
 class PersistentMap(MutableMapping):
@@ -43,14 +51,12 @@ class PersistentMap(MutableMapping):
         self._indexes = {}
 
     def attach_transaction(self, txn):
-        # print('LMDB transaction attached', dir(txn))
         self._txn = txn
 
     def attach_index(self, index_name, index_key, index_map):
         self._indexes[index_name] = (index_key, index_map)
 
     def truncate(self, rebuild_indexes=True):
-        # print('TRUNCATE on map')
         key_from = struct.pack('<H', self._slot)
         key_to = struct.pack('<H', self._slot + 1)
         cursor = self._txn._txn.cursor()
@@ -190,7 +196,7 @@ class MapOidPickle(PersistentMap):
         return struct.pack('<Q', key)
 
     def _serialize_value(self, value):
-        return pickle.dumps(value, protocol=4)
+        return pickle.dumps(value, protocol=_PICKLE_PROTOCOL)
 
     def _deserialize_value(self, data):
         return pickle.loads(data)
@@ -260,7 +266,5 @@ class BaseTransaction(object):
                     self._txn.put(_key, _data)
                     cnt += 1
             self._txn.commit()
-            # print('LMDB transaction committed: {} logs records, {} puts, {} deletes'.format(cnt, self._puts, self._dels))
         else:
             self._txn.abort()
-            # print('LMDB transaction aborted', exc_type, exc_value, traceback)

@@ -1,16 +1,74 @@
-# Config file for automatic testing at travis-ci.org
-
 language: python
-python:
-  - 3.6
-  - 3.5
-  - 3.4
-  - 2.7
+sudo: false
 
-# Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: pip install -U tox-travis
+install:
+  - pip install tox codecov
 
-# Command to run tests, e.g. python setup.py test
-script: tox
+script:
+  - tox -c tox.ini -e $TOX_ENV
 
+#after_success:
+#  # since we use --parallel-mode to coverage inside Tox we use
+#  # "coverage combine" so the filename is always ".coverage"
+#  - cd test && coverage combine && codecov
 
+matrix:
+  fast_finish: true
+
+  include:
+    - env: TOX_ENV=flake8
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36
+
+    - python: 3.5
+      env:
+      - TOX_ENV=py35
+
+    - python: 3.4
+      env:
+      - TOX_ENV=py34
+
+    - python: 2.7
+      env:
+      - TOX_ENV=py27
+
+    - python: pypy3
+      env:
+      - TOX_ENV=pypy3
+
+    - python: pypy
+      env:
+      - TOX_ENV=pypy
+
+# CI notifications
+notifications:
+  # IRC: chat messages on #crossbar-ci @ freenode
+  irc:
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: always    # options: [always|never|change] default: always
+    channels:
+      - "irc.freenode.org#crossbar-ci"
+    use_notice: false
+    skip_join: false
+
+  # Gitter: activity feed on https://gitter.im/crossbario/ci
+  webhooks:
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: always    # options: [always|never|change] default: always
+    urls:
+      # travis encrypt "https://webhooks.gitter.im/e/7ef..." --org --repo crossbario/zlmdb
+      - secure: "UO99Q+NRI9xEemv0cu56lWpVEA24GSvmFKdahdmdWjb6nfB+8IGshS5QM8UiLb/EFoQ2jQIIi55bDOLljo6oy/GuXcb7H26pYxbWmxeusLlke4ZscBG1/wx18L42f60Hr745ZwxrUiNvY5xsos50lBAKSpD63n8QxZXlIlkWdBelTBQmYIPjOFYsdcdOekm8Zq+ItxaIlrSYXKSfM76ppt63XIJBzvYyyMpuJIFx/+Q8TRlY0coGHVEdeDpfgJzLLZB9EW8GZ8xTBMmHplckYMkc6qfaLYwUw9Dj/0jfklC9ow2EPeRKm9/Z5Axvzr0PjCNkFCmMuNHpWt6IEDp/hjOBBwvW+K2mrEljRsXpj6VmWHrmQ30fVKRECRF4b/pvGl1Lhme1qWAGirn/b+yMkSGbFjZKD1lM0FPL4ycTcZDn9tAUaNwObs8tVaPuRZaRAj14MthcY6LX7l+/SErjJ5pWFDnKg513+Bp9/0/hgiTgW1bXMsLFGppOw+AmCciQh1bh6/o0ccjmbjurvFZWwIypfegzCfM3OQc/cQhTXHhU9pDKZTQG0ykaHMd0JOwgGrDubrllUzve1Cfi0XXlK1ufwx14tNYY8UraR5+jCrZxS54T2SDimwggDQH23882AHegKR5srup7EDkL5Fzoj4BSrQV7f4i9PcEoMPo5+Nw="
+
+  # Slack: post feed on https://crossbario.slack.com/messages/CAT527K8D
+  # https://crossbario.slack.com/services/
+  slack:
+    on_success: always  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: always    # options: [always|never|change] default: always
+    rooms:
+      # travis encrypt "crossbario:FY...IJ#ci" --org --repo crossbario/zlmdb
+      - secure: "A1FckaAuXQ1C/ByEaDQMytvE9oBGVJhBqaUn4Dv/KkvFS7puHi2+hJ4rSulBo5H4imFaW5kMMb6jgshmrWwXSs1hivCHos0bKuEVF7U67SSpP2gNhMttxWr1tB4jDDKeb9e7sP6NV7EQWU+vgSp5y7PF3yfov+tZpSWEw7Bq+mK95EPEQq/CTOXcRPVG+cK7BfsNrzFjZNSSJbIlrE4+ivZlOqHVqgBHcCMOT7efbWn4umcHFSkHMe44iUxuyRqryRSsyUHd9z4jym31qhCv1oDVnxSxLvkfZfdC+UcJPz6be2ncLrXRIwOmW7K0t3pNQZnclVMs8k+t0CoGSav9g0/V9gpWvxKHVw9Ee6podQtZG4UWElMKJfEvDosa8LttY57gYLhoVg+3rPOhM8hNR53cK9gPWHp902iGGHXt1QI4Zzq0cwAwaDnsXgXwCWNkZaUvOEx2esB8Dni1xR50F17p4MirAkTKwPaDawLkHeZGhNSrc+K3h7IPwAXw5jRu1LQ6FmY7u4E9PsKInAPhEZr9IYqXugIjtLD+5N0SNYkFaxCbuEJxC4RvKoYPovSoFOmrEW+KysQ9UgO8baVSyx8d3Yj9DxqIHr/ny4LdipH/w6lPUgMt8sSY/a6jMjkphUAVA/b2ICuvi5iPAE40SMITIMuO5p/epm+4FIQo2vo="

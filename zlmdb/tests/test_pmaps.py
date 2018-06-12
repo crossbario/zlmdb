@@ -1,39 +1,34 @@
 import os
+import sys
 import shutil
-import datetime
 import random
-from typing import Optional, List, Dict
-
 import lmdb
 import pytest
 
 from zlmdb import BaseTransaction, TransactionStats, MapOidPickle, MapStringOid
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+if sys.version_info >= (3, 6):
+    from user_typed import User
+else:
+    from user import User
+
 
 DBNAME = '.test-db1'
 
 
-class User(object):
-
-    oid: int
-    name: str
-    authid: str
-    email: str
-    birthday: datetime.date
-    is_friendly: bool
-    tags: Optional[List[str]]
-    ratings: Dict[str, float] = {}
-    friends: List[int] = []
-    referred_by: int = None
-
-
 class Transaction1(BaseTransaction):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        BaseTransaction.__init__(self, *args, **kwargs)
 
 
 class Transaction2(BaseTransaction):
 
-    users: MapOidPickle = MapOidPickle(slot=1)
+    def __init__(self, *args, **kwargs):
+        BaseTransaction.__init__(self, *args, **kwargs)
+        self.users = MapOidPickle(slot=1)
 
     def attach(self):
         self.users.attach_transaction(self)
@@ -41,9 +36,12 @@ class Transaction2(BaseTransaction):
 
 class Transaction3(BaseTransaction):
 
-    users: MapOidPickle = MapOidPickle(slot=1)
-    idx_users_by_authid: MapStringOid = MapStringOid(slot=2)
-    idx_users_by_email: MapStringOid = MapStringOid(slot=3)
+    def __init__(self, *args, **kwargs):
+        BaseTransaction.__init__(self, *args, **kwargs)
+
+        self.users = MapOidPickle(slot=1)
+        self.idx_users_by_authid = MapStringOid(slot=2)
+        self.idx_users_by_email = MapStringOid(slot=3)
 
     def attach(self):
         self.users.attach_transaction(self)
