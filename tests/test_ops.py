@@ -1,64 +1,3 @@
-import datetime
-import random
-from typing import Optional, List, Dict
-
-import lmdb
-
-from zlmdb import BaseTransaction, MapOidPickle, MapStringOid
-
-
-class User(object):
-
-    oid: int
-    name: str
-    authid: str
-    email: str
-    birthday: datetime.date
-    is_friendly: bool
-    tags: Optional[List[str]]
-    ratings: Dict[str, float] = {}
-    friends: List[int] = []
-    referred_by: int = None
-
-
-class Transaction(BaseTransaction):
-    """
-    Definition of application database schema
-    """
-
-    users: MapOidPickle = MapOidPickle(slot=1)
-    """
-    Maps user OID to user object (in pickle format).
-    """
-
-    idx_users_by_authid: MapStringOid = MapStringOid(slot=2)
-    """
-    Maps user authid to user OID.
-    """
-
-    idx_users_by_email: MapStringOid = MapStringOid(slot=3)
-    """
-    Maps user email to user OID.
-    """
-
-    def attach(self):
-        # table: oid-user -> user
-        self.users.attach_transaction(self)
-
-        # index: authid -> oid-user
-        self.idx_users_by_authid.attach_transaction(self)
-        self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
-
-        # index: email -> oid-user
-        self.idx_users_by_email.attach_transaction(self)
-        self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
-
-
-def test_txn(env):
-    with Transaction(env) as txn:
-        print(txn._txn.id())
-
-
 def test_insert1(env):
     users = []
 
@@ -170,42 +109,7 @@ def test_by_email(env):
                 print('failure: user not found for email "{}"'.format(email))
 
 
-def test_truncate_table(env):
-    with Transaction(env, write=True) as txn:
-        rows = txn.users.truncate(rebuild_indexes=True)
-        print('users truncated: {} rows (including indexes)'.format(rows))
-
-
 def test_truncate_index(env):
     with Transaction(env, write=True) as txn:
         rows = txn.users_by_authid.truncate()
         print('users_by_authid truncated: {} rows'.format(rows))
-
-
-def test_rebuild(env):
-    with Transaction(env, write=True) as txn:
-        rows = txn.users.rebuild_index('idx1')
-        print('users_by_authid rebuilt: {} rows'.format(rows))
-
-
-def test_rebuild_all(env):
-    with Transaction(env, write=True) as txn:
-        rows = txn.users.rebuild_indexes()
-        print('indexes rebuilt: {} rows'.format(rows))
-
-
-env = lmdb.open('.db4')
-
-#test_txn(env)
-test_insert1(env)
-test_insert2(env)
-test_insert3(env)
-test_by_auth(env)
-test_by_email(env)
-test_rebuild_all(env)
-test_truncate_table(env)
-#test_by_email(env)
-#test_rebuild(env)
-#test(env)
-#test_rebuild(env)
-#test(env)

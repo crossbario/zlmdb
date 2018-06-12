@@ -49,7 +49,7 @@ def test():
 
     User.UserAddName(builder, name)
     User.UserAddAuthid(builder, authid)
-    User.UserAddEmail(builder, authid)
+    User.UserAddEmail(builder, email)
     User.UserAddBirthday(builder, Date.CreateDate(builder, 1950, 12, 24))
     User.UserAddIsFriendly(builder, True)
     User.UserAddTags(builder, tags)

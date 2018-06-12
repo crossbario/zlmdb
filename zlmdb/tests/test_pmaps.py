@@ -171,3 +171,15 @@ def test_truncate_table(env):
             txn.users[user.oid] = user
 
     assert stats.puts == n
+
+
+def test_rebuild_index(env):
+    with Transaction3(env, write=True) as txn:
+        records = txn.users.rebuild_index('idx1')
+        print('\nrebuilt specific index "idx1" on "users": {} records affected'.format(records))
+
+
+def test_rebuild_all_indexes(env):
+    with Transaction3(env, write=True) as txn:
+        records = txn.users.rebuild_indexes()
+        print('\nrebuilt all indexes on "users": {} records affected'.format(records))

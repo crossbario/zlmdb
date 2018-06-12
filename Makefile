@@ -87,3 +87,7 @@ dist: clean ## builds source and wheel package
 install: clean ## install the package to the active Python's site-packages
 	#python setup.py install
 	pip install -e .
+
+
+generate:
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/tests/_generated zlmdb/tests/user.fbs
