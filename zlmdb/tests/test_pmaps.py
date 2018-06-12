@@ -5,7 +5,7 @@ import random
 import lmdb
 import pytest
 
-from zlmdb import BaseTransaction, TransactionStats, MapOidPickle, MapStringOid
+from zlmdb import BaseTransaction, TransactionStats, MapOidPickle, MapStringOid, MapStringPickle
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -51,6 +51,17 @@ class Transaction3(BaseTransaction):
 
         self.idx_users_by_email.attach_transaction(self)
         self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
+
+
+class Transaction4(BaseTransaction):
+
+    def __init__(self, *args, **kwargs):
+        BaseTransaction.__init__(self, *args, **kwargs)
+
+        self.users = MapStringPickle(slot=1)
+
+    def attach(self):
+        self.users.attach_transaction(self)
 
 
 @pytest.fixture(scope='function')
@@ -116,3 +127,47 @@ def test_fill_with_idxs(env):
             assert _user.oid == user.oid
 
     assert stats.puts == n * 3
+
+
+def test_table_count(env):
+    n = 200
+
+    stats = TransactionStats()
+
+    with Transaction4(env, write=True, stats=stats) as txn:
+        for i in range(n):
+            user = _create_test_user(i)
+            txn.users[user.authid] = user
+
+    with Transaction4(env) as txn:
+        rows = txn.users.count()
+        assert rows == n
+
+    with Transaction4(env) as txn:
+        rows = txn.users.count('test-111')
+        assert rows == 1
+
+        rows = txn.users.count('test-11')
+        assert rows == 11
+
+        rows = txn.users.count('test-1')
+        assert rows == 111
+
+        rows = txn.users.count('test-')
+        assert rows == n
+
+        rows = txn.users.count('')
+        assert rows == n
+
+
+def test_truncate_table(env):
+    n = 100
+
+    stats = TransactionStats()
+
+    with Transaction2(env, write=True, stats=stats) as txn:
+        for i in range(n):
+            user = _create_test_user(i)
+            txn.users[user.oid] = user
+
+    assert stats.puts == n

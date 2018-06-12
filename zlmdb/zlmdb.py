@@ -56,6 +56,25 @@ class PersistentMap(MutableMapping):
     def attach_index(self, index_name, index_key, index_map):
         self._indexes[index_name] = (index_key, index_map)
 
+    def count(self, prefix=None):
+        key_from = struct.pack('<H', self._slot)
+        if prefix:
+            key_from += self._serialize_key(prefix)
+
+        cnt = 0
+
+        cursor = self._txn._txn.cursor()
+        if cursor.set_range(key_from):
+            kfl = len(key_from)
+            while True:
+                _prefix = cursor.key()[:kfl]
+                if _prefix != key_from:
+                    break
+                cnt += 1
+                cursor.next()
+
+        return cnt
+
     def truncate(self, rebuild_indexes=True):
         key_from = struct.pack('<H', self._slot)
         key_to = struct.pack('<H', self._slot + 1)
@@ -149,11 +168,24 @@ class PersistentMap(MutableMapping):
         raise Exception('not implemented')
 
 
+class MapStringString(PersistentMap):
+    """
+    Persistent map with string (utf8) keys and string (utf8) values.
+    """
+
+    def _serialize_key(self, key):
+        return key.encode('utf8')
+
+    def _serialize_value(self, value):
+        return value.encode('utf8')
+
+    def _deserialize_value(self, data):
+        return data.decode('utf8')
+
+
 class MapStringOid(PersistentMap):
     """
     Persistent map with string (utf8) keys and OID (uint64) values.
-
-    This is used eg for string->OID indexes.
     """
 
     def _serialize_key(self, key):
@@ -166,13 +198,69 @@ class MapStringOid(PersistentMap):
         return struct.unpack('<Q', data)[0]
 
 
+class MapStringCbor(PersistentMap):
+    """
+    Persistent map with string (utf8) keys and CBOR values.
+    """
+
+    def _serialize_key(self, key):
+        return key.encode('utf8')
+
+    def _serialize_value(self, value):
+        return cbor2.dumps(value)
+
+    def _deserialize_value(self, data):
+        return cbor2.loads(data)
+
+
+class MapStringPickle(PersistentMap):
+    """
+    Persistent map with string (utf8) keys and Python pickle values.
+    """
+
+    def _serialize_key(self, key):
+        return key.encode('utf8')
+
+    def _serialize_value(self, value):
+        return pickle.dumps(value, protocol=_PICKLE_PROTOCOL)
+
+    def _deserialize_value(self, data):
+        return pickle.loads(data)
+
+
+class MapOidString(PersistentMap):
+    """
+    Persistent map with OID (uint64) keys and string (utf8) values.
+    """
+
+    def _serialize_key(self, key):
+        return struct.pack('<Q', key)
+
+    def _serialize_value(self, value):
+        return value.encode('utf8')
+
+    def _deserialize_value(self, data):
+        return data.decode('utf8')
+
+
+class MapOidOid(PersistentMap):
+    """
+    Persistent map with OID (uint64) keys and OID (uint64) values.
+    """
+
+    def _serialize_key(self, key):
+        return struct.pack('<Q', key)
+
+    def _serialize_value(self, value):
+        return struct.pack('<Q', value)
+
+    def _deserialize_value(self, data):
+        return struct.unpack('<Q', data)
+
+
 class MapOidCbor(PersistentMap):
     """
     Persistent map with OID (uint64) keys and CBOR values.
-
-    This is used eg for transparent storage of dynamically typed data
-    in object tables in a language neutral, flexible and binary transparent
-    format.
     """
 
     def _serialize_key(self, key):
@@ -188,8 +276,6 @@ class MapOidCbor(PersistentMap):
 class MapOidPickle(PersistentMap):
     """
     Persistent map with OID (uint64) keys and Python pickle values.
-
-    This is used eg for transparent storage of native Python object tables.
     """
 
     def _serialize_key(self, key):
