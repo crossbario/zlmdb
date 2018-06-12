@@ -34,18 +34,21 @@ from ._pmap import MapUuidString, \
                    MapUuidJson, \
                    MapUuidCbor, \
                    MapUuidPickle, \
+                   MapUuidFlatBuffers, \
                    MapStringString, \
                    MapStringOid, \
                    MapStringUuid, \
                    MapStringJson, \
                    MapStringCbor, \
                    MapStringPickle, \
+                   MapStringFlatBuffers, \
                    MapOidString, \
                    MapOidOid, \
                    MapOidUuid, \
                    MapOidJson, \
                    MapOidCbor, \
-                   MapOidPickle
+                   MapOidPickle, \
+                   MapOidFlatBuffers
 
 from ._transaction import BaseTransaction, TransactionStats
 
@@ -60,16 +63,19 @@ __all__ = (
     'MapUuidJson',
     'MapUuidCbor',
     'MapUuidPickle',
+    'MapUuidFlatBuffers',
     'MapStringString',
     'MapStringOid',
     'MapStringUuid',
     'MapStringJson',
     'MapStringCbor',
     'MapStringPickle',
+    'MapStringFlatBuffers',
     'MapOidString',
     'MapOidOid',
     'MapOidUuid',
     'MapOidJson',
     'MapOidCbor',
     'MapOidPickle',
+    'MapOidFlatBuffers',
 )

@@ -62,7 +62,7 @@ def _serializer_run():
 
 
 def _serialization_speed(serializer):
-    N = 20
+    N = 10
     M = 10000
 
     samples = []

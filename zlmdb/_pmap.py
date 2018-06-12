@@ -352,7 +352,7 @@ class _FlatBuffersValuesMixin(object):
 
     def _serialize_value(self, value):
         builder = flatbuffers.Builder(0)
-        obj = self._build(builder, value)
+        obj = self._build(value, builder)
         builder.Finish(obj)
         buf = builder.Output()
         return bytes(buf)
