@@ -60,7 +60,8 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source zlmdb -m pytest
+	#coverage run --source zlmdb -m pytest
+	coverage run --source zlmdb -m pytest -v -s zlmdb
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
@@ -84,10 +85,11 @@ dist: clean ## builds source and wheel package
 	python setup.py bdist_wheel
 	ls -l dist
 
-install: clean ## install the package to the active Python's site-packages
-	#python setup.py install
+install:
 	pip install -e .
+	pip install -r requirements_dev.txt
 
 
 generate:
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/tests/_generated zlmdb/tests/user.fbs
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/reflection.fbs

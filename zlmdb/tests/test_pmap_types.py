@@ -57,16 +57,16 @@ class Transaction(BaseTransaction):
             self.tab_oid_oid = MapOidOid(slot=8)
             self.tab_oid_uuid = MapOidUuid(slot=9)
 
-        self.tab_uuid_json = MapUuidJson(slot=10)
-        self.tab_uuid_cbor = MapUuidCbor(slot=11)
+        self.tab_uuid_json = MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_cbor = MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
         self.tab_uuid_pickle = MapUuidPickle(slot=12)
 
-        self.tab_str_json = MapStringJson(slot=20)
-        self.tab_str_cbor = MapStringCbor(slot=21)
+        self.tab_str_json = MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_cbor = MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
         self.tab_str_pickle = MapStringPickle(slot=22)
 
-        self.tab_oid_json = MapOidJson(slot=30)
-        self.tab_oid_cbor = MapOidCbor(slot=31)
+        self.tab_oid_json = MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_cbor = MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
         self.tab_oid_pickle = MapOidPickle(slot=32)
 
     def attach(self):
@@ -131,9 +131,9 @@ def test_pmap_json_values(env):
         for i in range(n):
             user = _create_test_user()
 
-            txn.tab_oid_json[user.oid] = user.marshal()
-            txn.tab_str_json[user.authid] = user.marshal()
-            txn.tab_uuid_json[user.uuid] = user.marshal()
+            txn.tab_oid_json[user.oid] = user
+            txn.tab_str_json[user.authid] = user
+            txn.tab_uuid_json[user.uuid] = user
 
     assert stats.puts == n * 3
     assert stats.dels == 0
@@ -183,9 +183,9 @@ def test_pmap_cbor_values(env):
         for i in range(n):
             user = _create_test_user()
 
-            txn.tab_oid_cbor[user.oid] = user.marshal()
-            txn.tab_str_cbor[user.authid] = user.marshal()
-            txn.tab_uuid_cbor[user.uuid] = user.marshal()
+            txn.tab_oid_cbor[user.oid] = user
+            txn.tab_str_cbor[user.authid] = user
+            txn.tab_uuid_cbor[user.uuid] = user
 
     assert stats.puts == n * 3
     assert stats.dels == 0

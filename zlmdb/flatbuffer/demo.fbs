@@ -1,4 +1,4 @@
-namespace crossbarfx;
+namespace demo;
 
 struct Date {
     year: uint16;
@@ -16,11 +16,14 @@ table Rating {
 table User {
     name: string;
     authid: string (required);
+    uuid: [uint8];
     email: string;
     birthday: Date;
     is_friendly: bool;
-    tags: [Tag];
+    tags: [string];
     ratings: [Rating];
+    friends: [uint64];
+    referred_by: uint64;
 }
 
 root_type User;
