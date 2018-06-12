@@ -118,7 +118,11 @@ def test_table_pickle(env):
             txn.tab_str_pickle[user.authid] = user
             txn.tab_uuid_pickle[user.uuid] = user
 
-    assert stats.puts == n * 3
+            txn.tab_oid_cbor[user.oid] = user.marshal()
+            txn.tab_str_cbor[user.authid] = user.marshal()
+            txn.tab_uuid_cbor[user.uuid] = user.marshal()
+
+    assert stats.puts == n * 6
     assert stats.dels == 0
 
     stats.reset()
