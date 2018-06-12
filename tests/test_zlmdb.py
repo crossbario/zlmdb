@@ -7,7 +7,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from zlmdb import zlmdb
+from zlmdb import _transaction
 from zlmdb import cli
 
 

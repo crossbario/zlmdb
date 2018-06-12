@@ -12,16 +12,19 @@ from zlmdb import BaseTransaction, \
                   MapUuidString, \
                   MapUuidOid, \
                   MapUuidUuid, \
+                  MapUuidJson, \
                   MapUuidCbor, \
                   MapUuidPickle, \
                   MapStringString, \
                   MapStringOid, \
                   MapStringUuid, \
+                  MapStringJson, \
                   MapStringCbor, \
                   MapStringPickle, \
                   MapOidString, \
                   MapOidOid, \
                   MapOidUuid, \
+                  MapOidJson, \
                   MapOidCbor, \
                   MapOidPickle
 
@@ -41,40 +44,54 @@ class Transaction(BaseTransaction):
     def __init__(self, *args, **kwargs):
         BaseTransaction.__init__(self, *args, **kwargs)
 
-        self.tab_uuid_str = MapUuidString(slot=1)
-        self.tab_uuid_iod = MapUuidOid(slot=2)
-        self.tab_uuid_uuid = MapUuidUuid(slot=3)
-        self.tab_uuid_cbor = MapUuidCbor(slot=4)
-        self.tab_uuid_pickle = MapUuidPickle(slot=5)
+        if False:
+            self.tab_uuid_str = MapUuidString(slot=1)
+            self.tab_uuid_oid = MapUuidOid(slot=2)
+            self.tab_uuid_uuid = MapUuidUuid(slot=3)
 
-        self.tab_str_str = MapStringString(slot=6)
-        self.tab_str_oid = MapStringOid(slot=7)
-        self.tab_str_uuid = MapStringUuid(slot=8)
-        self.tab_str_cbor = MapStringCbor(slot=9)
-        self.tab_str_pickle = MapStringPickle(slot=10)
+            self.tab_str_str = MapStringString(slot=4)
+            self.tab_str_oid = MapStringOid(slot=5)
+            self.tab_str_uuid = MapStringUuid(slot=6)
 
-        self.tab_oid_str = MapOidString(slot=11)
-        self.tab_oid_oid = MapOidOid(slot=12)
-        self.tab_oid_uuid = MapOidUuid(slot=13)
-        self.tab_oid_cbor = MapOidCbor(slot=14)
-        self.tab_oid_pickle = MapOidPickle(slot=15)
+            self.tab_oid_str = MapOidString(slot=7)
+            self.tab_oid_oid = MapOidOid(slot=8)
+            self.tab_oid_uuid = MapOidUuid(slot=9)
+
+        self.tab_uuid_json = MapUuidJson(slot=10)
+        self.tab_uuid_cbor = MapUuidCbor(slot=11)
+        self.tab_uuid_pickle = MapUuidPickle(slot=12)
+
+        self.tab_str_json = MapStringJson(slot=20)
+        self.tab_str_cbor = MapStringCbor(slot=21)
+        self.tab_str_pickle = MapStringPickle(slot=22)
+
+        self.tab_oid_json = MapOidJson(slot=30)
+        self.tab_oid_cbor = MapOidCbor(slot=31)
+        self.tab_oid_pickle = MapOidPickle(slot=32)
 
     def attach(self):
-        self.tab_uuid_str.attach_transaction(self)
-        self.tab_uuid_iod.attach_transaction(self)
-        self.tab_uuid_uuid.attach_transaction(self)
+        if False:
+            self.tab_uuid_str.attach_transaction(self)
+            self.tab_uuid_oid.attach_transaction(self)
+            self.tab_uuid_uuid.attach_transaction(self)
+
+            self.tab_str_str.attach_transaction(self)
+            self.tab_str_oid.attach_transaction(self)
+            self.tab_str_uuid.attach_transaction(self)
+
+            self.tab_oid_str.attach_transaction(self)
+            self.tab_oid_oid.attach_transaction(self)
+            self.tab_oid_uuid.attach_transaction(self)
+
+        self.tab_uuid_json.attach_transaction(self)
         self.tab_uuid_cbor.attach_transaction(self)
         self.tab_uuid_pickle.attach_transaction(self)
 
-        self.tab_str_str.attach_transaction(self)
-        self.tab_str_oid.attach_transaction(self)
-        self.tab_str_uuid.attach_transaction(self)
+        self.tab_str_json.attach_transaction(self)
         self.tab_str_cbor.attach_transaction(self)
         self.tab_str_pickle.attach_transaction(self)
 
-        self.tab_oid_str.attach_transaction(self)
-        self.tab_oid_oid.attach_transaction(self)
-        self.tab_oid_uuid.attach_transaction(self)
+        self.tab_oid_json.attach_transaction(self)
         self.tab_oid_cbor.attach_transaction(self)
         self.tab_oid_pickle.attach_transaction(self)
 
@@ -105,7 +122,33 @@ def _create_test_user():
     return user
 
 
-def test_table_pickle(env):
+def test_pmap_json_values(env):
+    n = 100
+
+    stats = TransactionStats()
+
+    with Transaction(env, write=True, stats=stats) as txn:
+        for i in range(n):
+            user = _create_test_user()
+
+            txn.tab_oid_json[user.oid] = user.marshal()
+            txn.tab_str_json[user.authid] = user.marshal()
+            txn.tab_uuid_json[user.uuid] = user.marshal()
+
+    assert stats.puts == n * 3
+    assert stats.dels == 0
+
+    stats.reset()
+
+    with Transaction(env) as txn:
+        for tab in [txn.tab_oid_json,
+                    txn.tab_str_json,
+                    txn.tab_uuid_json]:
+            rows = tab.count()
+            assert rows == n
+
+
+def test_pmap_pickle_values(env):
     n = 100
 
     stats = TransactionStats()
@@ -118,21 +161,40 @@ def test_table_pickle(env):
             txn.tab_str_pickle[user.authid] = user
             txn.tab_uuid_pickle[user.uuid] = user
 
-            txn.tab_oid_cbor[user.oid] = user.marshal()
-            txn.tab_str_cbor[user.authid] = user.marshal()
-            txn.tab_uuid_cbor[user.uuid] = user.marshal()
-
-    assert stats.puts == n * 6
+    assert stats.puts == n * 3
     assert stats.dels == 0
 
     stats.reset()
 
     with Transaction(env) as txn:
-        rows = txn.tab_oid_pickle.count()
-        assert rows == n
+        for tab in [txn.tab_oid_pickle,
+                    txn.tab_str_pickle,
+                    txn.tab_uuid_pickle]:
+            rows = tab.count()
+            assert rows == n
 
-        rows = txn.tab_str_pickle.count()
-        assert rows == n
 
-        rows = txn.tab_uuid_pickle.count()
-        assert rows == n
+def test_pmap_cbor_values(env):
+    n = 100
+
+    stats = TransactionStats()
+
+    with Transaction(env, write=True, stats=stats) as txn:
+        for i in range(n):
+            user = _create_test_user()
+
+            txn.tab_oid_cbor[user.oid] = user.marshal()
+            txn.tab_str_cbor[user.authid] = user.marshal()
+            txn.tab_uuid_cbor[user.uuid] = user.marshal()
+
+    assert stats.puts == n * 3
+    assert stats.dels == 0
+
+    stats.reset()
+
+    with Transaction(env) as txn:
+        for tab in [txn.tab_oid_cbor,
+                    txn.tab_str_cbor,
+                    txn.tab_uuid_cbor]:
+            rows = tab.count()
+            assert rows == n

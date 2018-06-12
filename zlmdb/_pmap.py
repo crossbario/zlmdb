@@ -32,8 +32,16 @@ import pickle
 import sys
 import os
 import uuid
-
+import json
+import zlib
 import cbor2
+
+try:
+    import snappy
+except ImportError:
+    HAS_SNAPPY = False
+else:
+    HAS_SNAPPY = True
 
 if sys.version_info < (3,):
     from UserDict import DictMixin as MutableMapping
@@ -47,9 +55,27 @@ class PersistentMap(MutableMapping):
     """
     Abstract base class for persistent maps stored in LMDB.
     """
+    COMPRESS_ZLIB = 1
+    COMPRESS_SNAPPY = 2
 
-    def __init__(self, slot):
+    def __init__(self, slot, compress=None):
         self._slot = slot
+        if compress:
+            if compress not in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]:
+                raise Exception('invalid compression mode')
+            if compress == PersistentMap.COMPRESS_SNAPPY and not HAS_SNAPPY:
+                raise Exception('snappy compression requested, but snappy is not installed')
+            if compress == PersistentMap.COMPRESS_ZLIB:
+                self._compress = zlib.compress
+                self._decompress = zlib.decompress
+            elif compress == PersistentMap.COMPRESS_SNAPPY:
+                self._compress = snappy.compress
+                self._decompress = snappy.uncompress
+            else:
+                raise Exception('logic error')
+        else:
+            self._compress = lambda data: data
+            self._decompress = lambda data: data
         self._txn = None
         self._indexes = {}
 
@@ -58,6 +84,50 @@ class PersistentMap(MutableMapping):
 
     def attach_index(self, index_name, index_key, index_map):
         self._indexes[index_name] = (index_key, index_map)
+
+    def _serialize_key(self, key):
+        raise Exception('not implemented')
+
+    def _serialize_value(self, value):
+        raise Exception('not implemented')
+
+    def _deserialize_value(self, data):
+        raise Exception('not implemented')
+
+    def __getitem__(self, key):
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
+        _data = self._txn.get(_key)
+
+        if _data:
+            if self._decompress:
+                _data = self._decompress(_data)
+            return self._deserialize_value(_data)
+        else:
+            return None
+
+    def __setitem__(self, key, value):
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
+        _data = self._serialize_value(value)
+
+        if self._compress:
+            _data = self._compress(_data)
+
+        self._txn.put(_key, _data)
+
+        for index_key, index_map in self._indexes.values():
+            _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
+            _data = index_map._serialize_value(key)
+            self._txn.put(_key, _data)
+
+    def __delitem__(self, key):
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
+        self._txn.delete(_key)
+
+    def __iter__(self):
+        raise Exception('not implemented')
+
+    def __len__(self):
+        return self.count()
 
     def count(self, prefix=None):
         key_from = struct.pack('>H', self._slot)
@@ -90,7 +160,6 @@ class PersistentMap(MutableMapping):
                     break
                 cnt += 1
                 self._txn._dels += 1
-                self._txn._log.append((BaseTransaction.DEL, key))
         if rebuild_indexes:
             deleted, _ = self.rebuild_indexes()
             cnt += deleted
@@ -132,43 +201,6 @@ class PersistentMap(MutableMapping):
             return deleted, inserted
         else:
             raise Exception('no index "{}" attached'.format(index_name))
-
-    def _serialize_key(self, key):
-        raise Exception('not implemented')
-
-    def _serialize_value(self, value):
-        raise Exception('not implemented')
-
-    def _deserialize_value(self, data):
-        raise Exception('not implemented')
-
-    def __getitem__(self, key):
-        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
-        _data = self._txn.get(_key)
-        if _data:
-            return self._deserialize_value(_data)
-        else:
-            return None
-
-    def __setitem__(self, key, value):
-        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
-        _data = self._serialize_value(value)
-        self._txn.put(_key, _data)
-
-        for index_key, index_map in self._indexes.values():
-            _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
-            _data = index_map._serialize_value(key)
-            self._txn.put(_key, _data)
-
-    def __delitem__(self, key):
-        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
-        self._txn.delete(_key)
-
-    def __iter__(self):
-        raise Exception('not implemented')
-
-    def __len__(self):
-        raise Exception('not implemented')
 
 
 class _OidKeysMixin(object):
@@ -260,6 +292,15 @@ class _UuidValuesMixin(object):
         return uuid.UUID(bytes=data)
 
 
+class _JsonValuesMixin(object):
+
+    def _serialize_value(self, value):
+        return json.dumps(value, separators=(',', ':'), ensure_ascii=False, sort_keys=False).encode('utf8')
+
+    def _deserialize_value(self, data):
+        return json.loads(data.decode('utf8'))
+
+
 class _CborValuesMixin(object):
 
     def _serialize_value(self, value):
@@ -305,6 +346,14 @@ class MapUuidUuid(_UuidKeysMixin, _UuidValuesMixin, PersistentMap):
         PersistentMap.__init__(self, slot)
 
 
+class MapUuidJson(_UuidKeysMixin, _JsonValuesMixin, PersistentMap):
+    """
+    Persistent map with UUID (16 bytes) keys and JSON values.
+    """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
+
+
 class MapUuidCbor(_UuidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and CBOR values.
@@ -345,6 +394,14 @@ class MapStringUuid(_StringKeysMixin, _UuidValuesMixin, PersistentMap):
         PersistentMap.__init__(self, slot)
 
 
+class MapStringJson(_StringKeysMixin, _JsonValuesMixin, PersistentMap):
+    """
+    Persistent map with string (utf8) keys and JSON values.
+    """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
+
+
 class MapStringCbor(_StringKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and CBOR values.
@@ -380,6 +437,14 @@ class MapOidOid(_OidKeysMixin, _OidValuesMixin, PersistentMap):
 class MapOidUuid(_OidKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and UUID (16 bytes) values.
+    """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
+
+
+class MapOidJson(_OidKeysMixin, _JsonValuesMixin, PersistentMap):
+    """
+    Persistent map with OID (uint64) keys and JSON values.
     """
     def __init__(self, slot):
         PersistentMap.__init__(self, slot)
