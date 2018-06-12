@@ -1,3 +1,4 @@
+import uuid
 import datetime
 from typing import Optional, List, Dict
 
@@ -6,6 +7,7 @@ class User(object):
     oid: int
     name: str
     authid: str
+    uuid: uuid.UUID
     email: str
     birthday: datetime.date
     is_friendly: bool

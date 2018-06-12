@@ -27,8 +27,11 @@
 """Main module."""
 
 import struct
+import random
+import string
 import pickle
 import sys
+import os
 import uuid
 
 import cbor2
@@ -171,17 +174,57 @@ class PersistentMap(MutableMapping):
 
 class _OidKeysMixin(object):
 
+    @staticmethod
+    def new_key(secure=True):
+        if secure:
+            return struct.unpack('@Q', os.urandom(8))
+        else:
+            return random.randint(0, 2**64-1)
+
     def _serialize_key(self, key):
         return struct.pack('>Q', key)
 
 
 class _StringKeysMixin(object):
 
+    CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
+    """
+    Charset from which to generate random key IDs.
+    
+    .. note::
+
+        We take out the following 9 chars (leaving 27), because there is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z.
+    """
+    CHAR_GROUPS = 4
+    CHARS_PER_GROUP = 6
+    GROUP_SET = u'-'
+
+    @staticmethod
+    def new_key():
+        """
+        Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
+        The generated value is cryptographically strong and has (at least) 114 bits of entropy.
+
+        :return: new random string key
+        """
+        rng = random.SystemRandom()
+        token_value = u''.join(rng.choice(self.CHARSET) for _ in range(self.CHAR_GROUPS * self.CHARS_PER_GROUP))
+        if self.CHARS_PER_GROUP > 1:
+            return sep.join(map(u''.join, zip(*[iter(token_value)] * self.CHARS_PER_GROUP)))
+        else:
+            return token_value
+
     def _serialize_key(self, key):
         return key.encode('utf8')
 
 
 class _UuidKeysMixin(object):
+
+    @staticmethod
+    def new_key():
+        # https: // docs.python.org / 3 / library / uuid.html  # uuid.uuid4
+        # return uuid.UUID(bytes=os.urandom(16))
+        return uuid.uuid4()
 
     def _serialize_key(self, key):
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).

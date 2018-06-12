@@ -4,6 +4,7 @@ class User(object):
         self.oid = None
         self.name = None
         self.authid = None
+        self.uuid = None
         self.email = None
         self.birthday = None
         self.is_friendly = None
