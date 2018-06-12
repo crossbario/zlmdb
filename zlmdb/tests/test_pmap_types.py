@@ -7,7 +7,23 @@ import pytest
 import uuid
 import datetime
 
-from zlmdb import *
+from zlmdb import BaseTransaction, \
+                  TransactionStats, \
+                  MapUuidString, \
+                  MapUuidOid, \
+                  MapUuidUuid, \
+                  MapUuidCbor, \
+                  MapUuidPickle, \
+                  MapStringString, \
+                  MapStringOid, \
+                  MapStringUuid, \
+                  MapStringCbor, \
+                  MapStringPickle, \
+                  MapOidString, \
+                  MapOidOid, \
+                  MapOidUuid, \
+                  MapOidCbor, \
+                  MapOidPickle
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

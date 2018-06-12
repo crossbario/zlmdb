@@ -28,7 +28,6 @@
 
 import struct
 import random
-import string
 import pickle
 import sys
 import os
@@ -50,8 +49,9 @@ class PersistentMap(MutableMapping):
     Abstract base class for persistent maps stored in LMDB.
     """
 
-    def __init__(self, *args, **kwargs):
-        self._slot = kwargs.pop('slot', 0)
+    def __init__(self, slot):
+        self._slot = slot
+        self._txn = None
         self._indexes = {}
 
     def attach_transaction(self, txn):
@@ -190,14 +190,14 @@ class _StringKeysMixin(object):
     CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
     """
     Charset from which to generate random key IDs.
-    
+
     .. note::
 
         We take out the following 9 chars (leaving 27), because there is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z.
     """
     CHAR_GROUPS = 4
     CHARS_PER_GROUP = 6
-    GROUP_SET = u'-'
+    GROUP_SEP = u'-'
 
     @staticmethod
     def new_key():
@@ -208,9 +208,11 @@ class _StringKeysMixin(object):
         :return: new random string key
         """
         rng = random.SystemRandom()
-        token_value = u''.join(rng.choice(self.CHARSET) for _ in range(self.CHAR_GROUPS * self.CHARS_PER_GROUP))
-        if self.CHARS_PER_GROUP > 1:
-            return sep.join(map(u''.join, zip(*[iter(token_value)] * self.CHARS_PER_GROUP)))
+        token_value = u''.join(rng.choice(_StringKeysMixin.CHARSET)
+                               for _ in range(_StringKeysMixin.CHAR_GROUPS * _StringKeysMixin.CHARS_PER_GROUP))
+        if _StringKeysMixin.CHARS_PER_GROUP > 1:
+            return _StringKeysMixin.GROUP_SEP.join(
+                map(u''.join, zip(*[iter(token_value)] * _StringKeysMixin.CHARS_PER_GROUP)))
         else:
             return token_value
 
@@ -281,90 +283,120 @@ class MapUuidString(_UuidKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and string (utf8) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapUuidOid(_UuidKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and OID (uint64) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapUuidUuid(_UuidKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and UUID (16 bytes) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapUuidCbor(_UuidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and CBOR values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapUuidPickle(_UuidKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and Python Pickle values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapStringString(_StringKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and string (utf8) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapStringOid(_StringKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and OID (uint64) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapStringUuid(_StringKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and UUID (16 bytes) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapStringCbor(_StringKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and CBOR values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapStringPickle(_StringKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and Python pickle values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapOidString(_OidKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and string (utf8) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapOidOid(_OidKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and OID (uint64) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapOidUuid(_OidKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and UUID (16 bytes) values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapOidCbor(_OidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and CBOR values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class MapOidPickle(_OidKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and Python pickle values.
     """
+    def __init__(self, slot):
+        PersistentMap.__init__(self, slot)
 
 
 class TransactionStats(object):
