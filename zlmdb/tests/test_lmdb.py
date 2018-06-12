@@ -19,13 +19,13 @@ def env():
     return env
 
 
-def test_create(env):
+def test_lmdb_create(env):
     assert isinstance(env, lmdb.Environment)
     with env.begin() as txn:
         assert txn.id() == 0
 
 
-def test_insert(env):
+def test_lmdb_insert(env):
     n = 100
     total1 = 0
 
@@ -54,7 +54,7 @@ def test_insert(env):
         assert total1 == total2
 
 
-def test_delete(env):
+def test_lmdb_delete(env):
     n = 100
 
     with env.begin(write=True) as txn:

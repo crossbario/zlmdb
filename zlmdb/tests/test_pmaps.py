@@ -66,6 +66,17 @@ def env():
     return env
 
 
+def _create_test_user(i):
+    user = User()
+    user.oid = i
+    user.name = 'Test {}'.format(i)
+    user.authid = 'test-{}'.format(i)
+    user.email = '{}@example.com'.format(user.authid)
+    for j in range(10):
+        user.ratings['test-rating-{}'.format(j)] = random.random()
+    return user
+
+
 def test_create_txn(env):
     with Transaction1(env) as txn:
         assert txn._txn.id() == 0
@@ -76,18 +87,16 @@ def test_fill_no_idx(env):
     stats = TransactionStats()
     with Transaction2(env, write=True, stats=stats) as txn:
         for i in range(n):
-            user = User()
-            user.oid = i
-            user.name = 'Test {}'.format(i)
-            user.authid = 'test-{}'.format(i)
-            user.email = '{}@example.com'.format(user.authid)
-            for j in range(10):
-                user.ratings['test-rating-{}'.format(j)] = random.random()
+            user = _create_test_user(i)
 
             _user = txn.users[user.oid]
             assert not _user
 
             txn.users[user.oid] = user
+
+            _user = txn.users[user.oid]
+            assert _user
+            assert _user.oid == user.oid
 
     assert stats.puts == n * 1
 
@@ -97,17 +106,15 @@ def test_fill_with_idxs(env):
     stats = TransactionStats()
     with Transaction3(env, write=True, stats=stats) as txn:
         for i in range(n):
-            user = User()
-            user.oid = i
-            user.name = 'Test {}'.format(i)
-            user.authid = 'test-{}'.format(i)
-            user.email = '{}@example.com'.format(user.authid)
-            for j in range(10):
-                user.ratings['test-rating-{}'.format(j)] = random.random()
+            user = _create_test_user(i)
 
             _user = txn.users[user.oid]
             assert not _user
 
             txn.users[user.oid] = user
+
+            _user = txn.users[user.oid]
+            assert _user
+            assert _user.oid == user.oid
 
     assert stats.puts == n * 3
