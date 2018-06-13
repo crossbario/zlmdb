@@ -5,7 +5,7 @@ import random
 import lmdb
 import pytest
 
-from zlmdb import BaseTransaction, TransactionStats, MapOidPickle, MapStringOid, MapStringPickle
+import zlmdb
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -15,53 +15,41 @@ else:
     from user import User
 
 
-DBNAME = '.test-db1'
+DBFILE = '.testdb'
+zlmdb.Database.scratch(DBFILE)
 
 
-class Transaction1(BaseTransaction):
-
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
-
-
-class Transaction2(BaseTransaction):
-
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
-        self.users = MapOidPickle(slot=1)
-
-    def attach(self):
-        self.users.attach_transaction(self)
+@pytest.fixture(scope='module')
+def schema1():
+    schema = zlmdb.Schema()
+    schema.register(1, 'users', zlmdb.MapOidPickle)
+    return schema
 
 
-class Transaction3(BaseTransaction):
-
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
-
-        self.users = MapOidPickle(slot=1)
-        self.idx_users_by_authid = MapStringOid(slot=2)
-        self.idx_users_by_email = MapStringOid(slot=3)
-
-    def attach(self):
-        self.users.attach_transaction(self)
-
-        self.idx_users_by_authid.attach_transaction(self)
-        self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
-
-        self.idx_users_by_email.attach_transaction(self)
-        self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
+@pytest.fixture(scope='module')
+def schema2():
+    schema = zlmdb.Schema()
+    schema.register(1, 'users', zlmdb.MapStringPickle)
+    return schema
 
 
-class Transaction4(BaseTransaction):
+@pytest.fixture(scope='module')
+def schema3():
+    schema = zlmdb.Schema()
+    # schema.table(..)
+    # schema.index(..)
+    # schema.sequence(..)
+    # schema.check(..)
+    # schema.foreignkey(..)
 
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
+    schema.register(1, 'users', zlmdb.MapOidPickle)
+    schema.register(2, 'idx_users_by_authid', zlmdb.MapStringOid)
+    schema.register(3, 'idx_users_by_email', zlmdb.MapStringOid)
 
-        self.users = MapStringPickle(slot=1)
-
-    def attach(self):
-        self.users.attach_transaction(self)
+    # FIXME
+    # self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
+    # self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
+    return schema
 
 
 @pytest.fixture(scope='function')

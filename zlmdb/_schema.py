@@ -37,6 +37,43 @@ class Registration(object):
 
 
 class Schema(object):
+    """
+
+    """
+
+    SLOT_DATA_EMPTY = 0
+    """
+    Database slot is empty (unused, not necessarily zero'ed, but uninitialized).
+    """
+
+    SLOT_DATA_METADATA = 1
+    """
+    """
+
+    SLOT_DATA_TYPE = 2
+    """
+    """
+
+    SLOT_DATA_SEQUENCE = 3
+    """
+    """
+
+    SLOT_DATA_TABLE = 4
+    """
+    Database slot contains a persistent map, for example a map of type OID->Pickle.
+    """
+
+    SLOT_DATA_INDEX = 5
+    """
+    """
+
+    SLOT_DATA_REPLICATION = 6
+    """
+    """
+
+    SLOT_DATA_MATERIALIZATION= 7
+    """
+    """
 
     def __init__(self):
         self._slot_to_reg = {}

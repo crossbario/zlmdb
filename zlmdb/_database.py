@@ -46,7 +46,7 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, dbfile, schema, maxsize=10485760, readonly=False, sync=True):
+    def __init__(self, dbfile, schema=None, maxsize=10485760, readonly=False, sync=True):
         """
 
         :param dbfile: LMDB database file path.
@@ -58,9 +58,8 @@ class Database(object):
         :param read_only: Open database read-only.
         :type read_only: bool
         """
-        print(schema)
         assert type(dbfile) == six.text_type
-        assert isinstance(schema, Schema)
+        assert schema is None or isinstance(schema, Schema)
         assert type(maxsize) in six.integer_types
         assert type(readonly) == bool
         assert type(sync) == bool
