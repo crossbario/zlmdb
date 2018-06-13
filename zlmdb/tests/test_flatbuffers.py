@@ -15,7 +15,7 @@ DBNAME = '.test-db1'
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from user_fbs import User
+from user_fbs import User  # noqa
 
 
 class Transaction(BaseTransaction):

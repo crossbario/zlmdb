@@ -1,23 +1,20 @@
-import uuid
-import datetime
-from typing import Optional, List, Dict
-
 from zlmdb.flatbuffer.demo import User as _user
 from zlmdb.flatbuffer.demo import Date as _date
 
 
 class User(object):
-    oid: int
-    name: str
-    authid: str
-    uuid: uuid.UUID
-    email: str
-    birthday: datetime.date
-    is_friendly: bool
-    tags: Optional[List[str]]
-    ratings: Dict[str, float] = {}
-    friends: List[int] = []
-    referred_by: int = None
+    def __init__(self):
+        self.oid = None
+        self.name = None
+        self.authid = None
+        self.uuid = None
+        self.email = None
+        self.birthday = None
+        self.is_friendly = None
+        self.tags = None
+        self.ratings = {}
+        self.friends = []
+        self.referred_by = None
 
     def build(self, builder):
         name = builder.CreateString(self.name)
