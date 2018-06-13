@@ -50,12 +50,15 @@ from ._pmap import MapUuidString, \
                    MapOidPickle, \
                    MapOidFlatBuffers
 
-from ._transaction import BaseTransaction, TransactionStats
-
+from ._transaction import Transaction, TransactionStats
+from ._database import Database
+from ._schema import Schema
 
 __all__ = (
     '__version__',
-    'BaseTransaction',
+    'Schema',
+    'Database',
+    'Transaction',
     'TransactionStats',
     'MapUuidString',
     'MapUuidOid',

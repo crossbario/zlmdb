@@ -41,52 +41,36 @@ class TransactionStats(object):
         self.dels = 0
 
 
-class BaseTransaction(object):
+class Transaction(object):
 
     PUT = 1
     DEL = 2
 
-    def __init__(self, env, write=False, stats=None):
-        self._env = env
+    def __init__(self, db, write=False, stats=None):
+        self._db = db
         self._write = write
+        self._stats = stats
         self._txn = None
         self._log = None
-        self._stats = stats
+        self._pmaps = {}
 
-    def get(self, key):
-        return self._txn.get(key)
+    def __getattr__(self, name):
+        assert(self._txn is not None)
 
-    def put(self, key, data, overwrite=True):
-        # store the record, returning True if it was written, or False to indicate the key
-        # was already present and overwrite=False.
-        was_written = self._txn.put(key, data, overwrite=overwrite)
-        if was_written:
-            if self._stats:
-                self._stats.puts += 1
-            if self._log:
-                self._log.append((BaseTransaction.PUT, key))
-        return was_written
-
-    def delete(self, key):
-        was_deleted = self._txn.delete(key)
-        if was_deleted:
-            if self._stats:
-                self._stats.dels += 1
-            if self._log:
-                self._log.append((BaseTransaction.DEL, key))
-        return was_deleted
-
-    def attach(self):
-        pass
+        if name not in self._pmaps:
+            reg = self._db._schema[name]
+            self._pmaps[name] = reg.pmap(slot=reg.slot, txn=self)
+        return self._pmaps[name]
 
     def __enter__(self):
         assert(self._txn is None)
-        self._txn = lmdb.Transaction(self._env, write=self._write)
-        self.attach()
+
+        self._txn = lmdb.Transaction(self._db._env, write=self._write)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         assert(self._txn is not None)
+
         # https://docs.python.org/3/reference/datamodel.html#object.__exit__
         # If the context was exited without an exception, all three arguments will be None.
         if exc_type is None:
@@ -100,3 +84,34 @@ class BaseTransaction(object):
             self._txn.commit()
         else:
             self._txn.abort()
+
+        self._txn = None
+
+    def get(self, key):
+        assert(self._txn is not None)
+
+        return self._txn.get(key)
+
+    def put(self, key, data, overwrite=True):
+        assert(self._txn is not None)
+
+        # store the record, returning True if it was written, or False to indicate the key
+        # was already present and overwrite=False.
+        was_written = self._txn.put(key, data, overwrite=overwrite)
+        if was_written:
+            if self._stats:
+                self._stats.puts += 1
+            if self._log:
+                self._log.append((Transaction.PUT, key))
+        return was_written
+
+    def delete(self, key):
+        assert(self._txn is not None)
+
+        was_deleted = self._txn.delete(key)
+        if was_deleted:
+            if self._stats:
+                self._stats.dels += 1
+            if self._log:
+                self._log.append((Transaction.DEL, key))
+        return was_deleted

@@ -39,6 +39,27 @@ else:
 DBNAME = '.test-db1'
 
 
+class Schema(object):
+    pass
+
+
+class MySchema(Schema):
+    def __init__(self):
+        self.tab_uuid_json = MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_cbor = MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_pickle = MapUuidPickle(slot=12)
+
+        self.tab_str_json = MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_cbor = MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_pickle = MapStringPickle(slot=22)
+
+        self.tab_oid_json = MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_cbor = MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_pickle = MapOidPickle(slot=32)
+
+
+
+
 class Transaction(BaseTransaction):
 
     def __init__(self, *args, **kwargs):
