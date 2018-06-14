@@ -1,8 +1,5 @@
 import sys
 import os
-import uuid
-import datetime
-import random
 import pytest
 
 import zlmdb
@@ -10,125 +7,129 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_typed import User
+    from user_py3 import User, UsersSchema
 else:
-    from user import User
+    from user_py2 import User, UsersSchema
 
 
-dbfile = '.testdb'
-
-zlmdb.Database.scratch(dbfile)
-
-
-def create_test_user(oid=None):
-    user = User()
-    user.oid = oid or random.randint(0, 2**64-1)
-    user.name = 'Test {}'.format(user.oid)
-    user.authid = 'test-{}'.format(user.oid)
-    user.uuid = uuid.uuid4()
-    user.email = '{}@example.com'.format(user.authid)
-    user.birthday = datetime.date(1950, 12, 24)
-    user.is_friendly = True
-    user.tags = ['geek', 'sudoko', 'yellow']
-    for j in range(10):
-        user.ratings['test-rating-{}'.format(j)] = random.random()
-    return user
-
-
-@pytest.fixture(scope='module')
-def schema1():
-    schema = zlmdb.Schema()
-    schema.register(1, 'users', zlmdb.MapOidPickle)
-    return schema
+@pytest.fixture(scope='function')
+def dbfile():
+    _dbfile = '.testdb'
+    zlmdb.Database.scratch(_dbfile)
+    return _dbfile
 
 
 @pytest.fixture(scope='module')
 def testset1():
-    N = 1000
     users = []
-    for i in range(N):
-        user = create_test_user()
+    for i in range(1000):
+        user = User.create_test_user(i)
         users.append(user)
     return users
 
 
-class UsersSchema(object):
-    """
-    User database schema.
-    """
-
-    users: zlmdb.MapOidPickle
-
-    def __init__(self, txn):
-        self.users = zlmdb.MapOidPickle(1, txn)
+def test_transaction(dbfile):
+    schema = zlmdb.Schema()
+    with schema.open(dbfile) as db:
+        with db.begin() as txn:
+            print('transaction open', txn.id())
+        print('transaction committed')
+    print('database closed')
 
 
-def test_basic(testset1):
-    N = 1000
+def test_save_load(dbfile):
+    schema = UsersSchema()
+    user = User.create_test_user()
+
+    with schema.open(dbfile) as db:
+
+        with db.begin(write=True) as txn:
+
+            schema.users[txn, user.oid] = user
+            print('user saved')
+
+            _user = schema.users[txn, user.oid]
+            assert _user
+            assert user == _user
+            print('user loaded')
+
+        print('transaction committed')
+
+    print('database closed')
+
+
+def test_save_load_many_1(dbfile, testset1):
+    schema = UsersSchema()
+
+    with schema.open(dbfile) as db:
+
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.oid] = user
+
+            cnt = schema.users.count(txn)
+            print('user saved:', cnt)
+            assert cnt == len(testset1)
+
+        with db.begin() as txn:
+            cnt = schema.users.count(txn)
+            assert cnt == len(testset1)
+
+    with schema.open(dbfile) as db:
+        with db.begin() as txn:
+            cnt = schema.users.count(txn)
+            assert cnt == len(testset1)
+
+
+def test_save_load_many_2(dbfile, testset1):
+    schema = UsersSchema()
     oids = []
 
-    with zlmdb.Database(dbfile) as db:
+    with schema.open(dbfile) as db:
 
         # write records in a 1st transaction
         with db.begin(write=True) as txn:
 
-            schema = UsersSchema(txn)
-
             c = 0
             for user in testset1:
-                schema.users[user.oid] = user
+                schema.users[txn, user.oid] = user
                 oids.append(user.oid)
                 c += 1
-            assert c == N
+            assert c == len(testset1)
             print('[1] successfully stored {} records'.format(c))
 
             # in the same transaction, read back records
             c = 0
             for oid in oids:
-                user = schema.users[oid]
+                user = schema.users[txn, oid]
                 if user:
                     c += 1
-            assert c == N
+            assert c == len(testset1)
             print('[1] successfully loaded {} records'.format(c))
 
         # in a new transaction, read back records
         c = 0
         with db.begin() as txn:
-
-            schema = UsersSchema(txn)
-
             for oid in oids:
-                user = schema.users[oid]
+                user = schema.users[txn, oid]
                 if user:
                     c += 1
-        assert c == N
+        assert c == len(testset1)
         print('[2] successfully loaded {} records'.format(c))
 
     # in a new database environment (and hence new transaction), read back records
-    with zlmdb.Database(dbfile) as db:
-        with db.begin() as txn:
-            schema = UsersSchema(txn)
+    with schema.open(dbfile) as db:
 
-            count = schema.users.count()
-            assert count == N
+        with db.begin() as txn:
+
+            count = schema.users.count(txn)
+            assert count == len(testset1)
             print('total records:', count)
 
             c = 0
             for oid in oids:
-                user = schema.users[oid]
+                user = schema.users[txn, oid]
                 if user:
                     c += 1
-            assert c == N
+            assert c == len(testset1)
             print('[3] successfully loaded {} records'.format(c))
-
-
-def test_basic2(testset1):
-    oids = [user.oid for user in testset1]
-
-    with zlmdb.Database(dbfile) as db:
-        with db.begin() as txn:
-            schema = UsersSchema(txn)
-
-            count = schema.users.count()
-            print('total records:', count)
-            assert count == len(oids)

@@ -93,3 +93,6 @@ install:
 generate:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/reflection.fbs
+
+test_basic:
+	clear && pytest -v -s zlmdb/tests/test_basic.py

@@ -1,146 +1,53 @@
 import os
 import sys
-import shutil
-import random
-import lmdb
 import pytest
-import uuid
-import datetime
 
-from zlmdb import BaseTransaction, \
-                  TransactionStats, \
-                  MapUuidString, \
-                  MapUuidOid, \
-                  MapUuidUuid, \
-                  MapUuidJson, \
-                  MapUuidCbor, \
-                  MapUuidPickle, \
-                  MapStringString, \
-                  MapStringOid, \
-                  MapStringUuid, \
-                  MapStringJson, \
-                  MapStringCbor, \
-                  MapStringPickle, \
-                  MapOidString, \
-                  MapOidOid, \
-                  MapOidUuid, \
-                  MapOidJson, \
-                  MapOidCbor, \
-                  MapOidPickle
+import zlmdb
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_typed import User
+    from user_py3 import User, UsersSchema
 else:
-    from user import User
-
-
-DBNAME = '.test-db1'
-
-
-class Schema(object):
-    pass
-
-
-class MySchema(Schema):
-    def __init__(self):
-        self.tab_uuid_json = MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_cbor = MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_pickle = MapUuidPickle(slot=12)
-
-        self.tab_str_json = MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_cbor = MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_pickle = MapStringPickle(slot=22)
-
-        self.tab_oid_json = MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_cbor = MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_pickle = MapOidPickle(slot=32)
-
-
-
-
-class Transaction(BaseTransaction):
-
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
-
-        if False:
-            self.tab_uuid_str = MapUuidString(slot=1)
-            self.tab_uuid_oid = MapUuidOid(slot=2)
-            self.tab_uuid_uuid = MapUuidUuid(slot=3)
-
-            self.tab_str_str = MapStringString(slot=4)
-            self.tab_str_oid = MapStringOid(slot=5)
-            self.tab_str_uuid = MapStringUuid(slot=6)
-
-            self.tab_oid_str = MapOidString(slot=7)
-            self.tab_oid_oid = MapOidOid(slot=8)
-            self.tab_oid_uuid = MapOidUuid(slot=9)
-
-        self.tab_uuid_json = MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_cbor = MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_pickle = MapUuidPickle(slot=12)
-
-        self.tab_str_json = MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_cbor = MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_pickle = MapStringPickle(slot=22)
-
-        self.tab_oid_json = MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_cbor = MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_pickle = MapOidPickle(slot=32)
-
-    def attach(self):
-        if False:
-            self.tab_uuid_str.attach_transaction(self)
-            self.tab_uuid_oid.attach_transaction(self)
-            self.tab_uuid_uuid.attach_transaction(self)
-
-            self.tab_str_str.attach_transaction(self)
-            self.tab_str_oid.attach_transaction(self)
-            self.tab_str_uuid.attach_transaction(self)
-
-            self.tab_oid_str.attach_transaction(self)
-            self.tab_oid_oid.attach_transaction(self)
-            self.tab_oid_uuid.attach_transaction(self)
-
-        self.tab_uuid_json.attach_transaction(self)
-        self.tab_uuid_cbor.attach_transaction(self)
-        self.tab_uuid_pickle.attach_transaction(self)
-
-        self.tab_str_json.attach_transaction(self)
-        self.tab_str_cbor.attach_transaction(self)
-        self.tab_str_pickle.attach_transaction(self)
-
-        self.tab_oid_json.attach_transaction(self)
-        self.tab_oid_cbor.attach_transaction(self)
-        self.tab_oid_pickle.attach_transaction(self)
+    from user_py2 import User, UsersSchema
 
 
 @pytest.fixture(scope='function')
-def env():
-    if os.path.exists(DBNAME):
-        if os.path.isdir(DBNAME):
-            shutil.rmtree(DBNAME)
-        else:
-            os.remove(DBNAME)
-    env = lmdb.open(DBNAME)
-    return env
+def dbfile():
+    _dbfile = '.testdb'
+    zlmdb.Database.scratch(_dbfile)
+    return _dbfile
 
 
-def _create_test_user():
-    user = User()
-    user.oid = random.randint(0, 2**64-1)
-    user.name = 'Test {}'.format(user.oid)
-    user.authid = 'test-{}'.format(user.oid)
-    user.uuid = uuid.uuid4()
-    user.email = '{}@example.com'.format(user.authid)
-    user.birthday = datetime.date(1950, 12, 24)
-    user.is_friendly = True
-    user.tags = ['relaxed', 'beerfan']
-    for j in range(10):
-        user.ratings['test-rating-{}'.format(j)] = random.random()
-    return user
+class TestSchema(zlmdb.Schema):
+
+    def __init__(self):
+        super(TestSchema, self).__init__()
+        self.users = zlmdb.MapOidPickle(1)
+
+        self.tab_uuid_str = zlmdb.MapUuidString(slot=1)
+        self.tab_uuid_oid = zlmdb.MapUuidOid(slot=2)
+        self.tab_uuid_uuid = zlmdb.MapUuidUuid(slot=3)
+
+        self.tab_str_str = zlmdb.MapStringString(slot=4)
+        self.tab_str_oid = zlmdb.MapStringOid(slot=5)
+        self.tab_str_uuid = zlmdb.MapStringUuid(slot=6)
+
+        self.tab_oid_str = zlmdb.MapOidString(slot=7)
+        self.tab_oid_oid = zlmdb.MapOidOid(slot=8)
+        self.tab_oid_uuid = zlmdb.MapOidUuid(slot=9)
+
+        self.tab_uuid_json = zlmdb.MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_cbor = zlmdb.MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_pickle = zlmdb.MapUuidPickle(slot=12)
+
+        self.tab_str_json = zlmdb.MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_cbor = zlmdb.MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_pickle = zlmdb.MapStringPickle(slot=22)
+
+        self.tab_oid_json = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_cbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_pickle = zlmdb.MapOidPickle(slot=32)
 
 
 def test_pmap_json_values(env):

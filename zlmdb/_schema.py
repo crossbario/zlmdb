@@ -71,13 +71,19 @@ class Schema(object):
     """
     """
 
-    SLOT_DATA_MATERIALIZATION= 7
+    SLOT_DATA_MATERIALIZATION = 7
     """
     """
 
     def __init__(self):
         self._slot_to_reg = {}
         self._name_to_reg = {}
+
+    def open(self, *args, **kwargs):
+        from zlmdb._database import Database
+
+        db = Database(self, *args, **kwargs)
+        return db
 
     def register(self, slot, name, pmap):
         if slot in self._slot_to_reg:
@@ -106,7 +112,7 @@ class Schema(object):
             else:
                 raise KeyError('no pmap registered for slot "{}"'.format(key))
 
-    def __getitem__(self, key):
+    def __getattr__(self, key):
         if type(key) == six.text_type:
             if key in self._name_to_reg:
                 return self._name_to_reg[key]

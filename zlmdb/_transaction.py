@@ -47,20 +47,22 @@ class Transaction(object):
     DEL = 2
 
     def __init__(self, db, write=False, stats=None):
+        """
+
+        :param db:
+        :type db: zlmdb.Database
+
+        :param write:
+        :type write: bool
+
+        :param stats:
+        :type stats: TransactionStats
+        """
         self._db = db
         self._write = write
         self._stats = stats
         self._txn = None
         self._log = None
-        self._pmaps = {}
-
-    def __getattr__(self, name):
-        assert(self._txn is not None)
-
-        if name not in self._pmaps:
-            reg = self._db._schema[name]
-            self._pmaps[name] = reg.pmap(slot=reg.slot, txn=self)
-        return self._pmaps[name]
 
     def __enter__(self):
         assert(self._txn is None)
@@ -86,6 +88,11 @@ class Transaction(object):
             self._txn.abort()
 
         self._txn = None
+
+    def id(self):
+        assert(self._txn is not None)
+
+        return self._txn.id()
 
     def get(self, key):
         assert(self._txn is not None)
