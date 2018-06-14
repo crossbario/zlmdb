@@ -7,9 +7,9 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_py3 import User, UsersSchema
+    from user_py3 import User, UsersSchema2
 else:
-    from user_py2 import User, UsersSchema
+    from user_py2 import User, UsersSchema2
 
 
 @pytest.fixture(scope='function')
@@ -19,110 +19,39 @@ def dbfile():
     return _dbfile
 
 
-class TestSchema(zlmdb.Schema):
-
-    def __init__(self):
-        super(TestSchema, self).__init__()
-        self.users = zlmdb.MapOidPickle(1)
-
-        self.tab_uuid_str = zlmdb.MapUuidString(slot=1)
-        self.tab_uuid_oid = zlmdb.MapUuidOid(slot=2)
-        self.tab_uuid_uuid = zlmdb.MapUuidUuid(slot=3)
-
-        self.tab_str_str = zlmdb.MapStringString(slot=4)
-        self.tab_str_oid = zlmdb.MapStringOid(slot=5)
-        self.tab_str_uuid = zlmdb.MapStringUuid(slot=6)
-
-        self.tab_oid_str = zlmdb.MapOidString(slot=7)
-        self.tab_oid_oid = zlmdb.MapOidOid(slot=8)
-        self.tab_oid_uuid = zlmdb.MapOidUuid(slot=9)
-
-        self.tab_uuid_json = zlmdb.MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_cbor = zlmdb.MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_pickle = zlmdb.MapUuidPickle(slot=12)
-
-        self.tab_str_json = zlmdb.MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_cbor = zlmdb.MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_pickle = zlmdb.MapStringPickle(slot=22)
-
-        self.tab_oid_json = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_cbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_pickle = zlmdb.MapOidPickle(slot=32)
+@pytest.fixture(scope='function')
+def schema():
+    _schema = UsersSchema2()
+    return _schema
 
 
-def test_pmap_json_values(env):
+def test_pmap_json_values(schema, dbfile):
     n = 100
+    stats = zlmdb.TransactionStats()
 
-    stats = TransactionStats()
+    with schema.open(dbfile) as db:
+        with db.begin(write=True, stats=stats) as txn:
+            print('transaction open', txn.id())
+            for i in range(n):
+                user = User.create_test_user(i)
+                schema.tab_oid_json[txn, user.oid] = user
+                schema.tab_str_json[txn, user.authid] = user
+                schema.tab_uuid_json[txn, user.uuid] = user
 
-    with Transaction(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user()
+        print('transaction committed')
+        assert stats.puts == n * 3
+        assert stats.dels == 0
 
-            txn.tab_oid_json[user.oid] = user
-            txn.tab_str_json[user.authid] = user
-            txn.tab_uuid_json[user.uuid] = user
+        stats.reset()
 
-    assert stats.puts == n * 3
-    assert stats.dels == 0
+        with db.begin() as txn:
+            cnt = schema.tab_oid_json.count(txn)
+            assert cnt == n
 
-    stats.reset()
+            cnt = schema.tab_str_json.count(txn)
+            assert cnt == n
 
-    with Transaction(env) as txn:
-        for tab in [txn.tab_oid_json,
-                    txn.tab_str_json,
-                    txn.tab_uuid_json]:
-            rows = tab.count()
-            assert rows == n
+            cnt = schema.tab_uuid_json.count(txn)
+            assert cnt == n
 
-
-def test_pmap_pickle_values(env):
-    n = 100
-
-    stats = TransactionStats()
-
-    with Transaction(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user()
-
-            txn.tab_oid_pickle[user.oid] = user
-            txn.tab_str_pickle[user.authid] = user
-            txn.tab_uuid_pickle[user.uuid] = user
-
-    assert stats.puts == n * 3
-    assert stats.dels == 0
-
-    stats.reset()
-
-    with Transaction(env) as txn:
-        for tab in [txn.tab_oid_pickle,
-                    txn.tab_str_pickle,
-                    txn.tab_uuid_pickle]:
-            rows = tab.count()
-            assert rows == n
-
-
-def test_pmap_cbor_values(env):
-    n = 100
-
-    stats = TransactionStats()
-
-    with Transaction(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user()
-
-            txn.tab_oid_cbor[user.oid] = user
-            txn.tab_str_cbor[user.authid] = user
-            txn.tab_uuid_cbor[user.uuid] = user
-
-    assert stats.puts == n * 3
-    assert stats.dels == 0
-
-    stats.reset()
-
-    with Transaction(env) as txn:
-        for tab in [txn.tab_oid_cbor,
-                    txn.tab_str_cbor,
-                    txn.tab_uuid_cbor]:
-            rows = tab.count()
-            assert rows == n
+    print('database closed')

@@ -7,9 +7,9 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_py3 import User, UsersSchema
+    from user_py3 import User, UsersSchema1
 else:
-    from user_py2 import User, UsersSchema
+    from user_py2 import User, UsersSchema1
 
 
 @pytest.fixture(scope='function')
@@ -17,6 +17,12 @@ def dbfile():
     _dbfile = '.testdb'
     zlmdb.Database.scratch(_dbfile)
     return _dbfile
+
+
+@pytest.fixture(scope='function')
+def schema():
+    _schema = UsersSchema1()
+    return _schema
 
 
 @pytest.fixture(scope='module')
@@ -28,8 +34,7 @@ def testset1():
     return users
 
 
-def test_transaction(dbfile):
-    schema = zlmdb.Schema()
+def test_transaction(schema, dbfile):
     with schema.open(dbfile) as db:
         with db.begin() as txn:
             print('transaction open', txn.id())
@@ -37,8 +42,7 @@ def test_transaction(dbfile):
     print('database closed')
 
 
-def test_save_load(dbfile):
-    schema = UsersSchema()
+def test_save_load(schema, dbfile):
     user = User.create_test_user()
 
     with schema.open(dbfile) as db:
@@ -58,8 +62,7 @@ def test_save_load(dbfile):
     print('database closed')
 
 
-def test_save_load_many_1(dbfile, testset1):
-    schema = UsersSchema()
+def test_save_load_many_1(schema, dbfile, testset1):
 
     with schema.open(dbfile) as db:
 
@@ -81,8 +84,7 @@ def test_save_load_many_1(dbfile, testset1):
             assert cnt == len(testset1)
 
 
-def test_save_load_many_2(dbfile, testset1):
-    schema = UsersSchema()
+def test_save_load_many_2(schema, dbfile, testset1):
     oids = []
 
     with schema.open(dbfile) as db:
