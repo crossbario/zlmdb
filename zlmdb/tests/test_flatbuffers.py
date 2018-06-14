@@ -1,75 +1,49 @@
 import os
 import sys
-import shutil
-import random
-import lmdb
 import pytest
-import uuid
-import datetime
 
-from zlmdb import BaseTransaction, \
-                  TransactionStats, \
-                  MapOidFlatBuffers
-
-DBNAME = '.test-db1'
+import zlmdb
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from user_fbs import User
 
-from user_fbs import User  # noqa
 
-
-class Transaction(BaseTransaction):
-
-    def __init__(self, *args, **kwargs):
-        BaseTransaction.__init__(self, *args, **kwargs)
-        self.tab_oid_fbs = MapOidFlatBuffers(slot=1, build=User.build, root=User.root)
-
-    def attach(self):
-        self.tab_oid_fbs.attach_transaction(self)
+class UsersSchema(zlmdb.Schema):
+    def __init__(self):
+        self.tab_oid_fbs = zlmdb.MapOidFlatBuffers(1, build=User.build, root=User.root)
 
 
 @pytest.fixture(scope='function')
-def env():
-    if os.path.exists(DBNAME):
-        if os.path.isdir(DBNAME):
-            shutil.rmtree(DBNAME)
-        else:
-            os.remove(DBNAME)
-    env = lmdb.open(DBNAME)
-    return env
+def dbfile():
+    _dbfile = '.testdb'
+    zlmdb.Database.scratch(_dbfile)
+    return _dbfile
 
 
-def _create_test_user():
-    user = User()
-    user.oid = random.randint(0, 2**64-1)
-    user.name = 'Test {}'.format(user.oid)
-    user.authid = 'test-{}'.format(user.oid)
-    user.uuid = uuid.uuid4()
-    user.email = '{}@example.com'.format(user.authid)
-    user.birthday = datetime.date(1950, 12, 24)
-    user.is_friendly = True
-    user.tags = ['relaxed', 'beerfan']
-    for j in range(10):
-        user.ratings['test-rating-{}'.format(j)] = random.random()
-    return user
+@pytest.fixture(scope='function')
+def schema():
+    _schema = UsersSchema()
+    return _schema
 
 
-def test_pmap_flatbuffers_values(env):
-    n = 100
+def test_pmap_flatbuffers_values(schema, dbfile):
+    N = 100
 
-    stats = TransactionStats()
+    stats = zlmdb.TransactionStats()
 
-    with Transaction(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user()
-            txn.tab_oid_fbs[user.oid] = user
+    with schema.open(dbfile) as db:
 
-    assert stats.puts == n
-    assert stats.dels == 0
+        with db.begin(write=True, stats=stats) as txn:
+            for i in range(N):
+                user = User.create_test_user()
+                schema.tab_oid_fbs[txn, user.oid] = user
 
-    stats.reset()
+        assert stats.puts == N
+        assert stats.dels == 0
+        stats.reset()
 
-    with Transaction(env) as txn:
-        for tab in [txn.tab_oid_fbs]:
-            rows = tab.count()
-            assert rows == n
+        with db.begin() as txn:
+            cnt = schema.tab_oid_fbs.count(txn)
+
+        assert cnt == N
+

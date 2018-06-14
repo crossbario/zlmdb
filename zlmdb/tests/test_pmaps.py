@@ -1,8 +1,5 @@
 import os
 import sys
-import shutil
-import random
-import lmdb
 import pytest
 
 import zlmdb
@@ -10,68 +7,22 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_typed import User
+    from user_py3 import User, UsersSchema2
 else:
-    from user import User
-
-
-DBFILE = '.testdb'
-zlmdb.Database.scratch(DBFILE)
-
-
-@pytest.fixture(scope='module')
-def schema1():
-    schema = zlmdb.Schema()
-    schema.register(1, 'users', zlmdb.MapOidPickle)
-    return schema
-
-
-@pytest.fixture(scope='module')
-def schema2():
-    schema = zlmdb.Schema()
-    schema.register(1, 'users', zlmdb.MapStringPickle)
-    return schema
-
-
-@pytest.fixture(scope='module')
-def schema3():
-    schema = zlmdb.Schema()
-    # schema.table(..)
-    # schema.index(..)
-    # schema.sequence(..)
-    # schema.check(..)
-    # schema.foreignkey(..)
-
-    schema.register(1, 'users', zlmdb.MapOidPickle)
-    schema.register(2, 'idx_users_by_authid', zlmdb.MapStringOid)
-    schema.register(3, 'idx_users_by_email', zlmdb.MapStringOid)
-
-    # FIXME
-    # self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
-    # self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
-    return schema
+    from user_py2 import User, UsersSchema2
 
 
 @pytest.fixture(scope='function')
-def env():
-    if os.path.exists(DBNAME):
-        if os.path.isdir(DBNAME):
-            shutil.rmtree(DBNAME)
-        else:
-            os.remove(DBNAME)
-    env = lmdb.open(DBNAME)
-    return env
+def dbfile():
+    _dbfile = '.testdb'
+    zlmdb.Database.scratch(_dbfile)
+    return _dbfile
 
 
-def _create_test_user(i):
-    user = User()
-    user.oid = i
-    user.name = 'Test {}'.format(i)
-    user.authid = 'test-{}'.format(i)
-    user.email = '{}@example.com'.format(user.authid)
-    for j in range(10):
-        user.ratings['test-rating-{}'.format(j)] = random.random()
-    return user
+@pytest.fixture(scope='function')
+def schema():
+    _schema = UsersSchema2()
+    return _schema
 
 
 def test_create_txn(env):

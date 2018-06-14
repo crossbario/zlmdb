@@ -1,3 +1,7 @@
+import random
+import uuid
+import datetime
+
 from zlmdb.flatbuffer.demo import User as _user
 from zlmdb.flatbuffer.demo import Date as _date
 
@@ -38,3 +42,18 @@ class User(object):
     @staticmethod
     def root(buf):
         return _user.User.GetRootAsUser(buf, 0)
+
+    @staticmethod
+    def create_test_user(oid=None):
+        user = User()
+        user.oid = oid or random.randint(0, 2**64-1)
+        user.name = 'Test {}'.format(user.oid)
+        user.authid = 'test-{}'.format(user.oid)
+        user.uuid = uuid.uuid4()
+        user.email = '{}@example.com'.format(user.authid)
+        user.birthday = datetime.date(1950, 12, 24)
+        user.is_friendly = True
+        user.tags = ['geek', 'sudoko', 'yellow']
+        for j in range(10):
+            user.ratings['test-rating-{}'.format(j)] = random.random()
+        return user

@@ -123,3 +123,20 @@ class UsersSchema2(zlmdb.Schema):
     tab_oid_json: zlmdb.MapOidJson = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
     tab_oid_cbor: zlmdb.MapOidCbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
     tab_oid_pickle: zlmdb.MapOidPickle = zlmdb.MapOidPickle(slot=32)
+
+
+class UsersSchema3(zlmdb.Schema):
+
+    users: zlmdb.MapStringPickle = zlmdb.MapStringPickle(1)
+
+
+class UsersSchema4(zlmdb.Schema):
+
+    users: zlmdb.MapOidPickle = zlmdb.MapOidPickle(1)
+    idx_users_by_authid: zlmdb.MapStringOid = zlmdb.MapStringOid(2)
+    idx_users_by_email: zlmdb.MapStringOid = zlmdb.MapStringOid(3)
+
+    def __init__(self):
+        super(UsersSchema4, self).__init__()
+        self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
+        self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)

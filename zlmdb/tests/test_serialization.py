@@ -1,3 +1,4 @@
+import os
 import sys
 import timeit
 import random
@@ -9,11 +10,12 @@ import humanize
 
 from zlmdb._pmap import _JsonValuesMixin, _CborValuesMixin, _PickleValuesMixin
 
-if sys.version_info >= (3, 6):
-    from user_typed import User
-else:
-    from user import User
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+if sys.version_info >= (3, 6):
+    from user_py3 import User
+else:
+    from user_py2 import User
 
 _TEST = {
     'oid': 0,
