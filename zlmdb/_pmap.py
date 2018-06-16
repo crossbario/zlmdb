@@ -170,9 +170,10 @@ class PersistentMap(MutableMapping):
                 if not cursor.delete(dupdata=True):
                     break
                 cnt += 1
-                txn._dels += 1
+                if txn._stats:
+                    txn._stats.dels += 1
         if rebuild_indexes:
-            deleted, _ = self.rebuild_indexes()
+            deleted, _ = self.rebuild_indexes(txn)
             cnt += deleted
         return cnt
 
@@ -189,7 +190,7 @@ class PersistentMap(MutableMapping):
         if index_name in self._indexes:
             index_key, index_map = self._indexes[index_name]
 
-            deleted = index_map.truncate()
+            deleted = index_map.truncate(txn)
 
             key_from = struct.pack('>H', self._slot)
             key_to = struct.pack('>H', self._slot + 1)

@@ -30,7 +30,6 @@ import shutil
 import six
 import lmdb
 
-import zlmdb
 from zlmdb._transaction import Transaction
 from zlmdb._schema import Schema
 

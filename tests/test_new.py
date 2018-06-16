@@ -23,9 +23,9 @@ class Foo(object):
 
 class MySchema(zlmdb.Schema):
 
-    # tab1: zlmdb.MapOidPickle = zlmdb.MapOidPickle(1)
+    tab1: zlmdb.MapOidPickle = zlmdb.MapOidPickle(1)
     # tab1: zlmdb.MapOidJson = zlmdb.MapOidJson(1, marshal=Foo.marshal, unmarshal=Foo.unmarshal)
-    tab1: zlmdb.MapOidCbor = zlmdb.MapOidCbor(1, marshal=Foo.marshal, unmarshal=Foo.unmarshal)
+    # tab1: zlmdb.MapOidCbor = zlmdb.MapOidCbor(1, marshal=Foo.marshal, unmarshal=Foo.unmarshal)
 
 
 schema = MySchema()

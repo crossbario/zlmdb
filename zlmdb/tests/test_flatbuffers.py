@@ -5,7 +5,7 @@ import pytest
 import zlmdb
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from user_fbs import User
+from _schema_fbs import User
 
 
 class UsersSchema(zlmdb.Schema):

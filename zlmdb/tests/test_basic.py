@@ -7,9 +7,9 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_py3 import User, UsersSchema1
+    from _schema_py3 import User, Schema2
 else:
-    from user_py2 import User, UsersSchema1
+    from _schema_py3 import User, Schema2
 
 
 @pytest.fixture(scope='function')
@@ -21,7 +21,7 @@ def dbfile():
 
 @pytest.fixture(scope='function')
 def schema():
-    _schema = UsersSchema1()
+    _schema = Schema2()
     return _schema
 
 

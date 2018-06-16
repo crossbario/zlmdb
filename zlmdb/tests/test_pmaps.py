@@ -7,9 +7,9 @@ import zlmdb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from user_py3 import User, UsersSchema2
+    from _schema_py3 import User, Schema1, Schema3, Schema4
 else:
-    from user_py2 import User, UsersSchema2
+    from _schema_py2 import User, Schema1, Schema3, Schema4
 
 
 @pytest.fixture(scope='function')
@@ -19,106 +19,141 @@ def dbfile():
     return _dbfile
 
 
-@pytest.fixture(scope='function')
-def schema():
-    _schema = UsersSchema2()
-    return _schema
+@pytest.fixture(scope='module')
+def testset1():
+    users = []
+    for i in range(1000):
+        user = User.create_test_user(i)
+        users.append(user)
+    return users
 
 
-def test_create_txn(env):
-    with Transaction1(env) as txn:
-        assert txn._txn.id() == 0
+def test_truncate_table(dbfile):
+    schema = Schema1()
+
+    stats = zlmdb.TransactionStats()
+    tabs = [
+        schema.tab_oid_json, schema.tab_str_json, schema.tab_uuid_json,
+        schema.tab_oid_cbor, schema.tab_str_cbor, schema.tab_uuid_cbor,
+        schema.tab_oid_pickle, schema.tab_str_pickle, schema.tab_uuid_pickle,
+    ]
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True, stats=stats) as txn:
+            for tab in tabs:
+                tab.truncate(txn)
+
+    print(stats.puts)
+    print(stats.dels)
 
 
-def test_fill_no_idx(env):
-    n = 100
-    stats = TransactionStats()
-    with Transaction2(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user(i)
+def test_count_all(dbfile, testset1):
+    schema = Schema3()
 
-            _user = txn.users[user.oid]
-            assert not _user
+    with schema.open(dbfile) as db:
 
-            txn.users[user.oid] = user
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.authid] = user
 
-            _user = txn.users[user.oid]
-            assert _user
-            assert _user.oid == user.oid
+            # table count within transaction
+            cnt = schema.users.count(txn)
+            assert cnt == len(testset1)
 
-    assert stats.puts == n * 1
+        # table count in new transaction
+        with db.begin() as txn:
+            cnt = schema.users.count(txn)
+            assert cnt == len(testset1)
 
-
-def test_fill_with_idxs(env):
-    n = 100
-    stats = TransactionStats()
-    with Transaction3(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user(i)
-
-            _user = txn.users[user.oid]
-            assert not _user
-
-            txn.users[user.oid] = user
-
-            _user = txn.users[user.oid]
-            assert _user
-            assert _user.oid == user.oid
-
-    assert stats.puts == n * 3
+    # table count in new connection
+    with schema.open(dbfile) as db:
+        with db.begin() as txn:
+            cnt = schema.users.count(txn)
+            assert cnt == len(testset1)
 
 
-def test_table_count(env):
-    n = 200
+def test_count_prefix(dbfile, testset1):
+    schema = Schema3()
 
-    stats = TransactionStats()
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.authid] = user
 
-    with Transaction4(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user(i)
-            txn.users[user.authid] = user
-
-    with Transaction4(env) as txn:
-        rows = txn.users.count()
-        assert rows == n
-
-    with Transaction4(env) as txn:
-        rows = txn.users.count('test-111')
-        assert rows == 1
-
-        rows = txn.users.count('test-11')
-        assert rows == 11
-
-        rows = txn.users.count('test-1')
-        assert rows == 111
-
-        rows = txn.users.count('test-')
-        assert rows == n
-
-        rows = txn.users.count('')
-        assert rows == n
+    n = len(testset1)
+    tests = [
+        (None, n),
+        ('', n),
+        ('test-', n),
+        ('test-1', 111),
+        ('test-11', 11),
+        ('test-111', 1),
+    ]
+    with schema.open(dbfile) as db:
+        with db.begin() as txn:
+            for prefix, num in tests:
+                cnt = schema.users.count(txn, prefix)
+                assert cnt == num
 
 
-def test_truncate_table(env):
-    n = 100
+def test_fill_with_indexes(dbfile, testset1):
+    schema = Schema4()
 
-    stats = TransactionStats()
+    with schema.open(dbfile) as db:
 
-    with Transaction2(env, write=True, stats=stats) as txn:
-        for i in range(n):
-            user = _create_test_user(i)
-            txn.users[user.oid] = user
+        stats = zlmdb.TransactionStats()
 
-    assert stats.puts == n
+        with db.begin(write=True, stats=stats) as txn:
+            for user in testset1:
+                schema.users[txn, user.oid] = user
 
-
-def test_rebuild_index(env):
-    with Transaction3(env, write=True) as txn:
-        records = txn.users.rebuild_index('idx1')
-        print('\nrebuilt specific index "idx1" on "users": {} records affected'.format(records))
+        # check indexes has been written to (in addition to the table itself)
+        num_indexes = 2
+        assert stats.puts == len(testset1) * (1 + num_indexes)
 
 
-def test_rebuild_all_indexes(env):
-    with Transaction3(env, write=True) as txn:
-        records = txn.users.rebuild_indexes()
-        print('\nrebuilt all indexes on "users": {} records affected'.format(records))
+def test_truncate_table_with_index(dbfile, testset1):
+    schema = Schema4()
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.oid] = user
+
+    stats = zlmdb.TransactionStats()
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True, stats=stats) as txn:
+            records = schema.users.truncate(txn)
+            print('table truncated:', records)
+
+    print(stats.puts)
+    print(stats.dels)
+
+
+def test_rebuild_index(dbfile, testset1):
+    schema = Schema4()
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.oid] = user
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            records = schema.users.rebuild_index(txn, 'idx1')
+            print('\nrebuilt specific index "idx1" on "users": {} records affected'.format(records))
+
+
+def test_rebuild_all_indexes(dbfile, testset1):
+    schema = Schema4()
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            for user in testset1:
+                schema.users[txn, user.oid] = user
+
+    with schema.open(dbfile) as db:
+        with db.begin(write=True) as txn:
+            records = schema.users.rebuild_indexes(txn)
+            print('\nrebuilt all indexes on "users": {} records affected'.format(records))
