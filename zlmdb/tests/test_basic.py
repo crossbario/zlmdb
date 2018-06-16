@@ -9,12 +9,12 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 if sys.version_info >= (3, 6):
     from _schema_py3 import User, Schema2
 else:
-    from _schema_py3 import User, Schema2
+    from _schema_py2 import User, Schema2
 
 
 @pytest.fixture(scope='function')
 def dbfile():
-    _dbfile = '.testdb'
+    _dbfile = u'.testdb'
     zlmdb.Database.scratch(_dbfile)
     return _dbfile
 

@@ -20,7 +20,6 @@ class User(object):
         self.referred_by = None
 
     def __eq__(self, other):
-        print('User.__eq__')
         if not isinstance(other, self.__class__):
             return False
         if other.oid != self.oid:
@@ -46,70 +45,63 @@ class User(object):
 
     def marshal(self):
         obj = {
-            'oid': self.oid,
-            'name': self.name,
-            'authid': self.authid,
-            'uuid': self.uuid.hex if self.uuid else None,
-            'email': self.email,
-            'birthday': {
-                'year': self.birthday.year if self.birthday else None,
-                'month': self.birthday.month if self.birthday else None,
-                'day': self.birthday.day if self.birthday else None,
+            u'oid': self.oid,
+            u'name': self.name,
+            u'authid': self.authid,
+            u'uuid': self.uuid.hex if self.uuid else None,
+            u'email': self.email,
+            u'birthday': {
+                u'year': self.birthday.year if self.birthday else None,
+                u'month': self.birthday.month if self.birthday else None,
+                u'day': self.birthday.day if self.birthday else None,
             },
-            'is_friendly': self.is_friendly,
-            'tags': self.tags,
-            'ratings': self.ratings,
-            'friends': self.friends,
-            'referred_by': self.referred_by,
+            u'is_friendly': self.is_friendly,
+            u'tags': self.tags,
+            u'ratings': self.ratings,
+            u'friends': self.friends,
+            u'referred_by': self.referred_by,
         }
         return obj
 
     @staticmethod
     def parse(obj):
         user = User()
-        user.oid = obj.get('oid', None)
-        user.name = obj.get('name', None)
-        user.authid = obj.get('authid', None)
-        if 'uuid' in obj:
-            user.uuid = uuid.UUID(hex=obj['uuid'])
-        user.email = obj.get('email', None)
-        if 'birthday' in obj:
-            b = obj['birthday']
+        user.oid = obj.get(u'oid', None)
+        user.name = obj.get(u'name', None)
+        user.authid = obj.get(u'authid', None)
+        if u'uuid' in obj:
+            user.uuid = uuid.UUID(hex=obj[u'uuid'])
+        user.email = obj.get(u'email', None)
+        if u'birthday' in obj:
+            b = obj[u'birthday']
             user.birthday = datetime.date(b.year, b.month, b.day)
-        user.is_friendly = obj.get('is_friendly', None)
-        user.tags = obj.get('tags', None)
-        user.ratings = obj.get('ratings', {})
-        user.friends = obj.get('friends', [])
-        user.referred_by = obj.get('referred_by', None)
+        user.is_friendly = obj.get(u'is_friendly', None)
+        user.tags = obj.get(u'tags', None)
+        user.ratings = obj.get(u'ratings', {})
+        user.friends = obj.get(u'friends', [])
+        user.referred_by = obj.get(u'referred_by', None)
         return user
 
     @staticmethod
     def create_test_user(oid=None):
         user = User()
         user.oid = oid or random.randint(0, 2**64-1)
-        user.name = 'Test {}'.format(user.oid)
-        user.authid = 'test-{}'.format(user.oid)
+        user.name = u'Test {}'.format(user.oid)
+        user.authid = u'test-{}'.format(user.oid)
         user.uuid = uuid.uuid4()
-        user.email = '{}@example.com'.format(user.authid)
+        user.email = u'{}@example.com'.format(user.authid)
         user.birthday = datetime.date(1950, 12, 24)
         user.is_friendly = True
-        user.tags = ['geek', 'sudoko', 'yellow']
+        user.tags = [u'geek', u'sudoko', u'yellow']
         for j in range(10):
-            user.ratings['test-rating-{}'.format(j)] = random.random()
+            user.ratings[u'test-rating-{}'.format(j)] = random.random()
         return user
 
 
-class UsersSchema1(zlmdb.Schema):
+class Schema1(zlmdb.Schema):
 
     def __init__(self):
-        super(UsersSchema1, self).__init__()
-        self.users = zlmdb.MapOidPickle(1)
-
-
-class UsersSchema2(zlmdb.Schema):
-
-    def __init__(self):
-        super(UsersSchema2, self).__init__()
+        super(Schema1, self).__init__()
 
         self.tab_uuid_str = zlmdb.MapUuidString(slot=1)
         self.tab_uuid_oid = zlmdb.MapUuidOid(slot=2)
@@ -120,12 +112,51 @@ class UsersSchema2(zlmdb.Schema):
         self.tab_oid_str = zlmdb.MapOidString(slot=7)
         self.tab_oid_oid = zlmdb.MapOidOid(slot=8)
         self.tab_oid_uuid = zlmdb.MapOidUuid(slot=9)
-        self.tab_uuid_json = zlmdb.MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_uuid_cbor = zlmdb.MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_json = zlmdb.MapUuidJson(slot=10,
+                                               marshal=(lambda o: o.marshal()),
+                                               unmarshal=User.parse)
+        self.tab_uuid_cbor = zlmdb.MapUuidCbor(slot=11,
+                                               marshal=(lambda o: o.marshal()),
+                                               unmarshal=User.parse)
         self.tab_uuid_pickle = zlmdb.MapUuidPickle(slot=12)
-        self.tab_str_json = zlmdb.MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_str_cbor = zlmdb.MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_json = zlmdb.MapStringJson(slot=20,
+                                                marshal=(lambda o: o.marshal()),
+                                                unmarshal=User.parse)
+        self.tab_str_cbor = zlmdb.MapStringCbor(slot=21,
+                                                marshal=(lambda o: o.marshal()),
+                                                unmarshal=User.parse)
         self.tab_str_pickle = zlmdb.MapStringPickle(slot=22)
-        self.tab_oid_json = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-        self.tab_oid_cbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_json = zlmdb.MapOidJson(slot=30,
+                                             marshal=(lambda o: o.marshal()),
+                                             unmarshal=User.parse)
+        self.tab_oid_cbor = zlmdb.MapOidCbor(slot=31,
+                                             marshal=(lambda o: o.marshal()),
+                                             unmarshal=User.parse)
         self.tab_oid_pickle = zlmdb.MapOidPickle(slot=32)
+
+
+class Schema2(zlmdb.Schema):
+
+    def __init__(self):
+        super(Schema2, self).__init__()
+        self.users = zlmdb.MapOidPickle(1)
+
+
+class Schema3(zlmdb.Schema):
+
+    def __init__(self):
+        super(Schema3, self).__init__()
+        self.users = zlmdb.MapStringPickle(1)
+
+
+class Schema4(zlmdb.Schema):
+
+    def __init__(self):
+        super(Schema4, self).__init__()
+        self.users = zlmdb.MapOidPickle(1)
+
+        self.idx_users_by_authid = zlmdb.MapStringOid(2)
+        self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
+
+        self.idx_users_by_email = zlmdb.MapStringOid(3)
+        self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)

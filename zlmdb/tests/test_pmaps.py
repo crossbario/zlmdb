@@ -14,7 +14,7 @@ else:
 
 @pytest.fixture(scope='function')
 def dbfile():
-    _dbfile = '.testdb'
+    _dbfile = u'.testdb'
     zlmdb.Database.scratch(_dbfile)
     return _dbfile
 
@@ -83,11 +83,11 @@ def test_count_prefix(dbfile, testset1):
     n = len(testset1)
     tests = [
         (None, n),
-        ('', n),
-        ('test-', n),
-        ('test-1', 111),
-        ('test-11', 11),
-        ('test-111', 1),
+        (u'', n),
+        (u'test-', n),
+        (u'test-1', 111),
+        (u'test-11', 11),
+        (u'test-111', 1),
     ]
     with schema.open(dbfile) as db:
         with db.begin() as txn:

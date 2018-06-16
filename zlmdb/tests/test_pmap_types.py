@@ -14,7 +14,7 @@ else:
 
 @pytest.fixture(scope='function')
 def dbfile():
-    _dbfile = '.testdb'
+    _dbfile = u'.testdb'
     zlmdb.Database.scratch(_dbfile)
     return _dbfile
 
