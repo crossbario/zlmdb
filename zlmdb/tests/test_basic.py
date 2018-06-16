@@ -2,7 +2,10 @@ import sys
 import os
 import pytest
 
-import zlmdb
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from backports.tempfile import TemporaryDirectory
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -10,19 +13,6 @@ if sys.version_info >= (3, 6):
     from _schema_py3 import User, Schema2
 else:
     from _schema_py2 import User, Schema2
-
-
-@pytest.fixture(scope='function')
-def dbfile():
-    _dbfile = u'.testdb'
-    zlmdb.Database.scratch(_dbfile)
-    return _dbfile
-
-
-@pytest.fixture(scope='function')
-def schema():
-    _schema = Schema2()
-    return _schema
 
 
 @pytest.fixture(scope='module')
@@ -34,104 +24,123 @@ def testset1():
     return users
 
 
-def test_transaction(schema, dbfile):
-    with schema.open(dbfile) as db:
-        with db.begin() as txn:
-            print('transaction open', txn.id())
-        print('transaction committed')
-    print('database closed')
+def test_transaction():
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
+
+        schema = Schema2()
+
+        with schema.open(dbpath) as db:
+            with db.begin() as txn:
+                print('transaction open', txn.id())
+            print('transaction committed')
+        print('database closed')
 
 
-def test_save_load(schema, dbfile):
-    user = User.create_test_user()
+def test_save_load():
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
 
-    with schema.open(dbfile) as db:
+        schema = Schema2()
 
-        with db.begin(write=True) as txn:
+        user = User.create_test_user()
 
-            schema.users[txn, user.oid] = user
-            print('user saved')
+        with schema.open(dbpath) as db:
 
-            _user = schema.users[txn, user.oid]
-            assert _user
-            assert user == _user
-            print('user loaded')
+            with db.begin(write=True) as txn:
 
-        print('transaction committed')
-
-    print('database closed')
-
-
-def test_save_load_many_1(schema, dbfile, testset1):
-
-    with schema.open(dbfile) as db:
-
-        with db.begin(write=True) as txn:
-            for user in testset1:
                 schema.users[txn, user.oid] = user
+                print('user saved')
 
-            cnt = schema.users.count(txn)
-            print('user saved:', cnt)
-            assert cnt == len(testset1)
+                _user = schema.users[txn, user.oid]
+                assert _user
+                assert user == _user
+                print('user loaded')
 
-        with db.begin() as txn:
-            cnt = schema.users.count(txn)
-            assert cnt == len(testset1)
+            print('transaction committed')
 
-    with schema.open(dbfile) as db:
-        with db.begin() as txn:
-            cnt = schema.users.count(txn)
-            assert cnt == len(testset1)
+        print('database closed')
 
 
-def test_save_load_many_2(schema, dbfile, testset1):
-    oids = []
+def test_save_load_many_1(testset1):
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
 
-    with schema.open(dbfile) as db:
+        schema = Schema2()
 
-        # write records in a 1st transaction
-        with db.begin(write=True) as txn:
+        with schema.open(dbpath) as db:
 
-            c = 0
-            for user in testset1:
-                schema.users[txn, user.oid] = user
-                oids.append(user.oid)
-                c += 1
-            assert c == len(testset1)
-            print('[1] successfully stored {} records'.format(c))
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
 
-            # in the same transaction, read back records
-            c = 0
-            for oid in oids:
-                user = schema.users[txn, oid]
-                if user:
+                cnt = schema.users.count(txn)
+                print('user saved:', cnt)
+                assert cnt == len(testset1)
+
+            with db.begin() as txn:
+                cnt = schema.users.count(txn)
+                assert cnt == len(testset1)
+
+        with schema.open(dbpath) as db:
+            with db.begin() as txn:
+                cnt = schema.users.count(txn)
+                assert cnt == len(testset1)
+
+
+def test_save_load_many_2(testset1):
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
+
+        schema = Schema2()
+
+        oids = []
+
+        with schema.open(dbpath) as db:
+
+            # write records in a 1st transaction
+            with db.begin(write=True) as txn:
+
+                c = 0
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+                    oids.append(user.oid)
                     c += 1
-            assert c == len(testset1)
-            print('[1] successfully loaded {} records'.format(c))
+                assert c == len(testset1)
+                print('[1] successfully stored {} records'.format(c))
 
-        # in a new transaction, read back records
-        c = 0
-        with db.begin() as txn:
-            for oid in oids:
-                user = schema.users[txn, oid]
-                if user:
-                    c += 1
-        assert c == len(testset1)
-        print('[2] successfully loaded {} records'.format(c))
+                # in the same transaction, read back records
+                c = 0
+                for oid in oids:
+                    user = schema.users[txn, oid]
+                    if user:
+                        c += 1
+                assert c == len(testset1)
+                print('[1] successfully loaded {} records'.format(c))
 
-    # in a new database environment (and hence new transaction), read back records
-    with schema.open(dbfile) as db:
-
-        with db.begin() as txn:
-
-            count = schema.users.count(txn)
-            assert count == len(testset1)
-            print('total records:', count)
-
+            # in a new transaction, read back records
             c = 0
-            for oid in oids:
-                user = schema.users[txn, oid]
-                if user:
-                    c += 1
+            with db.begin() as txn:
+                for oid in oids:
+                    user = schema.users[txn, oid]
+                    if user:
+                        c += 1
             assert c == len(testset1)
-            print('[3] successfully loaded {} records'.format(c))
+            print('[2] successfully loaded {} records'.format(c))
+
+        # in a new database environment (and hence new transaction), read back records
+        with schema.open(dbpath) as db:
+
+            with db.begin() as txn:
+
+                count = schema.users.count(txn)
+                assert count == len(testset1)
+                print('total records:', count)
+
+                c = 0
+                for oid in oids:
+                    user = schema.users[txn, oid]
+                    if user:
+                        c += 1
+                assert c == len(testset1)
+                print('[3] successfully loaded {} records'.format(c))

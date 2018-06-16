@@ -1,6 +1,10 @@
 import os
 import sys
-import pytest
+
+try:
+    from tempfile import TemporaryDirectory
+except ImportError:
+    from backports.tempfile import TemporaryDirectory
 
 import zlmdb
 
@@ -15,36 +19,27 @@ class UsersSchema(zlmdb.Schema):
         self.tab_oid_fbs = zlmdb.MapOidFlatBuffers(1, build=User.build, root=User.root)
 
 
-@pytest.fixture(scope='function')
-def dbfile():
-    _dbfile = u'.testdb'
-    zlmdb.Database.scratch(_dbfile)
-    return _dbfile
+def test_pmap_flatbuffers_values():
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
 
+        schema = UsersSchema()
 
-@pytest.fixture(scope='function')
-def schema():
-    _schema = UsersSchema()
-    return _schema
+        with schema.open(dbpath) as db:
 
+            N = 100
+            stats = zlmdb.TransactionStats()
 
-def test_pmap_flatbuffers_values(schema, dbfile):
-    N = 100
+            with db.begin(write=True, stats=stats) as txn:
+                for i in range(N):
+                    user = User.create_test_user()
+                    schema.tab_oid_fbs[txn, user.oid] = user
 
-    stats = zlmdb.TransactionStats()
+            assert stats.puts == N
+            assert stats.dels == 0
+            stats.reset()
 
-    with schema.open(dbfile) as db:
+            with db.begin() as txn:
+                cnt = schema.tab_oid_fbs.count(txn)
 
-        with db.begin(write=True, stats=stats) as txn:
-            for i in range(N):
-                user = User.create_test_user()
-                schema.tab_oid_fbs[txn, user.oid] = user
-
-        assert stats.puts == N
-        assert stats.dels == 0
-        stats.reset()
-
-        with db.begin() as txn:
-            cnt = schema.tab_oid_fbs.count(txn)
-
-        assert cnt == N
+            assert cnt == N

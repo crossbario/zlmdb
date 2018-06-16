@@ -26,6 +26,7 @@
 
 import os
 import shutil
+import tempfile
 
 import six
 import lmdb
@@ -45,7 +46,7 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, schema, dbfile, maxsize=10485760, readonly=False, sync=True):
+    def __init__(self, schema, dbfile=None, maxsize=10485760, readonly=False, sync=True):
         """
 
         :param schema: Database schema to use.
@@ -58,13 +59,19 @@ class Database(object):
         :type read_only: bool
         """
         assert isinstance(schema, Schema)
-        assert type(dbfile) == six.text_type
+        assert dbfile is None or type(dbfile) == str  # yes! not "six.text_type" in this case ..
         assert type(maxsize) in six.integer_types
         assert type(readonly) == bool
         assert type(sync) == bool
 
         self._schema = schema
-        self._dbfile = dbfile
+        if dbfile:
+            self._is_temp = False
+            self._dbfile = dbfile
+        else:
+            self._is_temp = True
+            self._tempdir = tempfile.TemporaryDirectory()
+            self._dbfile = self._tempdir.name
         self._maxsize = maxsize
         self._readonly = readonly
         self._sync = sync
