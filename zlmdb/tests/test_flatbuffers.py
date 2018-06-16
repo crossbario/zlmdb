@@ -5,7 +5,8 @@ import pytest
 import zlmdb
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from _schema_fbs import User
+
+from _schema_fbs import User  # noqa
 
 
 class UsersSchema(zlmdb.Schema):
@@ -46,4 +47,3 @@ def test_pmap_flatbuffers_values(schema, dbfile):
             cnt = schema.tab_oid_fbs.count(txn)
 
         assert cnt == N
-
