@@ -138,10 +138,19 @@ class User(object):
             bd = self._from_fbs.Birthday()
             demo.UserAddBirthday(builder, demo.CreateDate(builder, bd.Year(), bd.Month(), bd.Day()))
 
+        # FIXME: tags
+        # FIXME: ratings
+        # FIXME: friends
+
         if self._is_friendly is not None:
             demo.UserAddIsFriendly(builder, self._is_friendly)
         else:
             demo.UserAddIsFriendly(builder, self._from_fbs.IsFriendly())
+
+        if self._referred_by is not None:
+            demo.UserAddReferredBy(builder, self._referred_by)
+        else:
+            demo.UserAddReferredBy(builder, self._from_fbs.ReferredBy())
 
         return demo.UserEnd(builder)
 

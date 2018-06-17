@@ -25,18 +25,48 @@
 ###############################################################################
 """Transactions"""
 
+import sys
 import struct
+import time
 import lmdb
+
+# Select the most precise wallclock measurement function available on the platform
+if sys.platform.startswith('win'):
+    # On Windows, this function returns wall-clock seconds elapsed since the
+    # first call to this function, as a floating point number, based on the
+    # Win32 function QueryPerformanceCounter(). The resolution is typically
+    # better than one microsecond
+    walltime = time.clock
+    _ = walltime()  # this starts wallclock
+else:
+    # On Unix-like platforms, this used the first available from this list:
+    # (1) gettimeofday() -- resolution in microseconds
+    # (2) ftime() -- resolution in milliseconds
+    # (3) time() -- resolution in seconds
+    walltime = time.time
 
 
 class TransactionStats(object):
     def __init__(self):
         self.puts = 0
         self.dels = 0
+        self._started = walltime()
+
+    @property
+    def started(self):
+        return self._started
+
+    @property
+    def duration(self):
+        if self._started:
+            return walltime() - self._started
+        else:
+            return 0
 
     def reset(self):
         self.puts = 0
         self.dels = 0
+        self._started = walltime()
 
 
 class Transaction(object):

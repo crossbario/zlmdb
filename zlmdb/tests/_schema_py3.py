@@ -98,6 +98,8 @@ class User(object):
         user.tags = ['geek', 'sudoko', 'yellow']
         for j in range(10):
             user.ratings['test-rating-{}'.format(j)] = random.random()
+        user.friends = [random.randint(0, 9007199254740992) for _ in range(10)]
+        user.referred_by = random.randint(0, 9007199254740992)
         return user
 
 

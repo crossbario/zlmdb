@@ -63,7 +63,7 @@ test-quick:
 	pytest
 
 test:
-	tox -e py36,flake8,coverage,mypy,yapf,pylint,sphinx
+	tox -e py36,flake8,coverage,mypy,yapf,sphinx
 
 test-all:
 	tox
