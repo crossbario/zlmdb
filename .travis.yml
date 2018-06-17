@@ -45,6 +45,14 @@ matrix:
 
     - python: 3.6
       env:
+      - TOX_ENV=mypy
+
+    - python: 3.6
+      env:
+      - TOX_ENV=yapf
+
+    - python: 3.6
+      env:
       - TOX_ENV=py36
 
     - python: 3.5
