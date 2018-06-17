@@ -199,12 +199,9 @@ class PersistentMap(MutableMapping):
             _prefix = _key[:kfl]
             if _prefix != key_from:
                 break
-            #if len(_key) > 10:
-            #    print(_key, cnt)
             cnt += 1
             has_more = cursor.next()
 
-        #print(cnt)
         return cnt
 
     def truncate(self, txn, rebuild_indexes=True):
@@ -272,7 +269,7 @@ class _OidKeysMixin(object):
     MAX_OID = 9007199254740992
     """
     Valid OID are from the integer range [0, MAX_OID].
-    
+
     The upper bound 2**53 is chosen since it is the maximum integer that can be
     represented as a IEEE double such that all smaller integers are representable as well.
 
