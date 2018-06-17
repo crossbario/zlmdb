@@ -6,6 +6,10 @@ language: python
 python:
   - "3.6"
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+
 before_install:
   - export PATH=$PATH:$HOME/.local/bin
 
@@ -18,14 +22,10 @@ install:
 script:
   - tox -c tox.ini -e $TOX_ENV
 
-cache:
-  directories:
-    - $HOME/.cache/pip
-
-#after_success:
-#  # since we use --parallel-mode to coverage inside Tox we use
-#  # "coverage combine" so the filename is always ".coverage"
-#  - cd test && coverage combine && codecov
+after_success:
+  # since we use --parallel-mode to coverage inside Tox we use
+  # "coverage combine" so the filename is always ".coverage"
+  - coverage combine && codecov
 
 matrix:
   fast_finish: true
