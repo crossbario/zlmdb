@@ -73,17 +73,17 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	sphinx-build -b html ./docs ./docs/_build
 	$(BROWSER) docs/_build/index.html
 
-release: dist ## package and upload a release
-	twine upload dist/*
-
 dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+	python setup.py sdist bdist_wheel
+	ls -la dist
+
+# publish to PyPI
+publish: dist
+	twine upload dist/*
 
 install:
 	pip install -e .
-	pip install -r requirements_dev.txt
+	pip install -r requirements-dev.txt
 
 flatbuffers:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
