@@ -1,4 +1,4 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-docs clean-test clean-pyc clean-build docs help
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -29,7 +29,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage, Python artifacts and docs
+
+clean-docs:
+	rm -fr docs/_build
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -67,15 +70,8 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/zlmdb.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ zlmdb
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
+	sphinx-build -b html ./docs ./docs/_build
 	$(BROWSER) docs/_build/html/index.html
-
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: dist ## package and upload a release
 	twine upload dist/*
@@ -89,8 +85,7 @@ install:
 	pip install -e .
 	pip install -r requirements_dev.txt
 
-
-generate:
+flatbuffers:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/reflection.fbs
 

@@ -1,14 +1,14 @@
 import os
 import sys
 import timeit
-import random
 import uuid
-import datetime
 import platform
 
 import humanize
 
 from zlmdb import _pmap
+
+from _schema_fbs import User as UserFbs
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -16,8 +16,6 @@ if sys.version_info >= (3, 6):
     from _schema_py3 import User
 else:
     from _schema_py2 import User
-
-from _schema_fbs import User as UserFbs
 
 _TEST = {
     'oid': 0,

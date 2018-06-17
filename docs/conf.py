@@ -78,6 +78,9 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# class reference target not found: object
+# https://stackoverflow.com/a/30624034/884770
+nitpick_ignore = [('py:class', 'type')]
 
 # -- Options for HTML output -------------------------------------------
 
