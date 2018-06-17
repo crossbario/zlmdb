@@ -4,21 +4,22 @@ ZLMDB
 
 
 .. image:: https://img.shields.io/pypi/v/zlmdb.svg
-        :target: https://pypi.python.org/pypi/zlmdb
+    :target: https://pypi.python.org/pypi/zlmdb
 
 .. image:: https://img.shields.io/travis/crossbario/zlmdb.svg
-        :target: https://travis-ci.org/crossbario/zlmdb
+    :target: https://travis-ci.org/crossbario/zlmdb
 
 .. image:: https://readthedocs.org/projects/zlmdb/badge/?version=latest
-        :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
+    :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/crossbario/zlmdb/shield.svg
      :target: https://pyup.io/repos/github/crossbario/zlmdb/
      :alt: Updates
 
-
+.. image:: https://codecov.io/github/codecov/crossbario/zlmdb/coverage.svg?branch=master
+    :target: https://codecov.io/github/codecov/crossbario/zlmdb
+    :alt: Coverage
 
 Object-relational zero-copy in-memory database layer for LMDB.
 
