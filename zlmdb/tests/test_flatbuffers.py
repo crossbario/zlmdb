@@ -63,7 +63,7 @@ def test_pmap_flatbuffers_count():
             M = 5
 
             # number of insert rows per transaction
-            N = 2000
+            N = 10000
             for j in range(M):
                 with db.begin(write=True, stats=stats) as txn:
                     for i in range(N):
@@ -72,14 +72,15 @@ def test_pmap_flatbuffers_count():
                         oids.add(user.oid)
                         oid_to_referred_by[user.oid] = user.referred_by
 
-                assert stats.puts == N * (j + 1)
+                assert stats.puts == N
                 assert stats.dels == 0
                 duration = stats.duration
                 ms = int(1000. * duration)
                 rows_per_sec = int(round(float(stats.puts + stats.dels) / float(duration)))
                 print('Transaction committed (puts={}, dels={}) rows in {} ms, {} rows/sec)'.format(
                     stats.puts, stats.dels, ms, rows_per_sec))
-            stats.reset()
+
+                stats.reset()
 
             # count all rows
             with db.begin() as txn:
@@ -88,15 +89,16 @@ def test_pmap_flatbuffers_count():
             assert cnt == N * M
 
             # retrieve
-            started = zlmdb.walltime()
             with db.begin() as txn:
-                M = 100
-                for i in range(M):
-                    for oid in random.sample(oids, N):
-                        user = schema.tab_oid_fbs[txn, oid]
-                        assert user
-                        assert user.referred_by == oid_to_referred_by.get(oid, None)
-                duration = zlmdb.walltime() - started
-                ms = int(1000. * duration)
-                rows_per_sec = int(round(float(M * N) / float(duration)))
-                print('Transaction committed ({} rows in {} ms, {} rows/sec)'.format(M * N, ms, rows_per_sec))
+                for j in range(5):
+                    started = zlmdb.walltime()
+                    M = 100
+                    for i in range(M):
+                        for oid in random.sample(oids, N):
+                            user = schema.tab_oid_fbs[txn, oid]
+                            assert user
+                            assert user.referred_by == oid_to_referred_by.get(oid, None)
+                    duration = zlmdb.walltime() - started
+                    ms = int(1000. * duration)
+                    rows_per_sec = int(round(float(M * N) / float(duration)))
+                    print('Transaction committed ({} rows in {} ms, {} rows/sec)'.format(M * N, ms, rows_per_sec))
