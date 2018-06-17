@@ -12,5 +12,5 @@ pytest-runner>=2.11.1
 humanize>=0.5.1
 backports.tempfile>=1.0
 yapf>=0.22.0
-mypy>=1.1.0
+mypy>=0.610
 pylint>=1.9.2
