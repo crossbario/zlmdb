@@ -56,10 +56,16 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 zlmdb tests
 
-test: ## run tests quickly with the default Python
-	py.test
+test-single:
+	clear && pytest -v -s zlmdb/tests/test_basic.py
 
-test-all: ## run tests on every Python version with tox
+test-quick:
+	pytest
+
+test:
+	tox -e py36,flake8,coverage,mypy,yapf,pylint,sphinx
+
+test-all:
 	tox
 
 coverage: ## check code coverage quickly with the default Python
@@ -88,9 +94,6 @@ install:
 flatbuffers:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/reflection.fbs
-
-test_basic:
-	clear && pytest -v -s zlmdb/tests/test_basic.py
 
 # auto-format code - WARNING: this my change files, in-place!
 autoformat:
