@@ -21,8 +21,7 @@ else:
 def testset1():
     users = []
     for i in range(1000):
-        oid = i + 1
-        user = User.create_test_user(oid)
+        user = User.create_test_user(i)
         users.append(user)
     return users
 
@@ -86,9 +85,6 @@ def test_select(testset1):
                 i = 0
                 for authid, user in schema.users.select(txn):
                     i += 1
-                    #print(authid, user)
-                    if len(authid) > 10:
-                        print(i, authid, user.authid, user.oid, user)
                     assert user
                     assert authid == user.authid
                     assert authid in testset1_keys
@@ -134,7 +130,7 @@ def test_count_all(testset1):
                 assert cnt == len(testset1)
 
 
-def _test_count_prefix(testset1):
+def test_count_prefix(testset1):
     with TemporaryDirectory() as dbpath:
         print('Using temporary directory {} for database'.format(dbpath))
 
