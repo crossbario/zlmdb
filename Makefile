@@ -71,7 +71,7 @@ coverage: ## check code coverage quickly with the default Python
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	sphinx-build -b html ./docs ./docs/_build
-	$(BROWSER) docs/_build/html/index.html
+	$(BROWSER) docs/_build/index.html
 
 release: dist ## package and upload a release
 	twine upload dist/*

@@ -8,7 +8,6 @@ Welcome to ZLMDB's documentation!
    readme
    installation
    usage
-   modules
    contributing
    history
 
