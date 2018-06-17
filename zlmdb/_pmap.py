@@ -261,6 +261,14 @@ class PersistentMap(MutableMapping):
             raise Exception('no index "{}" attached'.format(index_name))
 
 
+# LMDB Key-Value types
+#
+# Key sizes must be between 1 and mdb_env_get_maxkeysize() inclusive. The same applies to data sizes
+# in databases with the MDB_DUPSORT flag. Other data items can in theory be from 0 to 0xffffffff bytes long.
+#
+# see: http://www.lmdb.tech/doc/group__mdb.html#structMDB__val
+
+
 #
 # Key Type: OID, String, UUID
 #
@@ -428,9 +436,9 @@ class _PickleValuesMixin(object):
 
 class _FlatBuffersValuesMixin(object):
 
-    def __init__(self, build=None, root=None):
+    def __init__(self, build, cast):
         self._build = build
-        self._root = root
+        self._cast = cast
 
     def _serialize_value(self, value):
         builder = flatbuffers.Builder(0)
@@ -440,7 +448,7 @@ class _FlatBuffersValuesMixin(object):
         return bytes(buf)
 
     def _deserialize_value(self, data):
-        return self._root(data, 0)
+        return self._cast(data)
 
 
 #
@@ -502,9 +510,9 @@ class MapUuidFlatBuffers(_UuidKeysMixin, _FlatBuffersValuesMixin, PersistentMap)
     """
     Persistent map with UUID (16 bytes) keys and FlatBuffers values.
     """
-    def __init__(self, slot, compress=None, build=None, root=None):
+    def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
-        _FlatBuffersValuesMixin.__init__(self, build=build, root=root)
+        _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
 #
@@ -566,9 +574,9 @@ class MapStringFlatBuffers(_StringKeysMixin, _FlatBuffersValuesMixin, Persistent
     """
     Persistent map with string (utf8) keys and FlatBuffers values.
     """
-    def __init__(self, slot, compress=None, build=None, root=None):
+    def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
-        _FlatBuffersValuesMixin.__init__(self, build=build, root=root)
+        _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
 #
@@ -630,6 +638,6 @@ class MapOidFlatBuffers(_OidKeysMixin, _FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and FlatBuffers values.
     """
-    def __init__(self, slot, compress=None, build=None, root=None):
+    def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
-        _FlatBuffersValuesMixin.__init__(self, build=build, root=root)
+        _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
