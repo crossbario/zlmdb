@@ -61,7 +61,7 @@ test-all: ## run tests on every Python version with tox
 
 coverage: ## check code coverage quickly with the default Python
 	#coverage run --source zlmdb -m pytest
-	coverage run --source zlmdb -m pytest -v -s zlmdb
+	coverage run --source zlmdb --omit="zlmdb/flatbuffer/reflection/*,zlmdb/flatbuffer/demo/*,zlmdb/tests/*" -m pytest -v -s zlmdb
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html

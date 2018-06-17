@@ -94,6 +94,8 @@ class PersistentMapIterator(object):
 
         return key, data
 
+    next = __next__  # Python 2
+
 
 class PersistentMap(MutableMapping):
     """

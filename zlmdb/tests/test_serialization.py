@@ -86,7 +86,10 @@ def _serialization_speed(serializer):
         print('{} objects/sec {}'.format(ops, humanize.naturalsize(_TEST['bytes'])))
 
     ops_max = max(samples)
-    print('{} objects/sec max, {} bytes total'.format(ops_max, humanize.naturalsize(_TEST['bytes'])))
+    bytes_per_obj = float(_TEST['bytes']) / float(N * M)
+    print('{} objects/sec max, {} bytes total'.format(ops_max,
+                                                      humanize.naturalsize(_TEST['bytes']),
+                                                      humanize.naturalsize(bytes_per_obj)))
 
     return ops_max, _TEST['bytes']
 

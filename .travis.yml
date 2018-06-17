@@ -1,11 +1,26 @@
-language: python
 sudo: false
+dist: trusty
+
+language: python
+
+python:
+  - "3.6"
+
+before_install:
+  - export PATH=$PATH:$HOME/.local/bin
+
+  # build ID (eg, "20180513-28114a1")
+  - export ZLMDB_BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})"
 
 install:
   - pip install tox codecov
 
 script:
   - tox -c tox.ini -e $TOX_ENV
+
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 #after_success:
 #  # since we use --parallel-mode to coverage inside Tox we use
@@ -18,31 +33,39 @@ matrix:
   include:
     - python: 3.6
       env:
-      - TOX_ENV=flake8
+      - TOX_ENV=coverage
 
     - python: 3.6
       env:
-      - TOX_ENV=py36
+      - TOX_ENV=sphinx
 
-    - python: 3.5
-      env:
-      - TOX_ENV=py35
-
-    - python: 3.4
-      env:
-      - TOX_ENV=py34
-
-    - python: 2.7
-      env:
-      - TOX_ENV=py27
-
-    - python: pypy3
-      env:
-      - TOX_ENV=pypy3
-
-    - python: pypy
-      env:
-      - TOX_ENV=pypy
+#    - python: 3.6
+#      env:
+#      - TOX_ENV=flake8
+#
+#    - python: 3.6
+#      env:
+#      - TOX_ENV=py36
+#
+#    - python: 3.5
+#      env:
+#      - TOX_ENV=py35
+#
+#    - python: 3.4
+#      env:
+#      - TOX_ENV=py34
+#
+#    - python: 2.7
+#      env:
+#      - TOX_ENV=py27
+#
+#    - python: pypy3
+#      env:
+#      - TOX_ENV=pypy3
+#
+#    - python: pypy
+#      env:
+#      - TOX_ENV=pypy
 
 # CI notifications
 notifications:
