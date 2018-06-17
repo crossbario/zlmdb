@@ -6,7 +6,6 @@ from zlmdb.flatbuffer import demo
 
 
 class User(object):
-
     def __init__(self, from_fbs=None):
         self._from_fbs = from_fbs
 
@@ -133,18 +132,11 @@ class User(object):
         demo.UserAddEmail(builder, email)
 
         if self._birthday is not None:
-            demo.UserAddBirthday(builder,
-                                 demo.CreateDate(builder,
-                                                 self._birthday.year,
-                                                 self._birthday.month,
-                                                 self._birthday.day))
+            demo.UserAddBirthday(
+                builder, demo.CreateDate(builder, self._birthday.year, self._birthday.month, self._birthday.day))
         else:
             bd = self._from_fbs.Birthday()
-            demo.UserAddBirthday(builder,
-                                 demo.CreateDate(builder,
-                                                 bd.Year(),
-                                                 bd.Month(),
-                                                 bd.Day()))
+            demo.UserAddBirthday(builder, demo.CreateDate(builder, bd.Year(), bd.Month(), bd.Day()))
 
         if self._is_friendly is not None:
             demo.UserAddIsFriendly(builder, self._is_friendly)

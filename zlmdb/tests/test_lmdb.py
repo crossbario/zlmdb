@@ -30,7 +30,7 @@ def test_lmdb_insert():
         with env.begin(write=True) as txn:
             for i in range(n):
                 key = 'key-{}'.format(i).encode('utf8')
-                value = random.randint(0, 2 ** 32 - 1)
+                value = random.randint(0, 2**32 - 1)
                 total1 += value
                 data = struct.pack('<L', value)
                 txn.put(key, data)

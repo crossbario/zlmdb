@@ -17,12 +17,7 @@ if sys.version_info >= (3, 6):
 else:
     from _schema_py2 import User
 
-_TEST = {
-    'oid': 0,
-    'uuid': None,
-    'bytes': 0,
-    'serializer': None
-}
+_TEST = {'oid': 0, 'uuid': None, 'bytes': 0, 'serializer': None}
 
 
 def _serializer_run_fbs():
@@ -63,8 +58,7 @@ def _serialization_speed(serializer, testfun):
 
     ops_max = max(samples)
     bytes_per_obj = float(_TEST['bytes']) / float(N * M)
-    print('{} objects/sec max, {} bytes total, {} bytes/obj'.format(ops_max,
-                                                                    humanize.naturalsize(_TEST['bytes']),
+    print('{} objects/sec max, {} bytes total, {} bytes/obj'.format(ops_max, humanize.naturalsize(_TEST['bytes']),
                                                                     humanize.naturalsize(bytes_per_obj)))
 
     return ops_max, _TEST['bytes']

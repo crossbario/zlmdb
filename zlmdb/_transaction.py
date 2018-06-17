@@ -23,7 +23,6 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
 """Transactions"""
 
 import struct
@@ -31,7 +30,6 @@ import lmdb
 
 
 class TransactionStats(object):
-
     def __init__(self):
         self.puts = 0
         self.dels = 0
@@ -65,13 +63,13 @@ class Transaction(object):
         self._log = None
 
     def __enter__(self):
-        assert(self._txn is None)
+        assert (self._txn is None)
 
         self._txn = lmdb.Transaction(self._db._env, write=self._write)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert(self._txn is not None)
+        assert (self._txn is not None)
 
         # https://docs.python.org/3/reference/datamodel.html#object.__exit__
         # If the context was exited without an exception, all three arguments will be None.
@@ -90,17 +88,17 @@ class Transaction(object):
         self._txn = None
 
     def id(self):
-        assert(self._txn is not None)
+        assert (self._txn is not None)
 
         return self._txn.id()
 
     def get(self, key):
-        assert(self._txn is not None)
+        assert (self._txn is not None)
 
         return self._txn.get(key)
 
     def put(self, key, data, overwrite=True):
-        assert(self._txn is not None)
+        assert (self._txn is not None)
 
         # store the record, returning True if it was written, or False to indicate the key
         # was already present and overwrite=False.
@@ -113,7 +111,7 @@ class Transaction(object):
         return was_written
 
     def delete(self, key):
-        assert(self._txn is not None)
+        assert (self._txn is not None)
 
         was_deleted = self._txn.delete(key)
         if was_deleted:

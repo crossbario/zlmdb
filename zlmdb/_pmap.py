@@ -23,7 +23,6 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
 """Persistent mappings."""
 
 import struct
@@ -46,7 +45,7 @@ except ImportError:
 else:
     HAS_SNAPPY = True
 
-if sys.version_info < (3,):
+if sys.version_info < (3, ):
     from UserDict import DictMixin as MutableMapping
     _NATIVE_PICKLE_PROTOCOL = 2
 else:
@@ -55,7 +54,6 @@ else:
 
 
 class PersistentMapIterator(object):
-
     def __init__(self, txn, pmap, from_key=None, to_key=None):
         self._from_key = struct.pack('>H', pmap._slot)
         if from_key:
@@ -268,7 +266,6 @@ class PersistentMap(MutableMapping):
 #
 # see: http://www.lmdb.tech/doc/group__mdb.html#structMDB__val
 
-
 #
 # Key Type: OID, String, UUID
 #
@@ -330,8 +327,9 @@ class _StringKeysMixin(object):
         :return: new random string key
         """
         rng = random.SystemRandom()
-        token_value = u''.join(rng.choice(_StringKeysMixin.CHARSET)
-                               for _ in range(_StringKeysMixin.CHAR_GROUPS * _StringKeysMixin.CHARS_PER_GROUP))
+        token_value = u''.join(
+            rng.choice(_StringKeysMixin.CHARSET)
+            for _ in range(_StringKeysMixin.CHAR_GROUPS * _StringKeysMixin.CHARS_PER_GROUP))
         if _StringKeysMixin.CHARS_PER_GROUP > 1:
             return _StringKeysMixin.GROUP_SEP.join(
                 map(u''.join, zip(*[iter(token_value)] * _StringKeysMixin.CHARS_PER_GROUP)))
@@ -346,7 +344,6 @@ class _StringKeysMixin(object):
 
 
 class _UuidKeysMixin(object):
-
     @staticmethod
     def new_key():
         # https: // docs.python.org / 3 / library / uuid.html  # uuid.uuid4
@@ -361,13 +358,13 @@ class _UuidKeysMixin(object):
     def _deserialize_key(self, data):
         return uuid.UUID(bytes=data)
 
+
 #
 # Value Types: String, OID, UUID, JSON, CBOR, Pickle, FlatBuffers
 #
 
 
 class _StringValuesMixin(object):
-
     def _serialize_value(self, value):
         return value.encode('utf8')
 
@@ -376,7 +373,6 @@ class _StringValuesMixin(object):
 
 
 class _OidValuesMixin(object):
-
     def _serialize_value(self, value):
         return struct.pack('>Q', value)
 
@@ -385,7 +381,6 @@ class _OidValuesMixin(object):
 
 
 class _UuidValuesMixin(object):
-
     def _serialize_value(self, value):
         return value.bytes
 
@@ -394,23 +389,19 @@ class _UuidValuesMixin(object):
 
 
 class _JsonValuesMixin(object):
-
     def __init__(self, marshal=None, unmarshal=None):
         self._marshal = marshal or (lambda x: x)
         self._unmarshal = unmarshal or (lambda x: x)
 
     def _serialize_value(self, value):
-        return json.dumps(self._marshal(value),
-                          separators=(',', ':'),
-                          ensure_ascii=False,
-                          sort_keys=False).encode('utf8')
+        return json.dumps(
+            self._marshal(value), separators=(',', ':'), ensure_ascii=False, sort_keys=False).encode('utf8')
 
     def _deserialize_value(self, data):
         return self._unmarshal(json.loads(data.decode('utf8')))
 
 
 class _CborValuesMixin(object):
-
     def __init__(self, marshal=None, unmarshal=None):
         self._marshal = marshal or (lambda x: x)
         self._unmarshal = unmarshal or (lambda x: x)
@@ -435,7 +426,6 @@ class _PickleValuesMixin(object):
 
 
 class _FlatBuffersValuesMixin(object):
-
     def __init__(self, build, cast):
         self._build = build
         self._cast = cast
@@ -460,6 +450,7 @@ class MapUuidString(_UuidKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and string (utf8) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -468,6 +459,7 @@ class MapUuidOid(_UuidKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and OID (uint64) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -476,6 +468,7 @@ class MapUuidUuid(_UuidKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and UUID (16 bytes) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -484,6 +477,7 @@ class MapUuidJson(_UuidKeysMixin, _JsonValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and JSON values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _JsonValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -493,6 +487,7 @@ class MapUuidCbor(_UuidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and CBOR values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -502,6 +497,7 @@ class MapUuidPickle(_UuidKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with UUID (16 bytes) keys and Python Pickle values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -510,6 +506,7 @@ class MapUuidFlatBuffers(_UuidKeysMixin, _FlatBuffersValuesMixin, PersistentMap)
     """
     Persistent map with UUID (16 bytes) keys and FlatBuffers values.
     """
+
     def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
@@ -524,6 +521,7 @@ class MapStringString(_StringKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and string (utf8) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -532,6 +530,7 @@ class MapStringOid(_StringKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and OID (uint64) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -540,6 +539,7 @@ class MapStringUuid(_StringKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and UUID (16 bytes) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -548,6 +548,7 @@ class MapStringJson(_StringKeysMixin, _JsonValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and JSON values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _JsonValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -557,6 +558,7 @@ class MapStringCbor(_StringKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and CBOR values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -566,6 +568,7 @@ class MapStringPickle(_StringKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and Python pickle values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -574,6 +577,7 @@ class MapStringFlatBuffers(_StringKeysMixin, _FlatBuffersValuesMixin, Persistent
     """
     Persistent map with string (utf8) keys and FlatBuffers values.
     """
+
     def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
@@ -588,6 +592,7 @@ class MapOidString(_OidKeysMixin, _StringValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and string (utf8) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -596,6 +601,7 @@ class MapOidOid(_OidKeysMixin, _OidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and OID (uint64) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -604,6 +610,7 @@ class MapOidUuid(_OidKeysMixin, _UuidValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and UUID (16 bytes) values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -612,6 +619,7 @@ class MapOidJson(_OidKeysMixin, _JsonValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and JSON values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _JsonValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -621,6 +629,7 @@ class MapOidCbor(_OidKeysMixin, _CborValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and CBOR values.
     """
+
     def __init__(self, slot, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
@@ -630,6 +639,7 @@ class MapOidPickle(_OidKeysMixin, _PickleValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and Python pickle values.
     """
+
     def __init__(self, slot, compress=None):
         PersistentMap.__init__(self, slot, compress=compress)
 
@@ -638,6 +648,7 @@ class MapOidFlatBuffers(_OidKeysMixin, _FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and FlatBuffers values.
     """
+
     def __init__(self, slot, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot, compress=compress)
         _FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)

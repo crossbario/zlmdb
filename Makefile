@@ -91,3 +91,7 @@ flatbuffers:
 
 test_basic:
 	clear && pytest -v -s zlmdb/tests/test_basic.py
+
+# auto-format code - WARNING: this my change files, in-place!
+autoformat:
+	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffer/*" zlmdb

@@ -112,26 +112,18 @@ class Schema1(zlmdb.Schema):
     tab_oid_str: zlmdb.MapOidString = zlmdb.MapOidString(slot=7)
     tab_oid_oid: zlmdb.MapOidOid = zlmdb.MapOidOid(slot=8)
     tab_oid_uuid: zlmdb.MapOidUuid = zlmdb.MapOidUuid(slot=9)
-    tab_uuid_json: zlmdb.MapUuidJson = zlmdb.MapUuidJson(slot=10,
-                                                         marshal=(lambda o: o.marshal()),
-                                                         unmarshal=User.parse)
-    tab_uuid_cbor: zlmdb.MapUuidCbor = zlmdb.MapUuidCbor(slot=11,
-                                                         marshal=(lambda o: o.marshal()),
-                                                         unmarshal=User.parse)
+    tab_uuid_json: zlmdb.MapUuidJson = zlmdb.MapUuidJson(
+        slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+    tab_uuid_cbor: zlmdb.MapUuidCbor = zlmdb.MapUuidCbor(
+        slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
     tab_uuid_pickle: zlmdb.MapUuidPickle = zlmdb.MapUuidPickle(slot=12)
-    tab_str_json: zlmdb.MapStringJson = zlmdb.MapStringJson(slot=20,
-                                                            marshal=(lambda o: o.marshal()),
-                                                            unmarshal=User.parse)
-    tab_str_cbor: zlmdb.MapStringCbor = zlmdb.MapStringCbor(slot=21,
-                                                            marshal=(lambda o: o.marshal()),
-                                                            unmarshal=User.parse)
+    tab_str_json: zlmdb.MapStringJson = zlmdb.MapStringJson(
+        slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+    tab_str_cbor: zlmdb.MapStringCbor = zlmdb.MapStringCbor(
+        slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
     tab_str_pickle: zlmdb.MapStringPickle = zlmdb.MapStringPickle(slot=22)
-    tab_oid_json: zlmdb.MapOidJson = zlmdb.MapOidJson(slot=30,
-                                                      marshal=(lambda o: o.marshal()),
-                                                      unmarshal=User.parse)
-    tab_oid_cbor: zlmdb.MapOidCbor = zlmdb.MapOidCbor(slot=31,
-                                                      marshal=(lambda o: o.marshal()),
-                                                      unmarshal=User.parse)
+    tab_oid_json: zlmdb.MapOidJson = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+    tab_oid_cbor: zlmdb.MapOidCbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
     tab_oid_pickle: zlmdb.MapOidPickle = zlmdb.MapOidPickle(slot=32)
 
 

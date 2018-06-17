@@ -34,9 +34,15 @@ def test_truncate_table():
 
         stats = zlmdb.TransactionStats()
         tabs = [
-            schema.tab_oid_json, schema.tab_str_json, schema.tab_uuid_json,
-            schema.tab_oid_cbor, schema.tab_str_cbor, schema.tab_uuid_cbor,
-            schema.tab_oid_pickle, schema.tab_str_pickle, schema.tab_uuid_pickle,
+            schema.tab_oid_json,
+            schema.tab_str_json,
+            schema.tab_uuid_json,
+            schema.tab_oid_cbor,
+            schema.tab_str_cbor,
+            schema.tab_uuid_cbor,
+            schema.tab_oid_pickle,
+            schema.tab_str_pickle,
+            schema.tab_uuid_pickle,
         ]
 
         with schema.open(dbpath) as db:

@@ -85,7 +85,7 @@ class Database(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert(self._env is not None)
+        assert (self._env is not None)
 
         self._env.close()
         self._env = None

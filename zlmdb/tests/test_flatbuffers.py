@@ -14,7 +14,6 @@ from _schema_fbs import User  # noqa
 
 
 class UsersSchema(zlmdb.Schema):
-
     def __init__(self):
         self.tab_oid_fbs = zlmdb.MapOidFlatBuffers(1, build=User.build, cast=User.cast)
 

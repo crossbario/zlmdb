@@ -23,7 +23,6 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
 from ._version import __version__
