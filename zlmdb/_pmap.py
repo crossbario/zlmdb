@@ -35,6 +35,7 @@ import uuid
 import json
 import zlib
 
+import six
 import cbor2
 import flatbuffers
 
@@ -51,6 +52,47 @@ if sys.version_info < (3,):
 else:
     from collections.abc import MutableMapping
     _NATIVE_PICKLE_PROTOCOL = 4
+
+
+class PersistentMapIterator(object):
+
+    def __init__(self, txn, pmap, from_key=None, to_key=None):
+        self._from_key = struct.pack('>H', pmap._slot)
+        if from_key:
+            self._from_key += pmap._serialize_key(from_key)
+
+        self._to_key = struct.pack('>H', pmap._slot)
+        if to_key:
+            self._to_key += pmap._serialize_key(to_key)
+
+        self._txn = txn
+        self._pmap = pmap
+        self._cursor = None
+        self._found = None
+
+    def __iter__(self):
+        self._cursor = self._txn._txn.cursor()
+        self._found = self._cursor.set_range(self._from_key)
+        return self
+
+    def __next__(self):
+        if not self._found:
+            raise StopIteration
+
+        _key, _data = self._cursor.item()
+
+        if _data:
+            if self._pmap._decompress:
+                _data = self._pmap._decompress(_data)
+
+        # _slot = struct.unpack('>H', _key)
+        _key = _key[2:]
+        key = self._pmap._deserialize_key(_key)
+        data = self._pmap._deserialize_value(_data)
+
+        self._found = self._cursor.next()
+
+        return key, data
 
 
 class PersistentMap(MutableMapping):
@@ -140,23 +182,29 @@ class PersistentMap(MutableMapping):
     def __iter__(self):
         raise Exception('not implemented')
 
+    def select(self, txn, from_key=None, to_key=None):
+        return PersistentMapIterator(txn, self, from_key=from_key, to_key=to_key)
+
     def count(self, txn, prefix=None):
         key_from = struct.pack('>H', self._slot)
         if prefix:
             key_from += self._serialize_key(prefix)
+        kfl = len(key_from)
 
         cnt = 0
-
         cursor = txn._txn.cursor()
-        if cursor.set_range(key_from):
-            kfl = len(key_from)
-            while True:
-                _prefix = cursor.key()[:kfl]
-                if _prefix != key_from:
-                    break
-                cnt += 1
-                cursor.next()
+        has_more = cursor.set_range(key_from)
+        while has_more:
+            _key = cursor.key()
+            _prefix = _key[:kfl]
+            if _prefix != key_from:
+                break
+            #if len(_key) > 10:
+            #    print(_key, cnt)
+            cnt += 1
+            has_more = cursor.next()
 
+        #print(cnt)
         return cnt
 
     def truncate(self, txn, rebuild_indexes=True):
@@ -221,15 +269,35 @@ class PersistentMap(MutableMapping):
 
 class _OidKeysMixin(object):
 
+    MAX_OID = 9007199254740992
+    """
+    Valid OID are from the integer range [0, MAX_OID].
+    
+    The upper bound 2**53 is chosen since it is the maximum integer that can be
+    represented as a IEEE double such that all smaller integers are representable as well.
+
+    Hence, IDs can be safely used with languages that use IEEE double as their
+    main (or only) number type (JavaScript, Lua, etc).
+    """
+
     @staticmethod
-    def new_key(secure=True):
+    def new_key(secure=False):
         if secure:
-            return struct.unpack('@Q', os.urandom(8))
+            while True:
+                data = os.urandom(8)
+                key = struct.unpack('>Q', data)[0]
+                if key <= _OidKeysMixin.MAX_OID:
+                    return key
         else:
-            return random.randint(0, 2**64-1)
+            random.randint(0, _OidKeysMixin.MAX_OID)
 
     def _serialize_key(self, key):
+        assert type(key) in six.integer_types
+        assert key >= 0 and key <= _OidKeysMixin.MAX_OID
         return struct.pack('>Q', key)
+
+    def _deserialize_key(self, data):
+        return struct.unpack('>Q', data)[0]
 
 
 class _StringKeysMixin(object):
@@ -266,6 +334,9 @@ class _StringKeysMixin(object):
     def _serialize_key(self, key):
         return key.encode('utf8')
 
+    def _deserialize_key(self, data):
+        return data.decode('utf8')
+
 
 class _UuidKeysMixin(object):
 
@@ -280,6 +351,8 @@ class _UuidKeysMixin(object):
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
         return key.bytes
 
+    def _deserialize_key(self, data):
+        return uuid.UUID(bytes=data)
 
 #
 # Value Types: String, OID, UUID, JSON, CBOR, Pickle, FlatBuffers

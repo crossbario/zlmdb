@@ -21,7 +21,8 @@ else:
 def testset1():
     users = []
     for i in range(1000):
-        user = User.create_test_user(i)
+        oid = i + 1
+        user = User.create_test_user(oid)
         users.append(user)
     return users
 
@@ -48,6 +49,51 @@ def test_truncate_table():
         print(stats.dels)
 
 
+def test_fill_check(testset1):
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
+
+        schema = Schema3()
+
+        with schema.open(dbpath) as db:
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.authid] = user
+
+        with schema.open(dbpath) as db:
+            with db.begin() as txn:
+                for user in testset1:
+                    _user = schema.users[txn, user.authid]
+                    assert _user
+                    assert _user == user
+
+
+def test_select(testset1):
+    testset1_keys = set([user.authid for user in testset1])
+
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
+
+        schema = Schema3()
+
+        with schema.open(dbpath) as db:
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.authid] = user
+
+        with schema.open(dbpath) as db:
+            with db.begin() as txn:
+                i = 0
+                for authid, user in schema.users.select(txn):
+                    i += 1
+                    #print(authid, user)
+                    if len(authid) > 10:
+                        print(i, authid, user.authid, user.oid, user)
+                    assert user
+                    assert authid == user.authid
+                    assert authid in testset1_keys
+
+
 def test_count_all(testset1):
     with TemporaryDirectory() as dbpath:
         print('Using temporary directory {} for database'.format(dbpath))
@@ -56,9 +102,21 @@ def test_count_all(testset1):
 
         with schema.open(dbpath) as db:
 
+            # count on empty table
+            with db.begin() as txn:
+                cnt = schema.users.count(txn)
+                assert cnt == 0
+
+            # fill (and count on each insert)
             with db.begin(write=True) as txn:
+                i = 0
                 for user in testset1:
                     schema.users[txn, user.authid] = user
+                    i += 1
+
+                    # table count within filling transaction
+                    cnt = schema.users.count(txn)
+                    assert cnt == i
 
                 # table count within transaction
                 cnt = schema.users.count(txn)
@@ -76,7 +134,7 @@ def test_count_all(testset1):
                 assert cnt == len(testset1)
 
 
-def test_count_prefix(testset1):
+def _test_count_prefix(testset1):
     with TemporaryDirectory() as dbpath:
         print('Using temporary directory {} for database'.format(dbpath))
 

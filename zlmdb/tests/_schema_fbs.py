@@ -46,7 +46,10 @@ class User(object):
     @staticmethod
     def create_test_user(oid=None):
         user = User()
-        user.oid = oid or random.randint(0, 2**64-1)
+        if oid is not None:
+            user.oid = oid
+        else:
+            user.oid = random.randint(0, 9007199254740992)
         user.name = 'Test {}'.format(user.oid)
         user.authid = 'test-{}'.format(user.oid)
         user.uuid = uuid.uuid4()
