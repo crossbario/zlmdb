@@ -54,17 +54,22 @@ else:
 
 
 class PersistentMapIterator(object):
-    def __init__(self, txn, pmap, from_key=None, to_key=None):
+    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True):
+        self._txn = txn
+        self._pmap = pmap
+
         self._from_key = struct.pack('>H', pmap._slot)
         if from_key:
             self._from_key += pmap._serialize_key(from_key)
 
-        self._to_key = struct.pack('>H', pmap._slot)
         if to_key:
-            self._to_key += pmap._serialize_key(to_key)
+            self._to_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(to_key)
+        else:
+            self._to_key = struct.pack('>H', pmap._slot + 1)
 
-        self._txn = txn
-        self._pmap = pmap
+        self._return_keys = return_keys
+        self._return_values = return_values
+
         self._cursor = None
         self._found = None
 
@@ -77,20 +82,31 @@ class PersistentMapIterator(object):
         if not self._found:
             raise StopIteration
 
-        _key, _data = self._cursor.item()
+        _key = self._cursor.key()
+        if _key >= self._to_key:
+            raise StopIteration
 
-        if _data:
-            if self._pmap._decompress:
-                _data = self._pmap._decompress(_data)
+        _key = self._pmap._deserialize_key(_key[2:])
 
-        # _slot = struct.unpack('>H', _key)
-        _key = _key[2:]
-        key = self._pmap._deserialize_key(_key)
-        data = self._pmap._deserialize_value(_data)
+        if self._return_values:
+            _data = self._cursor.value()
+            if _data:
+                if self._pmap._decompress:
+                    _data = self._pmap._decompress(_data)
+                _data = self._pmap._deserialize_value(_data)
+        else:
+            _data = None
 
         self._found = self._cursor.next()
 
-        return key, data
+        if self._return_keys and self._return_values:
+            return _key, _data
+        elif self._return_values:
+            return _data
+        elif self._return_keys:
+            return _key
+        else:
+            return None
 
     next = __next__  # Python 2
 
@@ -182,8 +198,9 @@ class PersistentMap(MutableMapping):
     def __iter__(self):
         raise Exception('not implemented')
 
-    def select(self, txn, from_key=None, to_key=None):
-        return PersistentMapIterator(txn, self, from_key=from_key, to_key=to_key)
+    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True):
+        return PersistentMapIterator(
+            txn, self, from_key=from_key, to_key=to_key, return_keys=return_keys, return_values=return_values)
 
     def count(self, txn, prefix=None):
         key_from = struct.pack('>H', self._slot)

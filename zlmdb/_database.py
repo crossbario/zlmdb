@@ -32,7 +32,6 @@ import six
 import lmdb
 
 from zlmdb._transaction import Transaction
-from zlmdb._schema import Schema
 
 
 class Database(object):
@@ -46,7 +45,7 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, schema, dbfile=None, maxsize=10485760, readonly=False, sync=True):
+    def __init__(self, dbfile=None, maxsize=10485760, readonly=False, sync=True):
         """
 
         :param schema: Database schema to use.
@@ -58,13 +57,11 @@ class Database(object):
         :param read_only: Open database read-only.
         :type read_only: bool
         """
-        assert isinstance(schema, Schema)
         assert dbfile is None or type(dbfile) == str  # yes! not "six.text_type" in this case ..
         assert type(maxsize) in six.integer_types
         assert type(readonly) == bool
         assert type(sync) == bool
 
-        self._schema = schema
         if dbfile:
             self._is_temp = False
             self._dbfile = dbfile
@@ -81,7 +78,8 @@ class Database(object):
         assert self._env is None
 
         # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
-        self._env = lmdb.open(self._dbfile, map_size=self._maxsize, readonly=self._readonly, sync=self._sync)
+        self._env = lmdb.open(
+            self._dbfile, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):

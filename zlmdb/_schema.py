@@ -79,7 +79,7 @@ class Schema(object):
         """
         from zlmdb._database import Database
 
-        db = Database(self, *args, **kwargs)
+        db = Database(*args, **kwargs)
         return db
 
     def register(self, slot, name, pmap):
