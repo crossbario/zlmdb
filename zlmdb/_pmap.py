@@ -111,6 +111,25 @@ class PersistentMapIterator(object):
     next = __next__  # Python 2
 
 
+class Index(object):
+    def __init__(self, name, fkey, pmap):
+        self._name = name
+        self._fkey = fkey
+        self._pmap = pmap
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def fkey(self):
+        return self._fkey
+
+    @property
+    def pmap(self):
+        return self._pmap
+
+
 class PersistentMap(MutableMapping):
     """
     Abstract base class for persistent maps stored in LMDB.
@@ -119,6 +138,13 @@ class PersistentMap(MutableMapping):
     COMPRESS_SNAPPY = 2
 
     def __init__(self, slot, compress=None):
+        """
+
+        :param slot:
+        :param compress:
+        """
+        assert type(slot) in six.integer_types
+        assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
         self._slot = slot
         if compress:
             if compress not in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]:
@@ -138,25 +164,52 @@ class PersistentMap(MutableMapping):
             self._decompress = lambda data: data
         self._indexes = {}
 
-    def attach_index(self, index_name, index_key, index_map):
-        self._indexes[index_name] = (index_key, index_map)
+    def attach_index(self, name, fkey, pmap):
+        """
 
-    def detach_index(self, index_name):
-        if index_name in self._indexes:
-            del self._indexes[index_name]
+        :param name:
+        :param fkey:
+        :param pmap:
+        :return:
+        """
+        assert type(name) == six.text_type
+        assert callable(fkey)
+        assert isinstance(pmap, PersistentMap)
+        if name in self._indexes:
+            raise Exception('index with name "{}" already exists'.format(name))
+        self._indexes[name] = Index(name, fkey, pmap)
+
+    def detach_index(self, name):
+        """
+
+        :param name:
+        :return:
+        """
+        assert type(name) == six.text_type
+        if name in self._indexes:
+            del self._indexes[name]
 
     def _serialize_key(self, key):
-        raise Exception('not implemented')
+        raise Exception('must be implemented in derived class')
+
+    def _deserialize_key(self, data):
+        raise Exception('must be implemented in derived class')
 
     def _serialize_value(self, value):
-        raise Exception('not implemented')
+        raise Exception('must be implemented in derived class')
 
     def _deserialize_value(self, data):
-        raise Exception('not implemented')
+        raise Exception('must be implemented in derived class')
 
-    def __getitem__(self, _txn_key):
-        assert type(_txn_key) == tuple and len(_txn_key) == 2
-        txn, key = _txn_key
+    def __getitem__(self, txn_key):
+        """
+
+        :param txn_key:
+        :return:
+        """
+        assert type(txn_key) == tuple and len(txn_key) == 2
+
+        txn, key = txn_key
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = txn.get(_key)
@@ -168,9 +221,16 @@ class PersistentMap(MutableMapping):
         else:
             return None
 
-    def __setitem__(self, _txn_key, value):
-        assert type(_txn_key) == tuple and len(_txn_key) == 2
-        txn, key = _txn_key
+    def __setitem__(self, txn_key, value):
+        """
+
+        :param txn_key:
+        :param value:
+        :return:
+        """
+        assert type(txn_key) == tuple and len(txn_key) == 2
+
+        txn, key = txn_key
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = self._serialize_value(value)
@@ -180,29 +240,50 @@ class PersistentMap(MutableMapping):
 
         txn.put(_key, _data)
 
-        for index_key, index_map in self._indexes.values():
-            _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
-            _data = index_map._serialize_value(key)
+        for index in self._indexes.values():
+            _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(index.fkey(value))
+            _data = index.pmap._serialize_value(key)
             txn.put(_key, _data)
 
-    def __delitem__(self, _txn_key):
-        assert type(_txn_key) == tuple and len(_txn_key) == 2
-        txn, key = _txn_key
+    def __delitem__(self, txn_key):
+        """
+
+        :param txn_key:
+        :return:
+        """
+        assert type(txn_key) == tuple and len(txn_key) == 2
+
+        txn, key = txn_key
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         txn.delete(_key)
 
     def __len__(self):
-        raise Exception('cannot run without transaction')
+        raise Exception('not implemented')
 
     def __iter__(self):
         raise Exception('not implemented')
 
     def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True):
+        """
+
+        :param txn:
+        :param from_key:
+        :param to_key:
+        :param return_keys:
+        :param return_values:
+        :return:
+        """
         return PersistentMapIterator(
             txn, self, from_key=from_key, to_key=to_key, return_keys=return_keys, return_values=return_values)
 
     def count(self, txn, prefix=None):
+        """
+
+        :param txn:
+        :param prefix:
+        :return:
+        """
         key_from = struct.pack('>H', self._slot)
         if prefix:
             key_from += self._serialize_key(prefix)
@@ -222,6 +303,12 @@ class PersistentMap(MutableMapping):
         return cnt
 
     def truncate(self, txn, rebuild_indexes=True):
+        """
+
+        :param txn:
+        :param rebuild_indexes:
+        :return:
+        """
         key_from = struct.pack('>H', self._slot)
         key_to = struct.pack('>H', self._slot + 1)
         cursor = txn._txn.cursor()
@@ -240,19 +327,30 @@ class PersistentMap(MutableMapping):
         return cnt
 
     def rebuild_indexes(self, txn):
+        """
+
+        :param txn:
+        :return:
+        """
         total_deleted = 0
         total_inserted = 0
-        for index_name in sorted(self._indexes.keys()):
-            deleted, inserted = self.rebuild_index(txn, index_name)
+        for name in sorted(self._indexes.keys()):
+            deleted, inserted = self.rebuild_index(txn, name)
             total_deleted += deleted
             total_inserted += inserted
         return total_deleted, total_inserted
 
-    def rebuild_index(self, txn, index_name):
-        if index_name in self._indexes:
-            index_key, index_map = self._indexes[index_name]
+    def rebuild_index(self, txn, name):
+        """
 
-            deleted = index_map.truncate(txn)
+        :param txn:
+        :param name:
+        :return:
+        """
+        if name in self._indexes:
+            index = self._indexes[name]
+
+            deleted = index.pmap.truncate(txn)
 
             key_from = struct.pack('>H', self._slot)
             key_to = struct.pack('>H', self._slot + 1)
@@ -264,8 +362,8 @@ class PersistentMap(MutableMapping):
                     if data:
                         value = self._deserialize_value(data)
 
-                        _key = struct.pack('>H', index_map._slot) + index_map._serialize_key(index_key(value))
-                        _data = index_map._serialize_value(value.oid)
+                        _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(index.fkey(value))
+                        _data = index.pmap._serialize_value(value.oid)
 
                         txn.put(_key, _data)
                         inserted += 1
@@ -273,7 +371,7 @@ class PersistentMap(MutableMapping):
                         break
             return deleted, inserted
         else:
-            raise Exception('no index "{}" attached'.format(index_name))
+            raise Exception('no index "{}" attached'.format(name))
 
 
 # LMDB Key-Value types

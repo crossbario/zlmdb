@@ -188,14 +188,14 @@ def test_truncate_table_with_index(testset1):
 
         schema = Schema4()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.oid] = user
 
         stats = zlmdb.TransactionStats()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True, stats=stats) as txn:
                 records = schema.users.truncate(txn)
                 print('table truncated:', records)
@@ -210,12 +210,12 @@ def test_rebuild_index(testset1):
 
         schema = Schema4()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.oid] = user
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 records = schema.users.rebuild_index(txn, 'idx1')
                 print('\nrebuilt specific index "idx1" on "users": {} records affected'.format(records))
@@ -227,12 +227,12 @@ def test_rebuild_all_indexes(testset1):
 
         schema = Schema4()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.oid] = user
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 records = schema.users.rebuild_indexes(txn)
                 print('\nrebuilt all indexes on "users": {} records affected'.format(records))

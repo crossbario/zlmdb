@@ -105,47 +105,75 @@ class User(object):
 
 class Schema1(zlmdb.Schema):
 
-    tab_uuid_str: zlmdb.MapUuidString = zlmdb.MapUuidString(slot=1)
-    tab_uuid_oid: zlmdb.MapUuidOid = zlmdb.MapUuidOid(slot=2)
-    tab_uuid_uuid: zlmdb.MapUuidUuid = zlmdb.MapUuidUuid(slot=3)
-    tab_str_str: zlmdb.MapStringString = zlmdb.MapStringString(slot=4)
-    tab_str_oid: zlmdb.MapStringOid = zlmdb.MapStringOid(slot=5)
-    tab_str_uuid: zlmdb.MapStringUuid = zlmdb.MapStringUuid(slot=6)
-    tab_oid_str: zlmdb.MapOidString = zlmdb.MapOidString(slot=7)
-    tab_oid_oid: zlmdb.MapOidOid = zlmdb.MapOidOid(slot=8)
-    tab_oid_uuid: zlmdb.MapOidUuid = zlmdb.MapOidUuid(slot=9)
-    tab_uuid_json: zlmdb.MapUuidJson = zlmdb.MapUuidJson(
-        slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_uuid_cbor: zlmdb.MapUuidCbor = zlmdb.MapUuidCbor(
-        slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_uuid_pickle: zlmdb.MapUuidPickle = zlmdb.MapUuidPickle(slot=12)
-    tab_str_json: zlmdb.MapStringJson = zlmdb.MapStringJson(
-        slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_str_cbor: zlmdb.MapStringCbor = zlmdb.MapStringCbor(
-        slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_str_pickle: zlmdb.MapStringPickle = zlmdb.MapStringPickle(slot=22)
-    tab_oid_json: zlmdb.MapOidJson = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_oid_cbor: zlmdb.MapOidCbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
-    tab_oid_pickle: zlmdb.MapOidPickle = zlmdb.MapOidPickle(slot=32)
+    tab_uuid_str: zlmdb.MapUuidString
+    tab_uuid_oid: zlmdb.MapUuidOid
+    tab_uuid_uuid: zlmdb.MapUuidUuid
+    tab_str_str: zlmdb.MapStringString
+    tab_str_oid: zlmdb.MapStringOid
+    tab_str_uuid: zlmdb.MapStringUuid
+    tab_oid_str: zlmdb.MapOidString
+    tab_oid_oid: zlmdb.MapOidOid
+    tab_oid_uuid: zlmdb.MapOidUuid
+    tab_uuid_json: zlmdb.MapUuidJson
+    tab_uuid_cbor: zlmdb.MapUuidCbor
+    tab_uuid_pickle: zlmdb.MapUuidPickle
+    tab_str_json: zlmdb.MapStringJson
+    tab_str_cbor: zlmdb.MapStringCbor
+    tab_str_pickle: zlmdb.MapStringPickle
+    tab_oid_json: zlmdb.MapOidJson
+    tab_oid_cbor: zlmdb.MapOidCbor
+    tab_oid_pickle: zlmdb.MapOidPickle
+
+    def __init__(self):
+        self.tab_uuid_str = zlmdb.MapUuidString(slot=1)
+        self.tab_uuid_oid = zlmdb.MapUuidOid(slot=2)
+        self.tab_uuid_uuid = zlmdb.MapUuidUuid(slot=3)
+        self.tab_str_str = zlmdb.MapStringString(slot=4)
+        self.tab_str_oid = zlmdb.MapStringOid(slot=5)
+        self.tab_str_uuid = zlmdb.MapStringUuid(slot=6)
+        self.tab_oid_str = zlmdb.MapOidString(slot=7)
+        self.tab_oid_oid = zlmdb.MapOidOid(slot=8)
+        self.tab_oid_uuid = zlmdb.MapOidUuid(slot=9)
+        self.tab_uuid_json = zlmdb.MapUuidJson(slot=10, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_cbor = zlmdb.MapUuidCbor(slot=11, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_uuid_pickle = zlmdb.MapUuidPickle(slot=12)
+        self.tab_str_json = zlmdb.MapStringJson(slot=20, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_cbor = zlmdb.MapStringCbor(slot=21, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_str_pickle = zlmdb.MapStringPickle(slot=22)
+        self.tab_oid_json = zlmdb.MapOidJson(slot=30, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_cbor = zlmdb.MapOidCbor(slot=31, marshal=(lambda o: o.marshal()), unmarshal=User.parse)
+        self.tab_oid_pickle = zlmdb.MapOidPickle(slot=32)
 
 
 class Schema2(zlmdb.Schema):
 
-    users: zlmdb.MapOidPickle = zlmdb.MapOidPickle(1)
+    users: zlmdb.MapOidPickle
+
+    def __init__(self):
+        self.users = zlmdb.MapOidPickle(1)
 
 
 class Schema3(zlmdb.Schema):
 
-    users: zlmdb.MapStringPickle = zlmdb.MapStringPickle(1)
+    users: zlmdb.MapStringPickle
+
+    def __init__(self):
+        self.users = zlmdb.MapStringPickle(1)
 
 
 class Schema4(zlmdb.Schema):
 
-    users: zlmdb.MapOidPickle = zlmdb.MapOidPickle(1)
-    idx_users_by_authid: zlmdb.MapStringOid = zlmdb.MapStringOid(2)
-    idx_users_by_email: zlmdb.MapStringOid = zlmdb.MapStringOid(3)
+    users: zlmdb.MapOidPickle
+    idx_users_by_authid: zlmdb.MapStringOid
+    idx_users_by_email: zlmdb.MapStringOid
 
     def __init__(self):
         super(Schema4, self).__init__()
+
+        self.users = zlmdb.MapOidPickle(1)
+
+        self.idx_users_by_authid = zlmdb.MapStringOid(2)
         self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
+
+        self.idx_users_by_email = zlmdb.MapStringOid(3)
         self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
