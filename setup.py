@@ -59,10 +59,7 @@ setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
 
-packages = find_packages(include=['flatbuffers/python/*'])
-packages = find_packages(include=['zlmdb.flatbuffer'])
-
-print('XXXXXXXXXXXXX', packages)
+packages = find_packages(include=['flatbuffers', 'zlmdb'])
 
 setup(
     author="Crossbar.io Technologies GmbH",
@@ -92,7 +89,6 @@ setup(
     keywords='zlmdb',
     name='zlmdb',
     packages=packages,
-#    packages=find_packages(include=['flatbuffers/python', 'zlmdb']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

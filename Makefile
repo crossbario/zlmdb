@@ -94,10 +94,39 @@ install:
 	pip install -e .
 	pip install -r requirements-dev.txt
 
-flatbuffers:
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/demo.fbs
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffer/ zlmdb/flatbuffer/reflection.fbs
-
 # auto-format code - WARNING: this my change files, in-place!
 autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffer/*" zlmdb
+
+flatbuffers:
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo.fbs
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+
+# input .fbs files for schema
+FBS_FILES=deps/flatbuffers/reflection/reflection.fbs
+FBS_OUTPUT=./crossbarfx/master/database/
+
+# flatc compiler to use (build directly from master: https://github.com/google/flatbuffers)
+# oberstet@thinkpad-t430s:~$ which flatc
+# /usr/local/bin/flatc
+# oberstet@thinkpad-t430s:~$ flatc --version
+# flatc version 1.9.0 (Jun 21 2018 14:06:19)
+# oberstet@thinkpad-t430s:~$ flatc --help | grep builtin
+#   --bfbs-builtins    Add builtin attributes to the binary schema files.
+# oberstet@thinkpad-t430s:~$
+
+FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
+#FLATC=/usr/local/bin/flatc
+
+flatc_version:
+	$(FLATC) --version
+
+build_fbs: build_fbs_bfbs build_fbs_python
+
+# generate schema type library (.bfbs binary) from schema files
+build_fbs_bfbs:
+	$(FLATC) -o $(FBS_OUTPUT) --binary --schema --bfbs-comments --bfbs-builtins $(FBS_FILES)
+
+# generate python bindings from schema files
+build_fbs_python:
+	$(FLATC) -o $(FBS_OUTPUT) --python $(FBS_FILES)
