@@ -382,8 +382,20 @@ class PersistentMap(MutableMapping):
 # see: http://www.lmdb.tech/doc/group__mdb.html#structMDB__val
 
 #
-# Key Type: OID, String, UUID
+# Key Types:
 #
+#  * OID (64 bit)
+#  * UUID (128 bit)
+#  * SHA256 (256 bit)
+#  * String (arbitrary length)
+#
+#  * OID-OID
+#  * OID-UUID
+#  * OID-String
+#
+#  * UUID-OID
+#  * UUID-UUID
+#  * UUID-String
 
 
 class _OidKeysMixin(object):
@@ -417,6 +429,27 @@ class _OidKeysMixin(object):
 
     def _deserialize_key(self, data):
         return struct.unpack('>Q', data)[0]
+
+
+class _OidOidKeysMixin(object):
+
+    @staticmethod
+    def new_key(secure=False):
+        return _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure)
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple
+        assert len(keys) == 2
+        key1, key2 = keys
+        assert type(key1) in six.integer_types
+        assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
+        assert type(key2) in six.integer_types
+        assert key2 >= 0 and key2 <= _OidKeysMixin.MAX_OID
+        return struct.pack('>QQ', key1, key2)
+
+    def _deserialize_key(self, data):
+        assert len(data) == 16
+        return struct.unpack('>QQ', data)
 
 
 class _StringKeysMixin(object):

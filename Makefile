@@ -50,8 +50,11 @@ clean-pyc: ## remove Python file artifacts
 clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
+	rm -f .coverage.*
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+	-rm -rf .test*
+	-rm -rf .mypy_cache
 
 lint: ## check style with flake8
 	flake8 zlmdb tests
