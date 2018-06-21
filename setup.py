@@ -49,7 +49,7 @@ os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
     'click>=6.7',
-    'flatbuffers>=2015.12.22.1',
+    # 'flatbuffers>=2015.12.22.1',
     'lmdb>=0.92',
     'pynacl>=1.1.2',
     'cbor2>=4.1.0',
@@ -58,6 +58,11 @@ requirements = [
 setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
+
+packages = find_packages(include=['flatbuffers/python/*'])
+packages = find_packages(include=['zlmdb.flatbuffer'])
+
+print('XXXXXXXXXXXXX', packages)
 
 setup(
     author="Crossbar.io Technologies GmbH",
@@ -86,7 +91,8 @@ setup(
     include_package_data=True,
     keywords='zlmdb',
     name='zlmdb',
-    packages=find_packages(include=['zlmdb']),
+    packages=packages,
+#    packages=find_packages(include=['flatbuffers/python', 'zlmdb']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
