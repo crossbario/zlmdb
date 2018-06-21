@@ -103,3 +103,5 @@ ENV/
 .idea
 .test*
 testdb
+__pycache__/*
+*.pyc

@@ -99,8 +99,9 @@ install:
 autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
-flatbuffers:
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo.fbs
+generate_flatbuffers:
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
+	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
 
 # input .fbs files for schema
@@ -131,3 +132,26 @@ build_fbs_bfbs:
 # generate python bindings from schema files
 build_fbs_python:
 	$(FLATC) -o $(FBS_OUTPUT) --python $(FBS_FILES)
+
+
+# deps/flatbuffers/flatc
+# deps/flatbuffers/libflatbuffers.a
+# deps/flatbuffers/include/
+flatbuffers_library:
+	cd deps/flatbuffers && cmake -DCMAKE_BUILD_TYPE=Release . && make && make test && cd ../..
+
+
+# load_fbs(repo_oid, source_name, source_code) -> BFBS -> return UUID
+
+# parser()
+# parser.parse_from_fbs(source_name: str, source_code: str, include_dirs=[]: List[str])
+# parser.serialize_to_bfbs -> bytes
+# parser.conforms_to(other_parser)
+
+# // Checks that the schema represented by this parser is a safe evolution
+# // of the schema provided. Returns non-empty error on any problems.
+
+# JSON parsing 	Yes 	No 	No 	No 	No 	No 	No 	Yes 	No 	No 	No
+# Simple mutation 	Yes 	Yes 	Yes 	Yes 	No 	No 	No 	No 	No 	No 	No
+# Reflection 	Yes 	No 	No 	No 	No 	No 	No 	Basic 	No 	No 	No
+# Buffer verifier

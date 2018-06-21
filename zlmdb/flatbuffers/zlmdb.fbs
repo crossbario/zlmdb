@@ -1,0 +1,5 @@
+attribute "uuid";
+attribute "type";
+attribute "stream";
+attribute "raises";
+table Void {}
