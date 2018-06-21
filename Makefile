@@ -85,6 +85,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 dist: clean ## builds source and wheel package
 	python setup.py sdist bdist_wheel
 	ls -la dist
+	unzip -l dist/zlmdb-*-py2.py3-none-any.whl
 
 # publish to PyPI
 publish: dist
@@ -96,7 +97,7 @@ install:
 
 # auto-format code - WARNING: this my change files, in-place!
 autoformat:
-	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffer/*" zlmdb
+	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
 flatbuffers:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo.fbs

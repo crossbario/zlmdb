@@ -432,7 +432,6 @@ class _OidKeysMixin(object):
 
 
 class _OidOidKeysMixin(object):
-
     @staticmethod
     def new_key(secure=False):
         return _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure)

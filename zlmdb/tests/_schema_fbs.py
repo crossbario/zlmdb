@@ -2,7 +2,8 @@ import random
 import uuid
 import datetime
 
-from zlmdb.flatbuffer import demo
+from zlmdb.flatbuffers.demo import User as _user
+from zlmdb.flatbuffers.demo import Date as _date
 
 
 class User(object):
@@ -126,37 +127,37 @@ class User(object):
         else:
             email = builder.CreateString(self._from_fbs.Email())
 
-        demo.UserStart(builder)
-        demo.UserAddName(builder, name)
-        demo.UserAddAuthid(builder, authid)
-        demo.UserAddEmail(builder, email)
+        _user.UserStart(builder)
+        _user.UserAddName(builder, name)
+        _user.UserAddAuthid(builder, authid)
+        _user.UserAddEmail(builder, email)
 
         if self._birthday is not None:
-            demo.UserAddBirthday(
-                builder, demo.CreateDate(builder, self._birthday.year, self._birthday.month, self._birthday.day))
+            _user.UserAddBirthday(
+                builder, _date.CreateDate(builder, self._birthday.year, self._birthday.month, self._birthday.day))
         else:
             bd = self._from_fbs.Birthday()
-            demo.UserAddBirthday(builder, demo.CreateDate(builder, bd.Year(), bd.Month(), bd.Day()))
+            _user.UserAddBirthday(builder, _date.CreateDate(builder, bd.Year(), bd.Month(), bd.Day()))
 
         # FIXME: tags
         # FIXME: ratings
         # FIXME: friends
 
         if self._is_friendly is not None:
-            demo.UserAddIsFriendly(builder, self._is_friendly)
+            _user.UserAddIsFriendly(builder, self._is_friendly)
         else:
-            demo.UserAddIsFriendly(builder, self._from_fbs.IsFriendly())
+            _user.UserAddIsFriendly(builder, self._from_fbs.IsFriendly())
 
         if self._referred_by is not None:
-            demo.UserAddReferredBy(builder, self._referred_by)
+            _user.UserAddReferredBy(builder, self._referred_by)
         else:
-            demo.UserAddReferredBy(builder, self._from_fbs.ReferredBy())
+            _user.UserAddReferredBy(builder, self._from_fbs.ReferredBy())
 
-        return demo.UserEnd(builder)
+        return _user.UserEnd(builder)
 
     @staticmethod
     def cast(buf):
-        return User(demo.User.GetRootAsUser(buf, 0))
+        return User(_user.User.GetRootAsUser(buf, 0))
 
     @staticmethod
     def create_test_user(oid=None):
