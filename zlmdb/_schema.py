@@ -26,12 +26,15 @@
 
 from __future__ import absolute_import
 
-import six
+from zlmdb._pmap import PersistentMap
 
 
-class Registration(object):
+class Slot(object):
     """
+    LMDB database slot. A slot is defined just by the convention of using
+    the first 2 bytes of keys in a LMDB database as the "slot index".
 
+    The 2 bytes are interpreted as an uint16 in big endian byte order.
     """
 
     def __init__(self, slot, name, pmap):
@@ -92,71 +95,37 @@ class Schema(object):
     """
 
     def __init__(self):
-        """
+        self._index_to_slot = {}
+        self._name_to_slot = {}
 
+    def slot(self, slot_index, marshal=None, unmarshal=None, build=None, cast=None, compress=False):
         """
-        self._slot_to_reg = {}
-        self._name_to_reg = {}
+        Decorator for use on classes derived from zlmdb.PersistentMap. The decorator define slots
+        in a LMDB database schema based on persistent maps, and slot configuration.
 
-    def open(self, *args, **kwargs):
-        """
-
-        :param args:
-        :param kwargs:
+        :param slot_index:
+        :param marshal:
+        :param unmarshal:
+        :param build:
+        :param cast:
+        :param compress:
         :return:
         """
-        from zlmdb._database import Database
 
-        db = Database(*args, **kwargs)
-        return db
+        def decorate(o):
+            assert isinstance(o, PersistentMap)
+            name = o.__class__.__name__
+            assert slot_index not in self._index_to_slot
+            assert name not in self._name_to_slot
+            o._zlmdb_slot = slot_index
+            o._zlmdb_marshal = marshal
+            o._zlmdb_unmarshal = unmarshal
+            o._zlmdb_build = build
+            o._zlmdb_cast = cast
+            o._zlmdb_compress = compress
+            _slot = Slot(slot_index, name, o)
+            self._index_to_slot[slot_index] = _slot
+            self._name_to_slot[name] = _slot
+            return o
 
-    def register(self, slot, name, pmap):
-        """
-
-        :param slot:
-        :param name:
-        :param pmap:
-        :return:
-        """
-        if slot in self._slot_to_reg:
-            raise Exception('pmap slot "{}" already registered'.format(slot))
-        if name in self._name_to_reg:
-            raise Exception('pmap name "{}" already registered'.format(name))
-
-        reg = Registration(slot, name, pmap)
-        self._slot_to_reg[slot] = reg
-        self._name_to_reg[name] = reg
-        return pmap
-
-    def unregister(self, key):
-        """
-
-        :param key:
-        :return:
-        """
-        if type(key) == six.text_type:
-            if key in self._name_to_reg:
-                reg = self._name_to_reg[key]
-                del self._slot_to_reg[reg.slot]
-                del self._name_to_reg[reg.name]
-            else:
-                raise KeyError('no pmap registered for name "{}"'.format(key))
-        elif type(key) in six.integer_types:
-            if key in self._slot_to_reg:
-                reg = self._slot_to_reg[key]
-                del self._slot_to_reg[reg.slot]
-                del self._name_to_reg[reg.name]
-            else:
-                raise KeyError('no pmap registered for slot "{}"'.format(key))
-
-    def __getattr__(self, key):
-        if type(key) == six.text_type:
-            if key in self._name_to_reg:
-                return self._name_to_reg[key]
-            else:
-                raise KeyError('no pmap registered for name "{}"'.format(key))
-        elif type(key) in six.integer_types:
-            if key in self._slot_to_reg:
-                return self._slot_to_reg[key]
-            else:
-                raise KeyError('no pmap registered for slot "{}"'.format(key))
+        return decorate
