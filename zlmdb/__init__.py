@@ -25,6 +25,8 @@
 ###############################################################################
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
+from __future__ import absolute_import
+
 from ._version import __version__
 
 from ._pmap import MapSlotUuidUuid, \

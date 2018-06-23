@@ -25,6 +25,8 @@
 ###############################################################################
 """Persistent mappings."""
 
+from __future__ import absolute_import
+
 import struct
 import random
 import pickle
@@ -181,7 +183,7 @@ class PersistentMap(MutableMapping):
         :param pmap:
         :return:
         """
-        assert type(name) == six.text_type
+        assert type(name) == str
         assert callable(fkey)
         assert isinstance(pmap, PersistentMap)
         if name in self._indexes:
@@ -194,7 +196,7 @@ class PersistentMap(MutableMapping):
         :param name:
         :return:
         """
-        assert type(name) == six.text_type
+        assert type(name) == str
         if name in self._indexes:
             del self._indexes[name]
 
