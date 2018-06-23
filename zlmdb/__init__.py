@@ -27,13 +27,16 @@
 
 from ._version import __version__
 
-from ._pmap import MapUuidString, \
+from ._pmap import MapSlotUuidUuid, \
+                   MapUuidString, \
                    MapUuidOid, \
                    MapUuidUuid, \
                    MapUuidJson, \
                    MapUuidCbor, \
                    MapUuidPickle, \
                    MapUuidFlatBuffers, \
+                   MapUuidStringUuid, \
+                   MapUuidUuidSet, \
                    MapStringString, \
                    MapStringOid, \
                    MapStringUuid, \
@@ -60,6 +63,7 @@ __all__ = (
     'Transaction',
     'TransactionStats',
     'walltime',
+    'MapSlotUuidUuid',
     'MapUuidString',
     'MapUuidOid',
     'MapUuidUuid',
@@ -67,6 +71,8 @@ __all__ = (
     'MapUuidCbor',
     'MapUuidPickle',
     'MapUuidFlatBuffers',
+    'MapUuidStringUuid',
+    'MapUuidUuidSet',
     'MapStringString',
     'MapStringOid',
     'MapStringUuid',
