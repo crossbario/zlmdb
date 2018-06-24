@@ -73,7 +73,7 @@ def test_truncate_table():
             schema.tab_uuid_pickle,
         ]
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True, stats=stats) as txn:
                 for tab in tabs:
                     tab.truncate(txn)
@@ -88,12 +88,12 @@ def test_fill_check(testset1):
 
         schema = Schema3()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.authid] = user
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 for user in testset1:
                     _user = schema.users[txn, user.authid]
@@ -109,12 +109,12 @@ def test_select(testset1):
 
         schema = Schema3()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.authid] = user
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 i = 0
                 for authid, user in schema.users.select(txn):
@@ -130,7 +130,7 @@ def test_count_all(testset1):
 
         schema = Schema3()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             # count on empty table
             with db.begin() as txn:
@@ -158,7 +158,7 @@ def test_count_all(testset1):
                 assert cnt == len(testset1)
 
         # table count in new connection
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 cnt = schema.users.count(txn)
                 assert cnt == len(testset1)
@@ -170,7 +170,7 @@ def test_count_prefix(testset1):
 
         schema = Schema3()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.authid] = user
@@ -184,7 +184,7 @@ def test_count_prefix(testset1):
             (u'test-11', 11),
             (u'test-111', 1),
         ]
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 for prefix, num in tests:
                     cnt = schema.users.count(txn, prefix)
@@ -197,7 +197,7 @@ def test_fill_with_indexes(testset1):
 
         schema = Schema4()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             stats = zlmdb.TransactionStats()
 

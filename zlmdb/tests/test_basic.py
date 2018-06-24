@@ -30,6 +30,8 @@ import sys
 import os
 import pytest
 
+import zlmdb
+
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
@@ -56,9 +58,7 @@ def test_transaction():
     with TemporaryDirectory() as dbpath:
         print('Using temporary directory {} for database'.format(dbpath))
 
-        schema = Schema2()
-
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 print('transaction open', txn.id())
             print('transaction committed')
@@ -73,7 +73,7 @@ def test_save_load():
 
         user = User.create_test_user()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             with db.begin(write=True) as txn:
 
@@ -96,7 +96,7 @@ def test_save_load_many_1(testset1):
 
         schema = Schema2()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             with db.begin(write=True) as txn:
                 for user in testset1:
@@ -110,7 +110,7 @@ def test_save_load_many_1(testset1):
                 cnt = schema.users.count(txn)
                 assert cnt == len(testset1)
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 cnt = schema.users.count(txn)
                 assert cnt == len(testset1)
@@ -124,7 +124,7 @@ def test_save_load_many_2(testset1):
 
         oids = []
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             # write records in a 1st transaction
             with db.begin(write=True) as txn:
@@ -157,7 +157,7 @@ def test_save_load_many_2(testset1):
             print('[2] successfully loaded {} records'.format(c))
 
         # in a new database environment (and hence new transaction), read back records
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             with db.begin() as txn:
 

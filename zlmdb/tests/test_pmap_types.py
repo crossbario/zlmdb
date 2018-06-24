@@ -59,7 +59,7 @@ def test_pmap_value_types():
             (schema.tab_oid_pickle, schema.tab_str_pickle, schema.tab_uuid_pickle),
         ]
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
             for tab_oid, tab_str, tab_uuid in tabs:
                 with db.begin(write=True, stats=stats) as txn:
                     for i in range(n):

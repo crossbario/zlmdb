@@ -53,7 +53,7 @@ def test_pmap_flatbuffers_values():
 
         schema = UsersSchema()
 
-        with schema.open(dbpath) as db:
+        with zlmdb.Database(dbpath) as db:
 
             N = 100
             stats = zlmdb.TransactionStats()
@@ -80,7 +80,7 @@ def test_pmap_flatbuffers_count():
         schema = UsersSchema()
 
         # max DB size is 100 MB
-        with schema.open(dbpath, maxsize=100 * (2**20)) as db:
+        with zlmdb.Database(dbpath, maxsize=100 * (2**20)) as db:
 
             oids = set()
             oid_to_referred_by = {}
