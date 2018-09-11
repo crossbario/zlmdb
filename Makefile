@@ -99,6 +99,11 @@ install:
 autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
+update_flatbuffers:
+	git submodule foreach git pull
+	rm -rf ./flatbuffers
+	cp -R deps/flatbuffers/python/flatbuffers .
+
 generate_flatbuffers:
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
 	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
