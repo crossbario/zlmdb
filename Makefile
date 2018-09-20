@@ -99,15 +99,21 @@ install:
 autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
+
+FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
+#FLATC=/usr/local/bin/flatc
+
 update_flatbuffers:
 	git submodule foreach git pull
 	rm -rf ./flatbuffers
 	cp -R deps/flatbuffers/python/flatbuffers .
 
-generate_flatbuffers:
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
-	~/scm/3rdparty/flatbuffers/flatc --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+generate_flatbuffers_reflection:
+	$(FLATC) --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+
+generate_flatbuffers_demos:
+	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
+	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
 
 # input .fbs files for schema
 FBS_FILES=deps/flatbuffers/reflection/reflection.fbs
@@ -121,9 +127,6 @@ FBS_OUTPUT=./crossbarfx/master/database/
 # oberstet@thinkpad-t430s:~$ flatc --help | grep builtin
 #   --bfbs-builtins    Add builtin attributes to the binary schema files.
 # oberstet@thinkpad-t430s:~$
-
-FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
-#FLATC=/usr/local/bin/flatc
 
 flatc_version:
 	$(FLATC) --version
