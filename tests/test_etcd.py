@@ -47,6 +47,31 @@ class MySchema(zlmdb.Schema):
         self.samples = MapStringDataFrame(1)
 
 
+# dtypes - https://pandas.pydata.org/pandas-docs/stable/basics.html#basics-dtypes
+#
+# The main types stored in pandas objects are float, int, bool, datetime64[ns] and
+# datetime64[ns, tz], timedelta[ns], category and object. In addition these dtypes
+# have item sizes, e.g. int64 and int32.
+
+# Key Types:
+#
+#  * OID (64 bit)
+#  * UUID (128 bit)
+#  * SHA256 (256 bit)
+#  * String (arbitrary length)
+#
+#  * OID-OID
+#  * OID-UUID
+#  * OID-String
+#
+#  * UUID-OID
+#  * UUID-UUID
+#  * UUID-String
+
+#
+# Value Types: String, OID, UUID, JSON, CBOR, Pickle, FlatBuffers
+#
+
 
 @inlineCallbacks
 def main(reactor):
@@ -99,26 +124,7 @@ def main(reactor):
 
     d.cancel()
 
-    # db_file = '/data/scratch/test1.db'
-    # db1_name = 'db1'.encode()
 
-    # env = lmdb.Environment(db_file, max_dbs=5, map_size=16*(2**20), writemap=False, meminit=False, subdir=False)
-    # db1 = env.open_db(db1_name)
-
-    # df = pd.DataFrame(np.random.randn(8, 4), columns=['A','B','C','D'])
-
-    # key1 = 'key1'.encode()
-    # value1 = pa.serialize(df).to_buffer()
-
-    # with env.begin(db=db1, write=True) as txn:
-    #     txn.put(key1, value1)
-
-    # env.sync()
-    # print('transaction {} complete.'.format(env.info()['last_txnid'] - 1))
-
-    # with env.begin(db=db1, buffers=True) as txn:
-    #     data_buffer = txn.get(key1)
-    #     df = pa.deserialize(data_buffer)
 
 if __name__ == '__main__':
     txaio.start_logging(level='info')
