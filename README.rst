@@ -32,6 +32,13 @@ Object-relational in-memory database layer based on LMDB:
 Performance
 -----------
 
+Read performance (with Flatbuffers serializer for object storage):
+
+.. image:: docs/_static/performance_test2.png
+   :width: 423px
+
+Write performance with different serializers:
+
 .. image:: docs/_static/performance_test1.png
    :width: 423px
 
@@ -83,7 +90,24 @@ The test was run on an Intel NUC with Ubuntu Bionic:
 Results
 .......
 
-Results for PyPy 3 (v6.0.0):
+Fill & Read performance results for PyPy 3 (v6.0.0):
+
+.. code-block:: console
+
+    zlmdb/tests/test_flatbuffers.py::test_pmap_flatbuffers_count Using temporary directory /tmp/tmpg38791il for database
+    Transaction ended: puts=10000 / dels=0 rows in 821 ms, 12166 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 211 ms, 47390 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 236 ms, 42372 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 216 ms, 46112 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 263 ms, 37881 rows/sec
+    Transaction ended: 1000000 rows read in 1349 ms, 740900 rows/sec
+    Transaction ended: 1000000 rows read in 1225 ms, 816188 rows/sec
+    Transaction ended: 1000000 rows read in 1230 ms, 812895 rows/sec
+    Transaction ended: 1000000 rows read in 1228 ms, 814307 rows/sec
+    Transaction ended: 1000000 rows read in 1228 ms, 814307 rows/sec
+    PASSED
+
+and Write performance with different serializers:
 
 .. code-block:: console
 
@@ -152,7 +176,24 @@ Results for PyPy 3 (v6.0.0):
     64583.2 objects/sec max, 16.0 MB bytes total, 159 Bytes bytes/obj
     PASSED
 
-Results for CPython 3 (v3.7.0):
+Fill & Read performance results for CPython 3 (v3.7.0):
+
+.. code-block:: console
+
+    zlmdb/tests/test_flatbuffers.py::test_pmap_flatbuffers_count Using temporary directory /tmp/tmpkxt44ayp for database
+    Transaction ended: puts=10000 / dels=0 rows in 1747 ms, 5721 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 1716 ms, 5826 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 1752 ms, 5705 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 1742 ms, 5740 rows/sec
+    Transaction ended: puts=10000 / dels=0 rows in 1756 ms, 5692 rows/sec
+    Transaction ended: 1000000 rows read in 12931 ms, 77328 rows/sec
+    Transaction ended: 1000000 rows read in 12926 ms, 77361 rows/sec
+    Transaction ended: 1000000 rows read in 12956 ms, 77179 rows/sec
+    Transaction ended: 1000000 rows read in 12977 ms, 77056 rows/sec
+    Transaction ended: 1000000 rows read in 12860 ms, 77758 rows/sec
+    PASSED
+
+and Write performance with different serializers:
 
 .. code-block:: console
 
