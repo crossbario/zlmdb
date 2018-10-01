@@ -8,6 +8,7 @@ Welcome to ZLMDB's documentation!
    readme
    installation
    usage
+   performance
    contributing
    history
 
