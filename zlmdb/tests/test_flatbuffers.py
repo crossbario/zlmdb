@@ -105,7 +105,7 @@ def test_pmap_flatbuffers_count():
                 duration = stats.duration
                 ms = int(1000. * duration)
                 rows_per_sec = int(round(float(stats.puts + stats.dels) / float(duration)))
-                print('Transaction committed (puts={}, dels={}) rows in {} ms, {} rows/sec)'.format(
+                print('Transaction ended: puts={} / dels={} rows in {} ms, {} rows/sec'.format(
                     stats.puts, stats.dels, ms, rows_per_sec))
 
                 stats.reset()
@@ -129,4 +129,4 @@ def test_pmap_flatbuffers_count():
                     duration = zlmdb.walltime() - started
                     ms = int(1000. * duration)
                     rows_per_sec = int(round(float(M * N) / float(duration)))
-                    print('Transaction committed ({} rows in {} ms, {} rows/sec)'.format(M * N, ms, rows_per_sec))
+                    print('Transaction ended: {} rows read in {} ms, {} rows/sec'.format(M * N, ms, rows_per_sec))

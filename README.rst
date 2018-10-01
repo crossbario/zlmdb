@@ -18,17 +18,16 @@ ZLMDB
     :target: https://pypi.python.org/pypi/zlmdb
     :alt: PyPI
 
-Object-relational zero-copy in-memory database layer for LMDB.
 
+Object-relational in-memory database layer based on LMDB:
 
-* Free software: MIT license
-* Documentation: https://zlmdb.readthedocs.io.
+* [ ] High-performance (see below)
+* [ ] Supports multiple serializers (JSON, CBOR, Pickle, Flatbuffers)
+* [ ] Supports export/import from/to Apache Arrow
+* [ ] Support native Numpy arrays and Pandas data frames
+* [ ] Automatic indexes
+* [ ] Free software (MIT license)
 
-
-Features
---------
-
-* TODO
 
 Performance
 -----------
@@ -155,6 +154,8 @@ Results for PyPy 3 (v6.0.0):
 
 Results for CPython 3 (v3.7.0):
 
+.. code-block:: console
+
     zlmdb/tests/test_serialization.py::test_json_serialization_speed running on:
     3.7.0 (default, Sep 11 2018, 09:56:32)
     [GCC 7.3.0]
@@ -219,12 +220,3 @@ Results for CPython 3 (v3.7.0):
     6119.6 objects/sec 16.0 MB
     6225.2 objects/sec max, 16.0 MB bytes total, 159 Bytes bytes/obj
     PASSED
-
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
