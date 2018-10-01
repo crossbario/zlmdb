@@ -1,6 +1,14 @@
 ZLMDB
 =====
 
+.. image:: https://img.shields.io/pypi/v/zlmdb.svg
+    :target: https://pypi.python.org/pypi/zlmdb
+    :alt: PyPI
+
+.. image:: https://readthedocs.org/projects/zlmdb/badge/?version=latest
+    :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation
+
 .. image:: https://img.shields.io/travis/crossbario/zlmdb.svg
     :target: https://travis-ci.org/crossbario/zlmdb
     :alt: TravisCI
@@ -8,14 +16,6 @@ ZLMDB
 .. image:: https://codecov.io/gh/crossbario/zlmdb/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/crossbario/zlmdb
     :alt: Coverage
-
-.. image:: https://readthedocs.org/projects/zlmdb/badge/?version=latest
-    :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation
-
-.. image:: https://img.shields.io/pypi/v/zlmdb.svg
-    :target: https://pypi.python.org/pypi/zlmdb
-    :alt: PyPI
 
 Object-relational in-memory database layer based on LMDB:
 
