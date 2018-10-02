@@ -77,6 +77,9 @@ test-zdb-df:
 test-zdb-dyn:
 	python tests/zdb/test_zdb_dyn.py
 
+test-zdb-fbs:
+	python tests/zdb/test_zdb_fbs.py
+
 
 test-quick:
 	pytest

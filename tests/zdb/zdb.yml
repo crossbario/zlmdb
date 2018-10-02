@@ -14,6 +14,7 @@ slots:
     description: Management realms.
 
   - index: 102
-    name: foobar
+    name: users2
     key: string
-    value: json
+    schema: user
+    value: cbor

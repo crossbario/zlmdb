@@ -5,19 +5,12 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted import util
 
 import txaio
-from txaioetcd import Client, KeySet
 
 import yaml
 
 from pprint import pprint, pformat
 
-import numpy as np
-import pandas as pd
-import pyarrow as pa
-import lmdb
-
 import zlmdb
-from zlmdb._pmap import _StringKeysMixin, PersistentMap
 from zlmdb._pmap import  MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
 
 import random
@@ -26,31 +19,9 @@ import datetime
 from typing import Optional, List, Dict
 
 
-try:
-    from tempfile import TemporaryDirectory
-except ImportError:
-    from backports.tempfile import TemporaryDirectory
-
-
-class _DataFrameValuesMixin(object):
-    def __init__(self, marshal=None, unmarshal=None):
-        self._marshal = marshal or self._zlmdb_marshal
-        self._unmarshal = unmarshal or self._zlmdb_unmarshal
-
-    def _serialize_value(self, value):
-        return pa.serialize(value).to_buffer()
-
-    def _deserialize_value(self, data):
-        return pa.deserialize(data)
-
-
-
-
 class Tag(object):
     GEEK = 1
     VIP = 2
-
-
 
 
 class User(object):
@@ -161,84 +132,34 @@ KV_TYPE_TO_CLASS = {
     'uuid-json-user': (MapUuidJson, User.marshal, User.parse),
     'uuid-cbor-user': (MapUuidCbor, User.marshal, User.parse),
 }
+DBPATH = '/tmp/zlmdb1'
+DBSCHEMA = 'tests/zdb/zdb.yml'
 
 @inlineCallbacks
 def main(reactor):
-    dbpath = '/tmp/zlmdb1'
 
-    print('Using database directory {}'.format(dbpath))
+    schema = zlmdb._database.Schema.parse(DBSCHEMA, KV_TYPE_TO_CLASS)
 
-    meta = {}
-    slots = {}
-    slots_byname = {}
+    print('Using database directory {} and schema {}:\n{}'.format(DBPATH, DBSCHEMA, schema))
 
-    with open('tests/zdb/zdb.yml') as f:
-        _meta = yaml.load(f.read())
-
-    for slot in _meta.get('slots', []):
-        _index = slot.get('index', None)
-        assert type(_index) in six.integer_types and _index >= 100 and _index < 65536
-        assert _index not in slots
-
-        _name = slot.get('name', None)
-        assert type(_name) == six.text_type
-        assert _name not in slots_byname
-
-        _key = slot.get('key', None)
-        assert _key in ['string', 'uuid']
-
-        _value = slot.get('value', None)
-        assert _value in ['json', 'cbor']
-
-        _schema = slot.get('schema', None)
-        assert _schema is None or type(_schema) == six.text_type
-
-        _description = slot.get('description', None)
-        assert _description is None or type(_description) == six.text_type
-
-        if _schema:
-            _kv_type = '{}-{}-{}'.format(_key, _value, _schema)
-        else:
-            _kv_type = '{}-{}'.format(_key, _value)
-        _kv_klass, _marshal, _unmarshal = KV_TYPE_TO_CLASS.get(_kv_type, (None, None, None))
-        assert _kv_klass
-        assert _marshal
-        assert _unmarshal
-
-        _table = _kv_klass(_index, marshal=_marshal, unmarshal=_unmarshal)
-        slots[_index] = _table
-        slots_byname[_name] = _table
-
-        meta[_index] = {
-            'index': _index,
-            'name': _name,
-            'key': _key,
-            'value': _value,
-            'impl': _kv_klass.__name__,
-            'description': _description,
-        }
-
-    pprint(meta)
-    pprint(slots)
-
-    with zlmdb.Database(dbpath) as db:
+    with zlmdb.Database(DBPATH, schema) as db:
         with db.begin(write=True) as txn:
-            users = slots_byname['users']
-            #users = slots_byname['foobar']
-            mrealms = slots_byname['mrealms']
+            users = schema['users']
+            users2 = schema['users2']
+
+            print('users', users)
+            print('users2', users2)
 
             key = 'user1'
-            user = users[txn, key]
-            if user:
-                print('user object already exists for key {}: {}'.format(key, user))
-            else:
-                print('user does not exist, storing new object ..')
-
-                user = User.create_test_user()
-                #user = User.create_test_user().marshal()
-                users[txn, key] = user
-
-                print('user object created for key {}: {}'.format(key, user))
+            for table in [users, users2]:
+                user = table[txn, key]
+                if user:
+                    print('user object already exists in {} for key {}: {}'.format(table, key, user))
+                else:
+                    print('user does not exist in {}, storing new object ..'.format(table))
+                    user = User.create_test_user()
+                    table[txn, key] = user
+                    print('user object created for key {}: {}'.format(key, user))
 
     yield util.sleep(1)
 
