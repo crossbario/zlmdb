@@ -62,14 +62,21 @@ lint: ## check style with flake8
 test-single:
 	clear && pytest -v -s zlmdb/tests/test_basic.py
 
-test-zdb:
-	python tests/zdb/test_zdb.py
+
+#
+# test ZLMDB high level API
+#
+test-zdb: test-zdb-etcd test-zdb-df test-zdb-dyn
 
 test-zdb-etcd:
 	python tests/zdb/test_zdb_etcd.py
 
 test-zdb-df:
 	python tests/zdb/test_zdb_df.py
+
+test-zdb-dyn:
+	python tests/zdb/test_zdb_dyn.py
+
 
 test-quick:
 	pytest
