@@ -1,11 +1,19 @@
 slots:
   - index: 100
     name: users
-    key: uuid
+    key: string
     value: json
+    schema: user
     description: Arbitrary user data (serialized in JSON format).
+
   - index: 101
     name: mrealms
     key: uuid
     value: cbor
+    schema: user
     description: Management realms.
+
+  - index: 102
+    name: foobar
+    key: string
+    value: json

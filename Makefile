@@ -65,6 +65,12 @@ test-single:
 test-zdb:
 	python tests/zdb/test_zdb.py
 
+test-zdb-etcd:
+	python tests/zdb/test_zdb_etcd.py
+
+test-zdb-df:
+	python tests/zdb/test_zdb_df.py
+
 test-quick:
 	pytest
 

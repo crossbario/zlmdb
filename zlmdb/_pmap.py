@@ -593,6 +593,7 @@ class _JsonValuesMixin(object):
         else:
             if hasattr(self, '_zlmdb_marshal'):
                 self._marshal = self._zlmdb_marshal
+        assert self._marshal
 
         self._unmarshal = None
         if unmarshal:
@@ -600,6 +601,7 @@ class _JsonValuesMixin(object):
         else:
             if hasattr(self, '_zlmdb_unmarshal'):
                 self._unmarshal = self._zlmdb_unmarshal
+        assert self._unmarshal
 
     def _serialize_value(self, value):
         return json.dumps(
@@ -617,6 +619,7 @@ class _CborValuesMixin(object):
         else:
             if hasattr(self, '_zlmdb_marshal'):
                 self._marshal = self._zlmdb_marshal
+        assert self._marshal
 
         self._unmarshal = None
         if unmarshal:
@@ -624,6 +627,7 @@ class _CborValuesMixin(object):
         else:
             if hasattr(self, '_zlmdb_unmarshal'):
                 self._unmarshal = self._zlmdb_unmarshal
+        assert self._unmarshal
 
     def _serialize_value(self, value):
         return cbor2.dumps(self._marshal(value))
