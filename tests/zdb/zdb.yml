@@ -1,0 +1,11 @@
+slots:
+  - index: 100
+    name: users
+    key: uuid
+    value: json
+    description: Arbitrary user data (serialized in JSON format).
+  - index: 101
+    name: mrealms
+    key: uuid
+    value: cbor
+    description: Management realms.

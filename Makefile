@@ -62,6 +62,9 @@ lint: ## check style with flake8
 test-single:
 	clear && pytest -v -s zlmdb/tests/test_basic.py
 
+test-zdb:
+	python tests/zdb/test_zdb.py
+
 test-quick:
 	pytest
 

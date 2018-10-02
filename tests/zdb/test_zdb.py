@@ -1,8 +1,15 @@
+import six
 from twisted.internet.task import react
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn.twisted import util
+
 import txaio
 from txaioetcd import Client, KeySet
+
+import yaml
+
+from pprint import pprint
 
 import numpy as np
 import pandas as pd
@@ -11,6 +18,8 @@ import lmdb
 
 import zlmdb
 from zlmdb._pmap import _StringKeysMixin, PersistentMap
+from zlmdb._pmap import  MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
+
 
 try:
     from tempfile import TemporaryDirectory
@@ -74,7 +83,7 @@ class MySchema(zlmdb.Schema):
 
 
 @inlineCallbacks
-def main(reactor):
+def main2(reactor):
     etcd = Client(reactor)
     status = yield etcd.status()
     print(status)
@@ -124,6 +133,81 @@ def main(reactor):
 
     d.cancel()
 
+
+KV_TYPE_TO_CLASS = {
+    'string-json': MapStringJson,
+    'string-cbor': MapStringCbor,
+    'uuid-json': MapUuidJson,
+    'uuid-cbor': MapUuidCbor,
+}
+
+@inlineCallbacks
+def main(reactor):
+    dbpath = '/tmp/zlmdb1'
+
+    print('Using database directory {}'.format(dbpath))
+
+    meta = {}
+    slots = {}
+
+    with open('tests/zdb/zdb.yml') as f:
+        _meta = yaml.load(f.read())
+
+    for slot in _meta.get('slots', []):
+        _index = slot.get('index', None)
+        assert type(_index) in six.integer_types and _index >= 100 and _index < 65536
+        assert _index not in slots
+
+        _name = slot.get('name', None)
+        assert type(_name) == six.text_type
+
+        _key = slot.get('key', None)
+        assert _key in ['string', 'uuid']
+
+        _value = slot.get('value', None)
+        assert _value in ['json', 'cbor']
+
+        _description = slot.get('description', None)
+        assert _description is None or type(_description) == six.text_type
+
+        _kv_type = '{}-{}'.format(_key, _value)
+        _kv_klass = KV_TYPE_TO_CLASS.get(_kv_type, None)
+        assert _kv_klass
+
+        slots[_index] = _kv_klass(_index)
+        meta[_index] = {
+            'index': _index,
+            'name': _name,
+            'key': _key,
+            'value': _value,
+            'impl': _kv_klass.__name__,
+            'description': _description,
+        }
+
+    pprint(meta)
+    pprint(slots)
+
+
+    schema = MySchema()
+
+    if False:
+        with zlmdb.Database(dbpath) as db:
+            with db.begin(write=True) as txn:
+                for i in range(10):
+                    if i % 2:
+                        key = 'key{}'.format(i)
+                        value = pd.DataFrame(np.random.randn(8, 4), columns=['A','B','C','D'])
+                        schema.samples[txn, key] = value
+
+    if False:
+        with zlmdb.Database(dbpath) as db:
+            with db.begin() as txn:
+                for i in range(10):
+                    key = 'key{}'.format(i)
+                    value = schema.samples[txn, key]
+                    print('key={} : value=\n{}'.format(key, value))
+
+    yield util.sleep(1)
 
 
 if __name__ == '__main__':

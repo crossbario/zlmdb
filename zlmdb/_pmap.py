@@ -587,8 +587,19 @@ class _UuidSetValuesMixin(object):
 
 class _JsonValuesMixin(object):
     def __init__(self, marshal=None, unmarshal=None):
-        self._marshal = marshal or self._zlmdb_marshal
-        self._unmarshal = unmarshal or self._zlmdb_unmarshal
+        self._marshal = None
+        if marshal:
+            self._marshal = marshal
+        else:
+            if hasattr(self, '_zlmdb_marshal'):
+                self._marshal = self._zlmdb_marshal
+
+        self._unmarshal = None
+        if unmarshal:
+            self._unmarshal = unmarshal
+        else:
+            if hasattr(self, '_zlmdb_unmarshal'):
+                self._unmarshal = self._zlmdb_unmarshal
 
     def _serialize_value(self, value):
         return json.dumps(
@@ -600,8 +611,19 @@ class _JsonValuesMixin(object):
 
 class _CborValuesMixin(object):
     def __init__(self, marshal=None, unmarshal=None):
-        self._marshal = marshal or self._zlmdb_marshal
-        self._unmarshal = unmarshal or self._zlmdb_unmarshal
+        self._marshal = None
+        if marshal:
+            self._marshal = marshal
+        else:
+            if hasattr(self, '_zlmdb_marshal'):
+                self._marshal = self._zlmdb_marshal
+
+        self._unmarshal = None
+        if unmarshal:
+            self._unmarshal = unmarshal
+        else:
+            if hasattr(self, '_zlmdb_unmarshal'):
+                self._unmarshal = self._zlmdb_unmarshal
 
     def _serialize_value(self, value):
         return cbor2.dumps(self._marshal(value))
