@@ -36,7 +36,7 @@ import yaml
 import pprint
 
 from zlmdb._transaction import Transaction
-from zlmdb._pmap import  MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
+from zlmdb._pmap import MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
 
 KV_TYPE_TO_CLASS = {
     'string-json': (MapStringJson, lambda x: x, lambda x: x),
@@ -45,8 +45,8 @@ KV_TYPE_TO_CLASS = {
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-class Schema(object):
 
+class Schema(object):
     def __init__(self, meta, slots, slots_byname):
         self._meta = meta
         self._slots = slots

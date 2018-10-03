@@ -13,4 +13,5 @@ humanize>=0.5.1
 backports.tempfile>=1.0
 yapf>=0.22.0
 pylint>=1.9.2
+yaml>=3.13
 mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'

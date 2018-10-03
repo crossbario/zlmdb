@@ -53,6 +53,7 @@ requirements = [
     'lmdb>=0.92',
     'pynacl>=1.1.2',
     'cbor2>=4.1.0',
+    'pyyaml>=3.13'
 ]
 
 setup_requirements = ['pytest-runner', ]
