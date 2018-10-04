@@ -34,7 +34,7 @@ import platform
 
 import humanize
 
-from zlmdb import _pmap
+from zlmdb import _types
 
 from _schema_fbs import User as UserFbs
 
@@ -93,7 +93,7 @@ def _serialization_speed(serializer, testfun):
 
 
 def test_json_serialization_speed():
-    ser = _pmap._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse)
+    ser = _types._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse)
     ops_max, total = _serialization_speed(ser, _serializer_run)
     # cpy36: 19564.6 objects/sec max, 135456153 bytes total
     assert ops_max > 1000
@@ -101,7 +101,7 @@ def test_json_serialization_speed():
 
 
 def test_cbor_serialization_speed():
-    ser = _pmap._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse)
+    ser = _types._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse)
     ops_max, total = _serialization_speed(ser, _serializer_run)
     # cpy36: 7787.4 objects/sec max, 97815364 bytes total
     assert ops_max > 1000
@@ -109,7 +109,7 @@ def test_cbor_serialization_speed():
 
 
 def test_pickle_serialization_speed():
-    ser = _pmap._PickleValuesMixin()
+    ser = _types._PickleValuesMixin()
     ops_max, total = _serialization_speed(ser, _serializer_run)
     # cpy36: 33586.0 objects/sec max, 137738869 bytes total
     assert ops_max > 1000
@@ -117,7 +117,7 @@ def test_pickle_serialization_speed():
 
 
 def test_flatbuffer_serialization_speed():
-    ser = _pmap._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast)
+    ser = _types._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast)
     ops_max, total = _serialization_speed(ser, _serializer_run_fbs)
     assert ops_max > 1000
     assert total > 1000000
@@ -126,16 +126,16 @@ def test_flatbuffer_serialization_speed():
 if __name__ == '__main__':
     sers = []
 
-    ser = _pmap._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse)
+    ser = _types._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse)
     sers.append(ser)
 
-    ser = _pmap._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse)
+    ser = _types._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse)
     sers.append(ser)
 
-    ser = _pmap._PickleValuesMixin()
+    ser = _types._PickleValuesMixin()
     sers.append(ser)
 
-    ser = _pmap._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast)
+    ser = _types._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast)
     sers.append(ser)
 
     for ser in sers:
