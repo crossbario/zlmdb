@@ -147,10 +147,16 @@ class _StringKeysMixin(object):
             return token_value
 
     def _serialize_key(self, key):
-        return key.encode('utf8')
+        if key:
+            return key.encode('utf8')
+        else:
+            return b''
 
     def _deserialize_key(self, data):
-        return data.decode('utf8')
+        if data:
+            return data.decode('utf8')
+        else:
+            return None
 
 
 class _UuidKeysMixin(object):
@@ -163,10 +169,16 @@ class _UuidKeysMixin(object):
     def _serialize_key(self, key):
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
-        return key.bytes
+        if key:
+            return key.bytes
+        else:
+            return b''
 
     def _deserialize_key(self, data):
-        return uuid.UUID(bytes=data)
+        if data:
+            return uuid.UUID(bytes=data)
+        else:
+            return None
 
 
 class _UuidStringKeysMixin(object):
@@ -203,10 +215,16 @@ class _SlotUuidKeysMixin(object):
 
 class _StringValuesMixin(object):
     def _serialize_value(self, value):
-        return value.encode('utf8')
+        if value:
+            return value.encode('utf8')
+        else:
+            return b''
 
     def _deserialize_value(self, data):
-        return data.decode('utf8')
+        if data:
+            return data.decode('utf8')
+        else:
+            return None
 
 
 class _OidValuesMixin(object):
@@ -219,10 +237,16 @@ class _OidValuesMixin(object):
 
 class _UuidValuesMixin(object):
     def _serialize_value(self, value):
-        return value.bytes
+        if value:
+            return value.bytes
+        else:
+            return b''
 
     def _deserialize_value(self, data):
-        return uuid.UUID(bytes=data)
+        if data:
+            return uuid.UUID(bytes=data)
+        else:
+            return None
 
 
 class _UuidSetValuesMixin(object):
