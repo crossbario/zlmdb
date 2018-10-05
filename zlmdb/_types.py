@@ -181,6 +181,16 @@ class _UuidKeysMixin(object):
             return None
 
 
+class _UuidUuidKeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        key1, key2 = key1_key2
+        return key1.bytes + key2.bytes
+
+    def _deserialize_key(self, data):
+        data1, data2 = data[0:16], data[16:32]
+        return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
+
+
 class _UuidStringKeysMixin(object):
     def _serialize_key(self, key1_key2):
         key1, key2 = key1_key2
@@ -227,12 +237,34 @@ class _StringValuesMixin(object):
             return None
 
 
+class _StringSetValuesMixin(object):
+    def _serialize_value(self, value_set):
+        assert type(value_set) == set
+        return b'\0'.join([value.encode('utf8') for value in value_set])
+
+    def _deserialize_value(self, data):
+        assert type(data) == bytes
+        return set([d.decode('utf8') for d in data.split('\0')])
+
+
 class _OidValuesMixin(object):
     def _serialize_value(self, value):
         return struct.pack('>Q', value)
 
     def _deserialize_value(self, data):
         return struct.unpack('>Q', data)[0]
+
+
+class _OidSetValuesMixin(object):
+    def _serialize_value(self, value_set):
+        assert type(value_set) == set
+        return b''.join([struct.pack('>Q', value) for value in value_set])
+
+    def _deserialize_value(self, data):
+        VLEN = 8
+        assert len(data) % VLEN == 0
+        cnt = len(data) / VLEN
+        return set([struct.unpack('>Q', data[i:i + VLEN])[0] for i in range(0, cnt, VLEN)])
 
 
 class _UuidValuesMixin(object):
