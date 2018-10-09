@@ -90,3 +90,25 @@ __all__ = (
     'MapOidPickle',
     'MapOidFlatBuffers',
 )
+
+
+_SLOTS = {}  # type: Dict[int, object]
+_META_DOC_OTYPE_TO_SLOT = {}  # type: Dict[str, object]
+
+
+def slot(slot_no, marshal=None, unmarshal=None, build=None, cast=None, compress=False, enable_meta=False):
+    def decorate(o):
+        o._zlmdb_slot = slot_no
+        o._zlmdb_marshal = marshal
+        o._zlmdb_unmarshal = unmarshal
+        o._zlmdb_build = build
+        o._zlmdb_cast = cast
+        o._zlmdb_compress = compress
+        o._zlmdb_enable_meta = enable_meta
+        # assert slot_no not in _SLOTS
+        _SLOTS[slot_no] = o
+        if enable_meta:
+            # assert o.__name__ not in _META_DOC_OTYPE_TO_SLOT
+            _META_DOC_OTYPE_TO_SLOT[o.__name__] = slot_no
+        return o
+    return decorate
