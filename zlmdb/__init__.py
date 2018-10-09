@@ -27,6 +27,8 @@
 
 from __future__ import absolute_import
 
+from typing import Dict  # noqa
+
 from ._version import __version__
 
 from ._pmap import MapSlotUuidUuid, \
@@ -91,7 +93,6 @@ __all__ = (
     'MapOidFlatBuffers',
 )
 
-
 _SLOTS = {}  # type: Dict[int, object]
 _META_DOC_OTYPE_TO_SLOT = {}  # type: Dict[str, object]
 
@@ -111,4 +112,5 @@ def slot(slot_no, marshal=None, unmarshal=None, build=None, cast=None, compress=
             # assert o.__name__ not in _META_DOC_OTYPE_TO_SLOT
             _META_DOC_OTYPE_TO_SLOT[o.__name__] = slot_no
         return o
+
     return decorate
