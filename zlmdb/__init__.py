@@ -27,11 +27,16 @@
 
 from __future__ import absolute_import
 
+import uuid
+
+import six
+
 from typing import Dict  # noqa
 
 from ._version import __version__
 
-from ._pmap import MapSlotUuidUuid, \
+from ._pmap import PersistentMap, \
+                   MapSlotUuidUuid, \
                    MapUuidString, \
                    MapUuidOid, \
                    MapUuidUuid, \
@@ -93,24 +98,41 @@ __all__ = (
     'MapOidFlatBuffers',
 )
 
-_SLOTS = {}  # type: Dict[int, object]
-_META_DOC_OTYPE_TO_SLOT = {}  # type: Dict[str, object]
+TABLES_BY_UUID = {}
+"""
+Map of table UUIDs to persistant maps stored in slots in a KV store.
+"""
 
 
-def slot(slot_no, marshal=None, unmarshal=None, build=None, cast=None, compress=False, enable_meta=False):
+def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
+    if type(oid) == six.text_type:
+        oid = uuid.UUID(oid)
+
+    assert isinstance(oid, uuid.UUID)
+    assert marshal is None or callable(marshal)
+    assert parse is None or callable(parse)
+    assert build is None or callable(build)
+    assert cast is None or callable(cast)
+    assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
+
     def decorate(o):
-        o._zlmdb_slot = slot_no
+        assert oid not in TABLES_BY_UUID
+
+        # slot UUID that is mapped to a slot index later when attaching to db
+        o._zlmdb_oid = oid
+
+        # for CBOR/JSON
         o._zlmdb_marshal = marshal
-        o._zlmdb_unmarshal = unmarshal
+        o._zlmdb_parse = parse
+
+        # for Flatbuffers
         o._zlmdb_build = build
         o._zlmdb_cast = cast
+
+        # for value compression
         o._zlmdb_compress = compress
-        o._zlmdb_enable_meta = enable_meta
-        # assert slot_no not in _SLOTS
-        _SLOTS[slot_no] = o
-        if enable_meta:
-            # assert o.__name__ not in _META_DOC_OTYPE_TO_SLOT
-            _META_DOC_OTYPE_TO_SLOT[o.__name__] = slot_no
+
+        TABLES_BY_UUID[oid] = o
         return o
 
     return decorate

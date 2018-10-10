@@ -134,7 +134,7 @@ class PersistentMap(MutableMapping):
     COMPRESS_ZLIB = 1
     COMPRESS_SNAPPY = 2
 
-    def __init__(self, slot=None, compress=None):
+    def __init__(self, slot, compress=None):
         """
 
         :param slot:
@@ -142,16 +142,9 @@ class PersistentMap(MutableMapping):
         """
         assert slot is None or type(slot) in six.integer_types
         assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
-        if slot:
-            self._slot = slot
-        else:
-            if hasattr(self, '_zlmdb_slot'):
-                self._slot = self._zlmdb_slot
-            else:
-                raise Exception('not slot set (not from parameter, not from decorator)')
-        if not compress:
-            if hasattr(self, '_zlmdb_compress'):
-                compress = self._zlmdb_compress
+
+        self._slot = slot
+
         if compress:
             if compress not in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]:
                 raise Exception('invalid compression mode')
@@ -168,6 +161,7 @@ class PersistentMap(MutableMapping):
         else:
             self._compress = lambda data: data
             self._decompress = lambda data: data
+
         self._indexes = {}
 
     def attach_index(self, name, fkey, pmap):
