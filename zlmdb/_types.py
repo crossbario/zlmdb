@@ -147,12 +147,14 @@ class _StringKeysMixin(object):
             return token_value
 
     def _serialize_key(self, key):
+        assert key is None or type(key) == six.text_type
         if key:
             return key.encode('utf8')
         else:
             return b''
 
     def _deserialize_key(self, data):
+        assert data is None or type(data) == six.binary_type
         if data:
             return data.decode('utf8')
         else:
