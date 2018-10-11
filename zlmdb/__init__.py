@@ -98,10 +98,11 @@ __all__ = (
     'MapOidFlatBuffers',
 )
 
-TABLES_BY_UUID = {}
+TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]
 """
 Map of table UUIDs to persistant maps stored in slots in a KV store.
 """
+
 
 
 def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):

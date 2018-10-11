@@ -148,6 +148,7 @@ class _StringKeysMixin(object):
 
     def _serialize_key(self, key):
         assert key is None or type(key) == six.text_type
+
         if key:
             return key.encode('utf8')
         else:
@@ -155,6 +156,7 @@ class _StringKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert data is None or type(data) == six.binary_type
+
         if data:
             return data.decode('utf8')
         else:
@@ -169,6 +171,8 @@ class _UuidKeysMixin(object):
         return uuid.uuid4()
 
     def _serialize_key(self, key):
+        assert key is None or isinstance(key, uuid.UUID)
+
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
         if key:
@@ -177,6 +181,8 @@ class _UuidKeysMixin(object):
             return b''
 
     def _deserialize_key(self, data):
+        assert data is None or type(data) == six.binary_type
+
         if data:
             return uuid.UUID(bytes=data)
         else:
@@ -185,23 +191,39 @@ class _UuidKeysMixin(object):
 
 class _UuidUuidKeysMixin(object):
     def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        assert isinstance(key1, uuid.UUID)
+        assert isinstance(key2, uuid.UUID)
+
         return key1.bytes + key2.bytes
 
     def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 32
+
         data1, data2 = data[0:16], data[16:32]
         return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
 
 
 class _UuidStringKeysMixin(object):
     def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        assert isinstance(key1, uuid.UUID)
+        assert type(key2) == six.text_type
+
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
         return key1.bytes + key2.encode('utf8')
 
     def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 16
         data1, data2 = data[:16], data[16:]
+
         return uuid.UUID(bytes=data1), data2.decode('utf8')
 
 
@@ -209,14 +231,18 @@ class _SlotUuidKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
         assert type(key1) in six.integer_types
         assert key1 >= 0 and key1 < 2**16
         assert isinstance(key2, uuid.UUID)
+
         return struct.pack('>H', key1) + key2.bytes
 
     def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
         assert len(data) == (2 + 16)
         data1, data2 = data[:2], data[2:]
+
         return struct.unpack('>H', data1)[0], uuid.UUID(bytes=data2)
 
 
