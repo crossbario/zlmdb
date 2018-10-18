@@ -614,3 +614,48 @@ class MapOidFlatBuffers(_types._OidKeysMixin, _types._FlatBuffersValuesMixin, Pe
     def __init__(self, slot=None, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
+class MapOidOidSet(_types._OidKeysMixin, _types._OidSetValuesMixin, PersistentMap):
+    """
+    Persistent map with OID (uint64) keys and OID-set (set of unique uint64) values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapOidStringOid(_types._OidStringKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, string) keys and OID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapOidOidOid(_types._OidOidKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, OID) keys and OID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapOidTimestampOid(_types._OidTimestampKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, Timestamp) keys and OID values, where Timestamp is a np.datetime64[ns].
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapOidTimestampStringOid(_types._OidTimestampStringKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, Timestamp, String) keys and OID values, where Timestamp is a np.datetime64[ns].
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)

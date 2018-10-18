@@ -55,10 +55,32 @@ import pickle
 import os
 import uuid
 import json
+import time
 
 import six
 import cbor2
 import flatbuffers
+
+try:
+    import numpy as np
+except ImportError:
+    HAS_NUMPY = False
+else:
+    HAS_NUMPY = True
+
+# time_ns: epoch time in ns, corresponds to pandas.Timestamp or numpy.datetime64[ns]
+# perf_counter_ns: hardware time in ns, use only in relative terms
+try:
+    # python 3.7
+    time_ns = time.time_ns
+    perf_counter_ns = time.perf_counter_ns
+except AttributeError:
+    # python 3
+    def time_ns():
+        return int(time.time() * 1000000000.)
+
+    def perf_counter_ns():
+        return int(time.perf_counter() * 1000000000.)
 
 
 class _OidKeysMixin(object):
@@ -112,6 +134,81 @@ class _OidOidKeysMixin(object):
     def _deserialize_key(self, data):
         assert len(data) == 16
         return struct.unpack('>QQ', data)
+
+
+class _OidTimestampKeysMixin(object):
+    @staticmethod
+    def new_key(secure=False):
+        return _OidKeysMixin.new_key(secure=secure), 0
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple
+        assert len(keys) == 2
+        key1, key2 = keys
+        assert type(key1) in six.integer_types
+        assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
+        assert isinstance(key2, np.datetime64)
+        return struct.pack('>Q', key1) + key2.tobytes()
+
+    def _deserialize_key(self, data):
+        assert len(data) == 16
+        key1, key2 = struct.unpack('>QQ', data)
+        key2 = np.datetime64(key2, 'ns')
+        return key1, key2
+
+
+class _OidTimestampStringKeysMixin(object):
+    @staticmethod
+    def new_key(secure=False):
+        return _OidKeysMixin.new_key(secure=secure), 0, ''
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple
+        assert len(keys) == 3
+        key1, key2, key3 = keys
+        assert type(key1) in six.integer_types
+        assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
+        assert isinstance(key2, np.datetime64)
+        assert type(key3) == six.text_type
+        return struct.pack('>Q', key1) + key2.tobytes() + key3.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) >= 16
+
+        oid, ts = struct.unpack('>QQ', data[:16])
+        ts = np.datetime64(ts, 'ns')
+        if len(data) > 16:
+            s = data[16:]
+        else:
+            s = ''
+        return oid, ts, s
+
+
+class _OidStringKeysMixin(object):
+    @staticmethod
+    def new_key(secure=False):
+        return _OidKeysMixin.new_key(secure=secure), ''
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) in six.integer_types
+        assert type(key2) == six.text_type
+
+        return struct.pack('>Q', key1) + key2.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) >= 8
+        oid = struct.unpack('>Q', data[:8])
+        if len(data) > 8:
+            data = data[8:]
+            s = data.decode('utf8')
+        else:
+            s = ''
+        return oid, s
 
 
 class _StringKeysMixin(object):

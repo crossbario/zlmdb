@@ -59,43 +59,80 @@ from ._pmap import PersistentMap, \
                    MapOidJson, \
                    MapOidCbor, \
                    MapOidPickle, \
-                   MapOidFlatBuffers
+                   MapOidFlatBuffers, \
+                   MapOidOidSet, \
+                   MapOidStringOid, \
+                   MapOidOidOid, \
+                   MapOidTimestampOid, \
+                   MapOidTimestampStringOid
 
 from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database
 from ._schema import Schema
+from ._types import perf_counter_ns, time_ns
 
 __all__ = (
     '__version__',
+    'perf_counter_ns',
+    'time_ns',
     'Schema',
     'Database',
     'Transaction',
     'TransactionStats',
     'walltime',
     'MapSlotUuidUuid',
+
+    #
+    # UUID pmaps
+    #
+
+    # UUID (uint128) based pmap types for object containers
     'MapUuidString',
     'MapUuidOid',
-    'MapUuidUuid',
     'MapUuidJson',
     'MapUuidCbor',
     'MapUuidPickle',
     'MapUuidFlatBuffers',
-    'MapUuidStringUuid',
+
+    # UUID (uint128) based pmap types for indexes
+    'MapUuidUuid',
     'MapUuidUuidSet',
-    'MapStringString',
-    'MapStringOid',
+    'MapUuidStringUuid',
+
+    #
+    # String pmaps
+    #
+
+    # String (utf8) based pmap types for object containers
     'MapStringUuid',
+    'MapStringOid',
     'MapStringJson',
     'MapStringCbor',
     'MapStringPickle',
     'MapStringFlatBuffers',
+
+    # String (utf8) based pmap types for indexes
+    'MapStringString',
+
+    #
+    # OID pmaps
+    #
+
+    # OID (uint64) based pmap types for object containers
     'MapOidString',
-    'MapOidOid',
     'MapOidUuid',
     'MapOidJson',
     'MapOidCbor',
     'MapOidPickle',
     'MapOidFlatBuffers',
+
+    # OID (uint64) based pmap types for indexes
+    'MapOidOid',
+    'MapOidOidSet',
+    'MapOidStringOid',
+    'MapOidOidOid',
+    'MapOidTimestampOid',
+    'MapOidTimestampStringOid',
 )
 
 TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]
