@@ -319,11 +319,10 @@ class Database(object):
 
     def __enter__(self):
         # temporary managed context entered ..
-        assert self._env is None
-
-        # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
-        self._env = lmdb.open(
-            self._dbfile, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True)
+        if not self._env:
+            # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
+            self._env = lmdb.open(
+                self._dbfile, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):

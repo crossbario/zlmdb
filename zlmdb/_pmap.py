@@ -285,8 +285,13 @@ class PersistentMap(MutableMapping):
         assert limit is None or type(limit) == int and limit > 0 and limit < 1000000
 
         return PersistentMapIterator(
-            txn, self, from_key=from_key, to_key=to_key, return_keys=return_keys,
-            return_values=return_values, limit=limit)
+            txn,
+            self,
+            from_key=from_key,
+            to_key=to_key,
+            return_keys=return_keys,
+            return_values=return_values,
+            limit=limit)
 
     def count(self, txn, prefix=None):
         """
