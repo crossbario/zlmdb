@@ -70,11 +70,11 @@ else:
 
 # time_ns: epoch time in ns, corresponds to pandas.Timestamp or numpy.datetime64[ns]
 # perf_counter_ns: hardware time in ns, use only in relative terms
-try:
+if hasattr(time, 'time_ns'):
     # python 3.7
     time_ns = time.time_ns
     perf_counter_ns = time.perf_counter_ns
-except AttributeError:
+else:
     # python 3
     def time_ns():
         return int(time.time() * 1000000000.)

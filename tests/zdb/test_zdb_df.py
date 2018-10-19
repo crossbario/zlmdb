@@ -54,23 +54,23 @@ def main(reactor):
         print('Using temporary directory {} for database'.format(dbpath))
 
         schema = MySchema()
+        db = zlmdb.Database(dbpath)
 
-        with zlmdb.Database(dbpath) as db:
-            # WRITE some native pandas data frames to zlmdb
-            with db.begin(write=True) as txn:
-                for i in range(10):
-                    if i % 2:
-                        key = 'key{}'.format(i)
-                        value = pd.DataFrame(np.random.randn(8, 4),
-                                             columns=['A','B','C','D'])
-                        schema.samples[txn, key] = value
-
-            # READ back native pandas data frames from zlmdb
-            with db.begin() as txn:
-                for i in range(10):
+        # WRITE some native pandas data frames to zlmdb
+        with db.begin(write=True) as txn:
+            for i in range(10):
+                if i % 2:
                     key = 'key{}'.format(i)
-                    value = schema.samples[txn, key]
-                    print('key={} : value=\n{}'.format(key, value))
+                    value = pd.DataFrame(np.random.randn(8, 4),
+                                         columns=['A','B','C','D'])
+                    schema.samples[txn, key] = value
+
+        # READ back native pandas data frames from zlmdb
+        with db.begin() as txn:
+            for i in range(10):
+                key = 'key{}'.format(i)
+                value = schema.samples[txn, key]
+                print('key={} : value=\n{}'.format(key, value))
 
     yield util.sleep(1)
 
