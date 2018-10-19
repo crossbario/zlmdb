@@ -162,12 +162,7 @@ class Slot(ConfigurationElement):
         creator = data.get('creator', None)
 
         drvd_obj = Slot(
-            oid=obj.oid,
-            name=obj.name,
-            description=obj.description,
-            tags=obj.tags,
-            slot=slot,
-            creator=creator)
+            oid=obj.oid, name=obj.name, description=obj.description, tags=obj.tags, slot=slot, creator=creator)
         return drvd_obj
 
 
@@ -426,9 +421,7 @@ class Database(object):
                 self._slots_by_index[slot.oid] = slot_index
 
             self.log.debug(
-                'Wrote metadata for table <{oid}> to slot {slot_index:03d}',
-                oid=slot.oid,
-                slot_index=slot_index)
+                'Wrote metadata for table <{oid}> to slot {slot_index:03d}', oid=slot.oid, slot_index=slot_index)
         else:
             with self.begin(write=True) as txn:
                 result = txn.get(key)
@@ -440,9 +433,7 @@ class Database(object):
                     del self._slots_by_index[slot.oid]
 
             self.log.debug(
-                'Deleted metadata for table <{oid}> from slot {slot_index:03d}',
-                oid=slot.oid,
-                slot_index=slot_index)
+                'Deleted metadata for table <{oid}> from slot {slot_index:03d}', oid=slot.oid, slot_index=slot_index)
 
     def attach_table(self, klass):
         """
