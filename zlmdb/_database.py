@@ -267,7 +267,7 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, dbfile=None, dbschema=None, maxsize=10485760, readonly=False, sync=True):
+    def __init__(self, dbfile=None, dbschema=None, maxsize=10485760, readonly=False, sync=True, open=True):
         """
 
         :param dbfile: LMDB database file path.
@@ -309,9 +309,13 @@ class Database(object):
         self._slots = None
         self._slots_by_index = None
 
-        # context manager environment we initialize with LMDB handle
+        # in a context manager environment we initialize with LMDB handle
         # when we enter the actual temporary, managed context ..
         self._env = None
+
+        # in a direct run environment, we immediately open LMDB
+        if open:
+            self.__enter__()
 
     def __enter__(self):
         # temporary managed context entered ..

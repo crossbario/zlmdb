@@ -51,7 +51,7 @@ else:
 
 
 class PersistentMapIterator(object):
-    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True):
+    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True, limit=None):
         self._txn = txn
         self._pmap = pmap
 
@@ -67,6 +67,9 @@ class PersistentMapIterator(object):
         self._return_keys = return_keys
         self._return_values = return_values
 
+        self._limit = limit
+        self._read = 0
+
         self._cursor = None
         self._found = None
 
@@ -76,8 +79,10 @@ class PersistentMapIterator(object):
         return self
 
     def __next__(self):
-        if not self._found:
+        if not self._found or (self._limit and self._read >= self._limit):
             raise StopIteration
+
+        self._read += 1
 
         _key = self._cursor.key()
         if _key >= self._to_key:
@@ -266,7 +271,7 @@ class PersistentMap(MutableMapping):
     def __iter__(self):
         raise Exception('not implemented')
 
-    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True):
+    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True, limit=None):
         """
 
         :param txn:
@@ -274,10 +279,14 @@ class PersistentMap(MutableMapping):
         :param to_key:
         :param return_keys:
         :param return_values:
+        :param limit:
         :return:
         """
+        assert limit is None or type(limit) == int and limit > 0 and limit < 1000000
+
         return PersistentMapIterator(
-            txn, self, from_key=from_key, to_key=to_key, return_keys=return_keys, return_values=return_values)
+            txn, self, from_key=from_key, to_key=to_key, return_keys=return_keys,
+            return_values=return_values, limit=limit)
 
     def count(self, txn, prefix=None):
         """
