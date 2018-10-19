@@ -48,12 +48,13 @@ os.environ['LMDB_FORCE_CFFI'] = '1'
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
+    'txaio>=18.8.1',
     'click>=6.7',
     'cbor2>=4.1.0',
     'lmdb>=0.92',
     'pynacl>=1.1.2',
     'cbor2>=4.1.0',
-    'pyyaml>=3.13'
+    'pyyaml>=3.13',
 ]
 
 setup_requirements = ['pytest-runner', ]

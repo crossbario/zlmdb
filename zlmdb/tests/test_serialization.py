@@ -34,9 +34,11 @@ import platform
 
 import humanize
 
-from zlmdb import _types
+import txaio
+txaio.use_twisted()
 
-from _schema_fbs import User as UserFbs
+from zlmdb import _types  # noqa
+from _schema_fbs import User as UserFbs  # noqa
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

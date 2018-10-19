@@ -30,12 +30,15 @@ import os
 import sys
 import random
 
+import txaio
+txaio.use_twisted()
+
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
     from backports.tempfile import TemporaryDirectory
 
-import zlmdb
+import zlmdb  # noqa
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

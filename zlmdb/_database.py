@@ -38,13 +38,19 @@ import lmdb
 import yaml
 import cbor2
 
-from twisted.python.reflect import qual
-
-import txaio
-
 from zlmdb._transaction import Transaction
 from zlmdb import _pmap
 from zlmdb._pmap import MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
+
+import txaio
+
+try:
+    from twisted.python.reflect import qual
+except ImportError:
+
+    def qual(klass):
+        return klass.__name__
+
 
 KV_TYPE_TO_CLASS = {
     'string-json': (MapStringJson, lambda x: x, lambda x: x),
@@ -261,8 +267,6 @@ class Database(object):
     the Python context manager interface.
     """
 
-    log = txaio.make_logger()
-
     def __init__(self, dbfile=None, dbschema=None, maxsize=10485760, readonly=False, sync=True):
         """
 
@@ -286,6 +290,8 @@ class Database(object):
         assert type(maxsize) in six.integer_types
         assert type(readonly) == bool
         assert type(sync) == bool
+
+        self.log = txaio.make_logger()
 
         if dbfile:
             self._is_temp = False

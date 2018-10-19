@@ -34,7 +34,10 @@ try:
 except ImportError:
     from backports.tempfile import TemporaryDirectory
 
-import zlmdb
+import txaio
+txaio.use_twisted()
+
+import zlmdb  # noqa
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

@@ -30,7 +30,10 @@ import sys
 import os
 import pytest
 
-import zlmdb
+import txaio
+txaio.use_twisted()
+
+import zlmdb  # noqa
 
 try:
     from tempfile import TemporaryDirectory
