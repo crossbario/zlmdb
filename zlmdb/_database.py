@@ -267,41 +267,39 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, dbfile=None, dbschema=None, maxsize=10485760, readonly=False, sync=True, open=True):
+    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, sync=True, open=True):
         """
 
-        :param dbfile: LMDB database file path.
-        :type dbfile: str
+        :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
+            If no database exists at the given path, create a new one.
+        :type dbpath: str
 
-        :param dbschema: Database schema file to use.
-        :type dbschema: str
-
-        :param maxsize: Database size limit in bytes (default: 1MB).
+        :param maxsize: Database size limit in bytes, with a default of 1MB.
         :type maxsize: int
 
-        :param read_only: Open database read-only.
+        :param read_only: Open database read-only. When ``True``, deny any modifying database operations.
+            Note that the LMDB lock file (``lock.mdb``) still needs to be written (by readers also),
+            and hence at the filesystem level, a LMDB database directory must be writable.
         :type read_only: bool
 
-        :param sync: Open database with sync on commit (default: true).
+        :param sync: Open database with sync on commit.
         :type sync: bool
         """
-        assert dbfile is None or type(dbfile) == str
-        assert dbschema is None or isinstance(dbschema, Schema)
+        assert dbpath is None or type(dbpath) == str
         assert type(maxsize) in six.integer_types
         assert type(readonly) == bool
         assert type(sync) == bool
 
         self.log = txaio.make_logger()
 
-        if dbfile:
+        if dbpath:
             self._is_temp = False
-            self._dbfile = dbfile
+            self._dbpath = dbpath
         else:
             self._is_temp = True
             self._tempdir = tempfile.TemporaryDirectory()
-            self._dbfile = self._tempdir.name
+            self._dbpath = self._tempdir.name
 
-        self._dbschema = dbschema
         self._maxsize = maxsize
         self._readonly = readonly
         self._sync = sync
@@ -321,8 +319,9 @@ class Database(object):
         # temporary managed context entered ..
         if not self._env:
             # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
+            # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
             self._env = lmdb.open(
-                self._dbfile, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True)
+                self._dbpath, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True, lock=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -331,13 +330,21 @@ class Database(object):
         self._env.close()
         self._env = None
 
+    @property
+    def is_readonly(self):
+        return self._readonly
+
+    @property
+    def is_open(self):
+        return self._env is not None
+
     @staticmethod
-    def scratch(dbfile):
-        if os.path.exists(dbfile):
-            if os.path.isdir(dbfile):
-                shutil.rmtree(dbfile)
+    def scratch(dbpath):
+        if os.path.exists(dbpath):
+            if os.path.isdir(dbpath):
+                shutil.rmtree(dbpath)
             else:
-                os.remove(dbfile)
+                os.remove(dbpath)
 
     def begin(self, write=False, stats=None):
         assert self._env is not None
