@@ -139,7 +139,8 @@ class _OidOidKeysMixin(object):
 class _Oid3KeysMixin(object):
     @staticmethod
     def new_key(secure=False):
-        return _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure)
+        return _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(
+            secure=secure)
 
     def _serialize_key(self, keys):
         assert type(keys) == tuple
