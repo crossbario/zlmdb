@@ -61,6 +61,7 @@ from ._pmap import PersistentMap, \
                    MapOidPickle, \
                    MapOidFlatBuffers, \
                    MapOidOidFlatBuffers, \
+                   MapOid3FlatBuffers, \
                    MapOidOidSet, \
                    MapOidStringOid, \
                    MapOidOidOid, \
@@ -127,6 +128,7 @@ __all__ = (
     'MapOidPickle',
     'MapOidFlatBuffers',
     'MapOidOidFlatBuffers',
+    'MapOid3FlatBuffers',
 
     # OID (uint64) based pmap types for indexes
     'MapOidOid',

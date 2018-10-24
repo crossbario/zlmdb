@@ -136,6 +136,28 @@ class _OidOidKeysMixin(object):
         return struct.unpack('>QQ', data)
 
 
+class _Oid3KeysMixin(object):
+    @staticmethod
+    def new_key(secure=False):
+        return _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure), _OidKeysMixin.new_key(secure=secure)
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple
+        assert len(keys) == 3
+        key1, key2, key3 = keys
+        assert type(key1) in six.integer_types
+        assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
+        assert type(key2) in six.integer_types
+        assert key2 >= 0 and key2 <= _OidKeysMixin.MAX_OID
+        assert type(key3) in six.integer_types
+        assert key3 >= 0 and key3 <= _OidKeysMixin.MAX_OID
+        return struct.pack('>QQQ', key1, key2, key3)
+
+    def _deserialize_key(self, data):
+        assert len(data) == 24
+        return struct.unpack('>QQQ', data)
+
+
 class _OidTimestampKeysMixin(object):
     @staticmethod
     def new_key(secure=False):

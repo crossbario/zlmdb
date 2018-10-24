@@ -640,6 +640,16 @@ class MapOidOidFlatBuffers(_types._OidOidKeysMixin, _types._FlatBuffersValuesMix
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
+class MapOid3FlatBuffers(_types._Oid3KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, OID, OID) / (uint64, uint64, uint64) keys and FlatBuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
 class MapOidOidSet(_types._OidKeysMixin, _types._OidSetValuesMixin, PersistentMap):
     """
     Persistent map with OID (uint64) keys and OID-set (set of unique uint64) values.
