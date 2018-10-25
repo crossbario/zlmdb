@@ -295,10 +295,16 @@ class PersistentMap(MutableMapping):
 
     def count(self, txn, prefix=None):
         """
+        Count number of records in the persistent map. When no prefix
+        is given, the total number of records is returned. When a prefix
+        is given, only the number of records with keys that have this
+        prefix are counted.
 
-        :param txn:
-        :param prefix:
-        :return:
+        :param txn: The transaction in which to run.
+        :param prefix: The key prefix of records to count.
+
+        :returns: The number of records.
+        :rtype: int
         """
         key_from = struct.pack('>H', self._slot)
         if prefix:
@@ -312,6 +318,32 @@ class PersistentMap(MutableMapping):
             _key = cursor.key()
             _prefix = _key[:kfl]
             if _prefix != key_from:
+                break
+            cnt += 1
+            has_more = cursor.next()
+
+        return cnt
+
+    def count_range(self, txn, from_key, to_key):
+        """
+        Counter number of records in the perstistent map with keys
+        within the given range.
+
+        :param txn: The transaction in which to run.
+        :param from_key: Count records starting and including from this key.
+        :param to_key: End counting records berfore this key.
+
+        :returns: The number of records.
+        :rtype: int
+        """
+        key_from = struct.pack('>H', self._slot) + self._serialize_key(from_key)
+        to_key = struct.pack('>H', self._slot) + self._serialize_key(to_key)
+
+        cnt = 0
+        cursor = txn._txn.cursor()
+        has_more = cursor.set_range(key_from)
+        while has_more:
+            if cursor.key() >= to_key:
                 break
             cnt += 1
             has_more = cursor.next()
