@@ -24,29 +24,6 @@
 #
 ###############################################################################
 
-# Persistent map key-value types
-#
-# Key sizes must be between 1 and mdb_env_get_maxkeysize() inclusive. The same applies to data sizes
-# in databases with the MDB_DUPSORT flag. Other data items can in theory be from 0 to 0xffffffff bytes long.
-#
-# see: http://www.lmdb.tech/doc/group__mdb.html#structMDB__val
-
-#
-# Key Types:
-#
-#  * OID (64 bit)
-#  * UUID (128 bit)
-#  * SHA256 (256 bit)
-#  * String (arbitrary length)
-#
-#  * OID-OID
-#  * OID-UUID
-#  * OID-String
-#
-#  * UUID-OID
-#  * UUID-UUID
-#  * UUID-String
-
 from __future__ import absolute_import
 
 import struct
@@ -81,6 +58,11 @@ else:
 
     def perf_counter_ns():
         return int(time.perf_counter() * 1000000000.)
+
+
+#
+# Key Types
+#
 
 
 class _OidKeysMixin(object):
@@ -367,7 +349,7 @@ class _SlotUuidKeysMixin(object):
 
 
 #
-# Value Types: String, OID, UUID, JSON, CBOR, Pickle, FlatBuffers
+# Value Types
 #
 
 
