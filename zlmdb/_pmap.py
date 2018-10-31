@@ -51,7 +51,8 @@ else:
 
 
 class PersistentMapIterator(object):
-    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True, limit=None):
+
+    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True, reverse=False, limit=None):
         self._txn = txn
         self._pmap = pmap
 
@@ -64,6 +65,8 @@ class PersistentMapIterator(object):
         else:
             self._to_key = struct.pack('>H', pmap._slot + 1)
 
+        self._reverse = reverse
+
         self._return_keys = return_keys
         self._return_values = return_values
 
@@ -75,19 +78,36 @@ class PersistentMapIterator(object):
 
     def __iter__(self):
         self._cursor = self._txn._txn.cursor()
-        self._found = self._cursor.set_range(self._from_key)
+
+        # https://lmdb.readthedocs.io/en/release/#lmdb.Cursor.set_range
+        if self._reverse:
+            # seek to the first record starting from to_key (and going reverse)
+            self._found = self._cursor.set_range(self._to_key)
+            if self._found:
+                # to_key is _not_ inclusive, so we move on one record
+                self._found = self._cursor.prev()
+        else:
+            # seek to the first record starting from from_key
+            self._found = self._cursor.set_range(self._from_key)
+
         return self
 
     def __next__(self):
+        # stop criteria: no more records or limit reached
         if not self._found or (self._limit and self._read >= self._limit):
             raise StopIteration
-
         self._read += 1
 
+        # stop criteria: end of key-range reached
         _key = self._cursor.key()
-        if _key >= self._to_key:
-            raise StopIteration
+        if self._reverse:
+            if _key < self._from_key:
+                raise StopIteration
+        else:
+            if _key >= self._to_key:
+                raise StopIteration
 
+        # read actual app key-value (before moving cursor)
         _key = self._pmap._deserialize_key(_key[2:])
 
         if self._return_values:
@@ -99,8 +119,13 @@ class PersistentMapIterator(object):
         else:
             _data = None
 
-        self._found = self._cursor.next()
+        # move the cursor
+        if self._reverse:
+            self._found = self._cursor.prev()
+        else:
+            self._found = self._cursor.next()
 
+        # return app key-value
         if self._return_keys and self._return_values:
             return _key, _data
         elif self._return_values:
@@ -114,21 +139,43 @@ class PersistentMapIterator(object):
 
 
 class Index(object):
+    """
+    Holds book keeping info for indexes on tables (pmaps).
+    """
+
     def __init__(self, name, fkey, pmap):
+        """
+
+        :param name:
+        :param fkey:
+        :param pmap:
+        """
         self._name = name
         self._fkey = fkey
         self._pmap = pmap
 
     @property
     def name(self):
+        """
+
+        :return:
+        """
         return self._name
 
     @property
     def fkey(self):
+        """
+
+        :return:
+        """
         return self._fkey
 
     @property
     def pmap(self):
+        """
+
+        :return:
+        """
         return self._pmap
 
 
@@ -206,6 +253,20 @@ class PersistentMap(MutableMapping):
     def _deserialize_value(self, data):
         raise Exception('must be implemented in derived class')
 
+    def __contains__(self, txn_key):
+        """
+
+        :param txn_key:
+        :return:
+        """
+        assert type(txn_key) == tuple and len(txn_key) == 2
+        txn, key = txn_key
+
+        _key = struct.pack('>H', self._slot) + self._serialize_key(key)
+        _data = txn.get(_key)
+
+        return _data is not None
+
     def __getitem__(self, txn_key):
         """
 
@@ -266,23 +327,39 @@ class PersistentMap(MutableMapping):
         # FIXME: delete entries from indexes
 
     def __len__(self):
-        raise Exception('not implemented')
+        raise NotImplementedError()
 
     def __iter__(self):
-        raise Exception('not implemented')
+        raise NotImplementedError()
 
-    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True, limit=None):
+    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True, reverse=False, limit=None):
         """
+        Select all records (key-value pairs) in table, optionally within a given key range.
 
-        :param txn:
-        :param from_key:
-        :param to_key:
-        :param return_keys:
-        :param return_values:
-        :param limit:
+        :param txn: The transaction in which to run.
+        :type txn: :class:`zlmdb.Transaction`
+
+        :param from_key: Return records starting from (and including) this key.
+        :type from_key: object
+
+        :param to_key: Return records up to (but not including) this key.
+        :type to_key: object
+
+        :param return_keys: If ``True`` (default), return keys of records.
+        :type return_keys: bool
+
+        :param return_values: If ``True`` (default), return values of records.
+        :type return_values: bool
+
+        :param limit: Limit number of records returned.
+        :type limit: int
+
         :return:
         """
-        assert limit is None or type(limit) == int and limit > 0 and limit < 1000000
+        assert type(return_keys) == bool
+        assert type(return_values) == bool
+        assert type(reverse) == bool
+        assert limit is None or (type(limit) == int and limit > 0 and limit < 10000000)
 
         return PersistentMapIterator(
             txn,
@@ -291,6 +368,7 @@ class PersistentMap(MutableMapping):
             to_key=to_key,
             return_keys=return_keys,
             return_values=return_values,
+            reverse=reverse,
             limit=limit)
 
     def count(self, txn, prefix=None):
@@ -301,7 +379,10 @@ class PersistentMap(MutableMapping):
         prefix are counted.
 
         :param txn: The transaction in which to run.
+        :type txn: :class:`zlmdb.Transaction`
+
         :param prefix: The key prefix of records to count.
+        :type prefix: object
 
         :returns: The number of records.
         :rtype: int
@@ -330,8 +411,13 @@ class PersistentMap(MutableMapping):
         within the given range.
 
         :param txn: The transaction in which to run.
+        :type txn: :class:`zlmdb.Transaction`
+
         :param from_key: Count records starting and including from this key.
-        :param to_key: End counting records berfore this key.
+        :type from_key: object
+
+        :param to_key: End counting records before this key.
+        :type to_key: object
 
         :returns: The number of records.
         :rtype: int
@@ -716,6 +802,16 @@ class MapOidTimestampOid(_types._OidTimestampKeysMixin, _types._OidValuesMixin, 
 
     def __init__(self, slot=None, compress=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapOidTimestampFlatBuffers(_types._OidTimestampKeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (OID, Timestamp) keys and Flatbuffers values, where Timestamp is a np.datetime64[ns].
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
 class MapOidTimestampStringOid(_types._OidTimestampStringKeysMixin, _types._OidValuesMixin, PersistentMap):

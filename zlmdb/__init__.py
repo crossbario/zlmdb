@@ -66,6 +66,7 @@ from ._pmap import PersistentMap, \
                    MapOidStringOid, \
                    MapOidOidOid, \
                    MapOidTimestampOid, \
+                   MapOidTimestampFlatBuffers, \
                    MapOidTimestampStringOid
 
 from ._transaction import Transaction, TransactionStats, walltime
@@ -128,6 +129,7 @@ __all__ = (
     'MapOidPickle',
     'MapOidFlatBuffers',
     'MapOidOidFlatBuffers',
+    'MapOidTimestampFlatBuffers',
     'MapOid3FlatBuffers',
 
     # OID (uint64) based pmap types for indexes
