@@ -51,8 +51,15 @@ else:
 
 
 class PersistentMapIterator(object):
-
-    def __init__(self, txn, pmap, from_key=None, to_key=None, return_keys=True, return_values=True, reverse=False, limit=None):
+    def __init__(self,
+                 txn,
+                 pmap,
+                 from_key=None,
+                 to_key=None,
+                 return_keys=True,
+                 return_values=True,
+                 reverse=False,
+                 limit=None):
         self._txn = txn
         self._pmap = pmap
 

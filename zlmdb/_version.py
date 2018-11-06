@@ -26,4 +26,4 @@
 
 from __future__ import absolute_import
 
-__version__ = u'18.10.3-dev'
+__version__ = u'18.11.1'
