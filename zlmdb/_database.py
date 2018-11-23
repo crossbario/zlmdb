@@ -267,7 +267,7 @@ class Database(object):
     the Python context manager interface.
     """
 
-    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, sync=True, open=True):
+    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, sync=True, open=True, log=None):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
@@ -290,7 +290,12 @@ class Database(object):
         assert type(readonly) == bool
         assert type(sync) == bool
 
-        self.log = txaio.make_logger()
+        if log:
+            self.log = log
+        else:
+            if not txaio._explicit_framework:
+                txaio.use_asyncio()
+            self.log = txaio.make_logger()
 
         if dbpath:
             self._is_temp = False
