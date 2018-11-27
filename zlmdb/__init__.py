@@ -67,7 +67,10 @@ from ._pmap import PersistentMap, \
                    MapOidOidOid, \
                    MapOidTimestampOid, \
                    MapOidTimestampFlatBuffers, \
-                   MapOidTimestampStringOid
+                   MapOidTimestampStringOid, \
+                   MapBytes32FlatBuffers, \
+                   MapBytes32Bytes32FlatBuffers, \
+                   MapBytes32StringFlatBuffers
 
 from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database

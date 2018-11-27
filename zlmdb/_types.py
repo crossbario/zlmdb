@@ -348,6 +348,68 @@ class _SlotUuidKeysMixin(object):
         return struct.unpack('>H', data1)[0], uuid.UUID(bytes=data2)
 
 
+class _Bytes32KeysMixin(object):
+
+    @staticmethod
+    def new_key():
+        return os.urandom(32)
+
+    def _serialize_key(self, key):
+        assert key is None or type(key) == six.binary_type
+        if key:
+            return key
+        else:
+            return b'\x00' * 32
+
+    def _deserialize_key(self, data):
+        assert data is None or type(data) == six.binary_type
+        if data:
+            return data
+        else:
+            return None
+
+
+class _Bytes32Bytes32KeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.binary_type
+        assert len(key1) == 32
+
+        assert type(key2) == six.binary_type
+        assert len(key2) == 32
+
+        return key1 + key2
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 64
+
+        data1, data2 = data[0:32], data[32:64]
+        return data1, data2
+
+
+class _Bytes32StringKeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.binary_type
+        assert len(key1) == 32
+
+        assert type(key2) == six.text_type
+
+        return key1 + key2.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 32
+        data1, data2 = data[:32], data[32:]
+
+        return data1, data2.decode('utf8')
+
+
 #
 # Value Types
 #
