@@ -142,6 +142,13 @@ __all__ = (
     'MapOidOidOid',
     'MapOidTimestampOid',
     'MapOidTimestampStringOid',
+
+    #
+    # Bytes32 pmaps
+    #
+    'MapBytes32FlatBuffers',
+    'MapBytes32Bytes32FlatBuffers',
+    'MapBytes32StringFlatBuffers',
 )
 
 TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]

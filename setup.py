@@ -30,7 +30,7 @@
 """The setup script."""
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open('zlmdb/_version.py') as f:
     exec(f.read())  # defines __version__
@@ -48,20 +48,18 @@ os.environ['LMDB_FORCE_CFFI'] = '1'
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'txaio>=18.8.1',
-    'click>=6.7',
     'cbor2>=4.1.0',
+    'click>=6.7',
     'lmdb>=0.92',
     'pynacl>=1.1.2',
-    'cbor2>=4.1.0',
     'pyyaml>=3.13',
+    'txaio>=18.8.1',
 ]
 
 setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest', ]
 
-# packages = find_packages(include=['flatbuffers', 'zlmdb'])
 packages = [
     'flatbuffers',
     'zlmdb',
@@ -74,7 +72,7 @@ setup(
     author="Crossbar.io Technologies GmbH",
     author_email='contact@crossbario.com',
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',

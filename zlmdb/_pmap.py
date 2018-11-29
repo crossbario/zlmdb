@@ -835,6 +835,7 @@ class MapOidTimestampStringOid(_types._OidTimestampStringKeysMixin, _types._OidV
 # Value type: FlatBuffers
 #
 
+
 class MapBytes32FlatBuffers(_types._Bytes32KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with Bytes32 keys and Flatbuffers values.

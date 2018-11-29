@@ -349,7 +349,6 @@ class _SlotUuidKeysMixin(object):
 
 
 class _Bytes32KeysMixin(object):
-
     @staticmethod
     def new_key():
         return os.urandom(32)
