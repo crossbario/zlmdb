@@ -169,7 +169,7 @@ def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
     assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
 
     def decorate(o):
-        assert oid not in TABLES_BY_UUID
+        assert oid not in TABLES_BY_UUID, "oid {} already in map (pointing to {})".format(oid, TABLES_BY_UUID[oid])
 
         # slot UUID that is mapped to a slot index later when attaching to db
         o._zlmdb_oid = oid
