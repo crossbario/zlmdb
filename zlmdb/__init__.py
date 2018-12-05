@@ -171,11 +171,15 @@ def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
     def decorate(o):
         if oid in TABLES_BY_UUID:
             assert TABLES_BY_UUID[oid]._zlmdb_oid == oid, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_oid, oid)
-            assert TABLES_BY_UUID[oid]._zlmdb_marshal == marshal, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_marshal, marshal)
-            assert TABLES_BY_UUID[oid]._zlmdb_parse == parse, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_parse, parse)
-            assert TABLES_BY_UUID[oid]._zlmdb_build == build, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_build, build)
+            assert TABLES_BY_UUID[oid]._zlmdb_marshal == marshal, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_marshal, marshal)
+            assert TABLES_BY_UUID[oid]._zlmdb_parse == parse, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_parse,
+                                                                                parse)
+            assert TABLES_BY_UUID[oid]._zlmdb_build == build, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_build,
+                                                                                build)
             assert TABLES_BY_UUID[oid]._zlmdb_cast == cast, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_cast, cast)
-            assert TABLES_BY_UUID[oid]._zlmdb_compress == compress, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_compress, compress)
+            assert TABLES_BY_UUID[oid]._zlmdb_compress == compress, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_compress, compress)
             return
         assert oid not in TABLES_BY_UUID, "oid {} already in map (pointing to {})".format(oid, TABLES_BY_UUID[oid])
 
