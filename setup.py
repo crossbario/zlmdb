@@ -38,9 +38,6 @@ with open('zlmdb/_version.py') as f:
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 # enforce use of CFFI for LMDB
 os.environ['LMDB_FORCE_CFFI'] = '1'
 
@@ -92,7 +89,7 @@ setup(
     },
     install_requires=requirements,
     license="MIT license",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     include_package_data=True,
     keywords='zlmdb',
     name='zlmdb',

@@ -9,8 +9,6 @@ Welcome to ZLMDB's documentation!
    installation
    usage
    performance
-   contributing
-   history
 
 Indices and tables
 ==================
