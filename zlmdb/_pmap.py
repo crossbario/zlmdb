@@ -556,6 +556,15 @@ class MapUuidUuid(_types._UuidKeysMixin, _types._UuidValuesMixin, PersistentMap)
         PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
+class MapUuidUuidCbor(_types._UuidUuidKeysMixin, _types._CborValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, UUID) keys and CBOR values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapUuidStringUuid(_types._UuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, string) keys and UUID values.

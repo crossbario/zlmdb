@@ -45,6 +45,7 @@ from ._pmap import PersistentMap, \
                    MapUuidPickle, \
                    MapUuidFlatBuffers, \
                    MapUuidStringUuid, \
+                   MapUuidUuidCbor, \
                    MapUuidUuidSet, \
                    MapStringString, \
                    MapStringOid, \
@@ -104,6 +105,9 @@ __all__ = (
     'MapUuidUuid',
     'MapUuidUuidSet',
     'MapUuidStringUuid',
+
+    # UUID-UUID based pmap types
+    'MapUuidUuidCbor',
 
     #
     # String pmaps
