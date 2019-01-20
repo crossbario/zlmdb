@@ -172,7 +172,7 @@ class Schema4(zlmdb.Schema):
         self.users = zlmdb.MapOidPickle(1)
 
         self.idx_users_by_authid = zlmdb.MapStringOid(2)
-        self.users.attach_index('idx1', lambda user: user.authid, self.idx_users_by_authid)
+        self.users.attach_index('idx1', self.idx_users_by_authid, lambda user: user.authid)
 
         self.idx_users_by_email = zlmdb.MapStringOid(3)
-        self.users.attach_index('idx2', lambda user: user.email, self.idx_users_by_email)
+        self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email)

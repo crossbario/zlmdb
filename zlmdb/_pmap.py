@@ -223,12 +223,12 @@ class PersistentMap(MutableMapping):
 
         self._indexes = {}
 
-    def attach_index(self, name, fkey, pmap):
+    def attach_index(self, name, pmap, fkey):
         """
 
         :param name:
-        :param fkey:
         :param pmap:
+        :param fkey:
         :return:
         """
         assert type(name) == str
@@ -561,8 +561,9 @@ class MapUuidUuidCbor(_types._UuidUuidKeysMixin, _types._CborValuesMixin, Persis
     Persistent map with (UUID, UUID) keys and CBOR values.
     """
 
-    def __init__(self, slot=None, compress=None):
+    def __init__(self, slot=None, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
 
 
 class MapUuidStringUuid(_types._UuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
