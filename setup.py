@@ -45,11 +45,11 @@ os.environ['LMDB_FORCE_CFFI'] = '1'
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'cbor2>=4.1.0',
-    'click>=6.7',
-    'lmdb>=0.92',
-    'pynacl>=1.1.2',
-    'pyyaml>=3.13',
+    'cbor2>=4.1.2',
+    'click>=7.0',
+    'lmdb>=0.94',
+    'pynacl>=1.3',
+    'pyyaml>=4.2b4',
     'txaio>=18.8.1',
 ]
 
