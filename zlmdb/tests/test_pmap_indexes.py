@@ -83,15 +83,18 @@ def test_fill_with_indexes(testset1):
 
                     assert user == obj
 
-            # check indexes
+            # check unique indexes
             with db.begin() as txn:
                 for user in testset1:
-                    # unique index
                     user_oid = schema.idx_users_by_authid[txn, user.authid]
                     assert user.oid == user_oid
 
-                    # unique index
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user.oid == user_oid
 
-                    # non-unique index
+            # check non-unique indexes
+            with db.begin() as txn:
+                for j in range(10):
+                    user_oids = list(
+                        schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+                    print(user_oids)

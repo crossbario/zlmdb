@@ -209,7 +209,7 @@ class Schema4(zlmdb.Schema):
     idx_users_by_email: zlmdb.MapStringOid
 
     # non-unique index
-    idx_users_by_mrealm: zlmdb.MapOidOid
+    idx_users_by_realm: zlmdb.MapOidOidOid
 
     def __init__(self):
         super(Schema4, self).__init__()
@@ -222,5 +222,5 @@ class Schema4(zlmdb.Schema):
         self.idx_users_by_email = zlmdb.MapStringOid(3)
         self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email)
 
-        self.idx_users_by_mrealm = zlmdb.MapOidOid(4)
-        self.users.attach_index('idx3', self.idx_users_by_mrealm, lambda user: user.realm_oid)
+        self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
+        self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid))
