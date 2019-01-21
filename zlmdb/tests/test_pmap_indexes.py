@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import os
 import sys
 import pytest
-from pprint import pprint
 
 import txaio
 txaio.use_twisted()
@@ -44,44 +43,19 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    from _schema_py3 import User, Schema1, Schema3, Schema4
+    from _schema_py3 import User, Schema4
 else:
-    from _schema_py2 import User, Schema1, Schema3, Schema4
+    from _schema_py2 import User, Schema4
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='module')
 def testset1():
     users = []
-    for j in range(2):
-        for i in range(2):
-            user = User.create_test_user(oid=i + 1, realm_oid=j + 1)
+    for j in range(10):
+        for i in range(100):
+            user = User.create_test_user(oid=j * 100 + i, realm_oid=j)
             users.append(user)
     return users
-
-
-def _test_save_load():
-    with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
-
-        schema = Schema4()
-
-        user = User.create_test_user()
-
-        with zlmdb.Database(dbpath) as db:
-
-            with db.begin(write=True) as txn:
-
-                schema.users[txn, user.oid] = user
-                print('user saved')
-
-                _user = schema.users[txn, user.oid]
-                assert _user
-                assert user == _user
-                print('user loaded')
-
-            print('transaction committed')
-
-        print('database closed')
 
 
 def test_fill_with_indexes(testset1):
@@ -96,21 +70,28 @@ def test_fill_with_indexes(testset1):
 
             with db.begin(write=True, stats=stats) as txn:
                 for user in testset1:
-                    pprint(user.marshal())
                     schema.users[txn, user.oid] = user
 
             # check indexes has been written to (in addition to the table itself)
             num_indexes = 3
             assert stats.puts == len(testset1) * (1 + num_indexes)
 
-            print('*'*100)
-            if True:
-                with db.begin() as txn:
-                    for user in testset1:
-                        obj = schema.users[txn, user.oid]
+            # check saved objects
+            with db.begin() as txn:
+                for user in testset1:
+                    obj = schema.users[txn, user.oid]
 
-                        if user != obj:
-                            pprint(user.marshal())
-                            pprint(obj.marshal())
+                    assert user == obj
 
-                        assert user == obj
+            # check indexes
+            with db.begin() as txn:
+                for user in testset1:
+                    # unique index
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
+                    assert user.oid == user_oid
+
+                    # unique index
+                    user_oid = schema.idx_users_by_email[txn, user.email]
+                    assert user.oid == user_oid
+
+                    # non-unique index

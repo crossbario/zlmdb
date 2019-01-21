@@ -211,7 +211,6 @@ class Schema4(zlmdb.Schema):
     # non-unique index
     idx_users_by_mrealm: zlmdb.MapOidOid
 
-
     def __init__(self):
         super(Schema4, self).__init__()
 
