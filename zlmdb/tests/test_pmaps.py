@@ -51,9 +51,10 @@ else:
 @pytest.fixture(scope='module')
 def testset1():
     users = []
-    for i in range(1000):
-        user = User.create_test_user(i)
-        users.append(user)
+    for j in range(10):
+        for i in range(100):
+            user = User.create_test_user(oid=j * 100 + i, realm_oid=j)
+            users.append(user)
     return users
 
 
@@ -100,6 +101,25 @@ def test_fill_check(testset1):
             with db.begin() as txn:
                 for user in testset1:
                     _user = schema.users[txn, user.authid]
+                    assert _user
+                    assert _user == user
+
+
+def test_fill_check2(testset1):
+    with TemporaryDirectory() as dbpath:
+        print('Using temporary directory {} for database'.format(dbpath))
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+        with zlmdb.Database(dbpath) as db:
+            with db.begin() as txn:
+                for user in testset1:
+                    _user = schema.users[txn, user.oid]
                     assert _user
                     assert _user == user
 
@@ -209,7 +229,7 @@ def test_fill_with_indexes(testset1):
                     schema.users[txn, user.oid] = user
 
             # check indexes has been written to (in addition to the table itself)
-            num_indexes = 2
+            num_indexes = len(schema.users.indexes())
             assert stats.puts == len(testset1) * (1 + num_indexes)
 
 

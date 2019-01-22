@@ -62,6 +62,11 @@ lint: ## check style with flake8
 test-single:
 	clear && pytest -v -s zlmdb/tests/test_basic.py
 
+test-pmaps:
+	clear && pytest -v -s zlmdb/tests/test_pmaps.py
+
+test-indexes:
+	clear && pytest -v -s zlmdb/tests/test_pmap_indexes.py
 
 #
 # test ZLMDB high level API

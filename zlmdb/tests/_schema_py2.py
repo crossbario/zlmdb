@@ -45,6 +45,7 @@ class User(object):
         self.ratings = {}
         self.friends = []
         self.referred_by = None
+        self.realm_id = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -64,6 +65,8 @@ class User(object):
         if other.is_friendly != self.is_friendly:
             return False
         if (self.tags and not other.tags) or (not self.tags and other.tags):
+            return False
+        if other.realm_oid != self.realm_oid:
             return False
         return True
 
@@ -87,6 +90,7 @@ class User(object):
             u'ratings': self.ratings,
             u'friends': self.friends,
             u'referred_by': self.referred_by,
+            u'realm_oid': self.realm_oid
         }
         return obj
 
@@ -107,10 +111,11 @@ class User(object):
         user.ratings = obj.get(u'ratings', {})
         user.friends = obj.get(u'friends', [])
         user.referred_by = obj.get(u'referred_by', None)
+        user.realm_oid = obj.get(u'realm_oid', None)
         return user
 
     @staticmethod
-    def create_test_user(oid=None):
+    def create_test_user(oid=None, realm_oid=None):
         user = User()
         if oid is not None:
             user.oid = oid
@@ -127,6 +132,10 @@ class User(object):
             user.ratings[u'test-rating-{}'.format(j)] = random.random()
         user.friends = [random.randint(0, 9007199254740992) for _ in range(10)]
         user.referred_by = random.randint(0, 9007199254740992)
+        if realm_oid is not None:
+            user.realm_oid = realm_oid
+        else:
+            user.realm_oid = random.randint(0, 9007199254740992)
         return user
 
 
@@ -176,3 +185,6 @@ class Schema4(zlmdb.Schema):
 
         self.idx_users_by_email = zlmdb.MapStringOid(3)
         self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email)
+
+        self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
+        self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid))

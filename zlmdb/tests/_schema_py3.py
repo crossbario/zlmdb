@@ -46,6 +46,7 @@ class User(object):
     ratings: Dict[str, float] = {}
     friends: List[int] = []
     referred_by: int = None
+    realm_oid: int
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -65,6 +66,8 @@ class User(object):
         if other.is_friendly != self.is_friendly:
             return False
         if (self.tags and not other.tags) or (not self.tags and other.tags):
+            return False
+        if other.realm_oid != self.realm_oid:
             return False
         return True
 
@@ -88,6 +91,7 @@ class User(object):
             'ratings': self.ratings,
             'friends': self.friends,
             'referred_by': self.referred_by,
+            'realm_oid': self.realm_oid
         }
         return obj
 
@@ -108,10 +112,11 @@ class User(object):
         user.ratings = obj.get('ratings', {})
         user.friends = obj.get('friends', [])
         user.referred_by = obj.get('referred_by', None)
+        user.realm_oid = obj.get('realm_oid', None)
         return user
 
     @staticmethod
-    def create_test_user(oid=None):
+    def create_test_user(oid=None, realm_oid=None):
         user = User()
         if oid is not None:
             user.oid = oid
@@ -125,9 +130,13 @@ class User(object):
         user.is_friendly = True
         user.tags = ['geek', 'sudoko', 'yellow']
         for j in range(10):
-            user.ratings['test-rating-{}'.format(j)] = random.random()
+            user.ratings['test-rating-{}'.format(j)] = 1 / (j + 1)  # round(random.random(), 3)
         user.friends = [random.randint(0, 9007199254740992) for _ in range(10)]
         user.referred_by = random.randint(0, 9007199254740992)
+        if realm_oid is not None:
+            user.realm_oid = realm_oid
+        else:
+            user.realm_oid = random.randint(0, 9007199254740992)
         return user
 
 
@@ -192,8 +201,15 @@ class Schema3(zlmdb.Schema):
 class Schema4(zlmdb.Schema):
 
     users: zlmdb.MapOidPickle
+
+    # unique index
     idx_users_by_authid: zlmdb.MapStringOid
+
+    # unique index
     idx_users_by_email: zlmdb.MapStringOid
+
+    # non-unique index
+    idx_users_by_realm: zlmdb.MapOidOidOid
 
     def __init__(self):
         super(Schema4, self).__init__()
@@ -205,3 +221,6 @@ class Schema4(zlmdb.Schema):
 
         self.idx_users_by_email = zlmdb.MapStringOid(3)
         self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email)
+
+        self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
+        self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid))
