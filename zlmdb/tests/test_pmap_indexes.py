@@ -97,4 +97,5 @@ def test_fill_with_indexes(testset1):
                 for j in range(10):
                     user_oids = list(
                         schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
-                    print(user_oids)
+
+                    assert list(range(j * 100, (j + 1) * 100)) == user_oids
