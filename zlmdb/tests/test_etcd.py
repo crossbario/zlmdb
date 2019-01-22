@@ -209,7 +209,7 @@ def test_fill_with_indexes(testset1):
                     schema.users[txn, user.oid] = user
 
             # check indexes has been written to (in addition to the table itself)
-            num_indexes = 3
+            num_indexes = len(schema.users.indexes())
             assert stats.puts == len(testset1) * (1 + num_indexes)
 
 

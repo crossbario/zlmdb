@@ -58,9 +58,8 @@ def testset1():
     return users
 
 
-def test_fill_with_indexes(testset1):
+def test_fill_unique_indexes(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
 
         schema = Schema4()
 
@@ -73,7 +72,7 @@ def test_fill_with_indexes(testset1):
                     schema.users[txn, user.oid] = user
 
             # check indexes has been written to (in addition to the table itself)
-            num_indexes = 3
+            num_indexes = len(schema.users.indexes())
             assert stats.puts == len(testset1) * (1 + num_indexes)
 
             # check saved objects
@@ -92,6 +91,20 @@ def test_fill_with_indexes(testset1):
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user.oid == user_oid
 
+
+def test_fill_nonunique_indexes(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
             # check non-unique indexes
             with db.begin() as txn:
                 for j in range(10):
@@ -99,3 +112,103 @@ def test_fill_with_indexes(testset1):
                         schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
 
                     assert list(range(j * 100, (j + 1) * 100)) == user_oids
+
+
+def test_delete_unique_indexes(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    del schema.users[txn, user.oid]
+
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
+                    assert user_oid is None
+
+                    user_oid = schema.idx_users_by_email[txn, user.email]
+                    assert user_oid is None
+
+
+def test_delete_nonunique_indexes(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    del schema.users[txn, user.oid]
+
+            with db.begin() as txn:
+                for j in range(10):
+                    user_oids = list(
+                        schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+
+                    assert [] == user_oids
+
+
+def test_delete_nonunique_indexes2(testset1):
+    # WARNING: quadratic run-time (in testset size)
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+            with db.begin(write=True) as txn:
+                for j in range(10):
+                    fullset = set(range(j * 100, (j + 1) * 100))
+                    for i in range(100):
+                        user_oid = j * 100 + i
+                        del schema.users[txn, user_oid]
+                        fullset.discard(user_oid)
+
+                        user_oids = set(
+                            schema.idx_users_by_realm.select(
+                                txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+
+                        assert fullset == user_oids
+
+
+def test_truncate_table_with_index(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+        stats = zlmdb.TransactionStats()
+
+        with zlmdb.Database(dbpath) as db:
+            with db.begin(write=True, stats=stats) as txn:
+                records = schema.users.truncate(txn)
+
+                assert records == len(testset1) * (len(schema.users.indexes()) + 1)
+
+        assert stats.dels == records
+        assert stats.puts == 0

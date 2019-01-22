@@ -223,6 +223,9 @@ class PersistentMap(MutableMapping):
 
         self._indexes = {}
 
+    def indexes(self):
+        return sorted(self._indexes.keys())
+
     def attach_index(self, name, pmap, fkey):
         """
 
@@ -310,8 +313,10 @@ class PersistentMap(MutableMapping):
         if self._compress:
             _data = self._compress(_data)
 
+        # insert data record
         txn.put(_key, _data)
 
+        # insert records into indexes
         for index in self._indexes.values():
             _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(index.fkey(value))
             _data = index.pmap._serialize_value(key)
@@ -329,9 +334,16 @@ class PersistentMap(MutableMapping):
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
 
-        txn.delete(_key)
+        # delete records from indexes
+        if self._indexes:
+            value = self.__getitem__(txn_key)
+            if value:
+                for index in self._indexes.values():
+                    _idx_key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(index.fkey(value))
+                    txn.delete(_idx_key)
 
-        # FIXME: delete entries from indexes
+        # delete actual data record
+        txn.delete(_key)
 
     def __len__(self):
         raise NotImplementedError()
@@ -564,6 +576,15 @@ class MapUuidUuidCbor(_types._UuidUuidKeysMixin, _types._CborValuesMixin, Persis
     def __init__(self, slot=None, compress=None, marshal=None, unmarshal=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
         _types._CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
+
+
+class MapUuidUuidUuid(_types._UuidUuidKeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, UUID) keys and UUID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
 class MapUuidStringUuid(_types._UuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
