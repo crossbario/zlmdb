@@ -336,6 +336,18 @@ class Database(object):
         self._env = None
 
     @property
+    def dbpath(self):
+        return self._dbpath
+
+    @property
+    def maxsize(self):
+        return self._maxsize
+
+    @property
+    def sync(self):
+        return self._sync
+
+    @property
     def is_readonly(self):
         return self._readonly
 
