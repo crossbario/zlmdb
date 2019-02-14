@@ -54,6 +54,7 @@ class PersistentMapIterator(object):
     """
     Iterator that walks over zLMDB database records.
     """
+
     def __init__(self,
                  txn,
                  pmap,
