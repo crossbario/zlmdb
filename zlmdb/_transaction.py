@@ -49,6 +49,9 @@ else:
 
 
 class TransactionStats(object):
+    """
+    Value class for holding transaction statistics.
+    """
     def __init__(self):
         self.puts = 0
         self.dels = 0
@@ -56,22 +59,37 @@ class TransactionStats(object):
 
     @property
     def started(self):
+        """
+
+        :return:
+        """
         return self._started
 
     @property
     def duration(self):
+        """
+
+        :return:
+        """
         if self._started:
             return walltime() - self._started
         else:
             return 0
 
     def reset(self):
+        """
+
+        :return:
+        """
         self.puts = 0
         self.dels = 0
         self._started = walltime()
 
 
 class Transaction(object):
+    """
+    Transactions in zLMDB are always run under an instance of this class.
+    """
 
     PUT = 1
     DEL = 2
@@ -120,16 +138,32 @@ class Transaction(object):
         self._txn = None
 
     def id(self):
+        """
+
+        :return:
+        """
         assert (self._txn is not None)
 
         return self._txn.id()
 
     def get(self, key):
+        """
+
+        :param key:
+        :return:
+        """
         assert (self._txn is not None)
 
         return self._txn.get(key)
 
     def put(self, key, data, overwrite=True):
+        """
+
+        :param key:
+        :param data:
+        :param overwrite:
+        :return:
+        """
         assert (self._txn is not None)
 
         # store the record, returning True if it was written, or False to indicate the key
@@ -143,6 +177,11 @@ class Transaction(object):
         return was_written
 
     def delete(self, key):
+        """
+
+        :param key:
+        :return:
+        """
         assert (self._txn is not None)
 
         was_deleted = self._txn.delete(key)

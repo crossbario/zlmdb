@@ -51,6 +51,9 @@ else:
 
 
 class PersistentMapIterator(object):
+    """
+    Iterator that walks over zLMDB database records.
+    """
     def __init__(self,
                  txn,
                  pmap,
@@ -60,6 +63,17 @@ class PersistentMapIterator(object):
                  return_values=True,
                  reverse=False,
                  limit=None):
+        """
+
+        :param txn:
+        :param pmap:
+        :param from_key:
+        :param to_key:
+        :param return_keys:
+        :param return_values:
+        :param reverse:
+        :param limit:
+        """
         self._txn = txn
         self._pmap = pmap
 
@@ -224,6 +238,10 @@ class PersistentMap(MutableMapping):
         self._indexes = {}
 
     def indexes(self):
+        """
+
+        :return:
+        """
         return sorted(self._indexes.keys())
 
     def attach_index(self, name, pmap, fkey):

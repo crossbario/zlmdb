@@ -344,7 +344,7 @@ class Database(object):
         return self._maxsize
 
     @property
-    def sync(self):
+    def is_sync(self):
         return self._sync
 
     @property
