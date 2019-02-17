@@ -309,6 +309,54 @@ class _UuidUuidKeysMixin(object):
         return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
 
 
+class _TimestampUuidKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return np.datetime64(time.time_ns(), 'ns'), uuid.uuid4()
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert isinstance(key1, np.datetime64)
+        assert isinstance(key2, uuid.UUID)
+
+        return key1.tobytes() + key2.bytes
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 24
+
+        data1, data2 = data[0:8], data[8:24]
+        key1 = np.datetime64(data1, 'ns')
+        key2 = uuid.UUID(bytes=data2)
+        return key1, key2
+
+
+class _UuidTimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return uuid.uuid4(), np.datetime64(time.time_ns(), 'ns')
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert isinstance(key1, uuid.UUID)
+        assert isinstance(key2, np.datetime64)
+
+        return key1.bytes + key2.tobytes()
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 24
+
+        data1, data2 = data[0:16], data[16:24]
+        key1 = uuid.UUID(bytes=data1)
+        key2 = np.datetime64(data2, 'ns')
+        return key1, key2
+
+
 class _UuidStringKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
