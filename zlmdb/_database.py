@@ -538,7 +538,7 @@ class Database(object):
         assert description is None or type(description) == six.text_type
 
         if oid not in self._slots_by_index:
-            self.log.warn('No slot found in database with DB table <{oid}>: <{name}>', name=name, oid=oid)
+            self.log.debug('No slot found in database with DB table <{oid}>: <{name}>', name=name, oid=oid)
             if create:
                 slot_index = self._get_free_slot()
                 slot = Slot(oid=oid, creator='unknown', slot=slot_index, name=name, description=description)
@@ -555,7 +555,7 @@ class Database(object):
             pmap = _pmap.PersistentMap(slot_index)
             with self.begin() as txn:
                 records = pmap.count(txn)
-            self.log.info(
+            self.log.debug(
                 'DB table <{oid}> attached from slot <{slot_index:03d}>: <{name}> [{records} records]',
                 name=name,
                 oid=oid,

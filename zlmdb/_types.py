@@ -157,7 +157,7 @@ class _OidTimestampKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert len(data) == 16
-        key1, key2 = struct.unpack('>QQ', data)
+        key1, key2 = struct.unpack('>Q!Q', data)
         key2 = np.datetime64(key2, 'ns')
         return key1, key2
 
@@ -181,7 +181,7 @@ class _OidTimestampStringKeysMixin(object):
         assert type(data) == six.binary_type
         assert len(data) >= 16
 
-        oid, ts = struct.unpack('>QQ', data[:16])
+        oid, ts = struct.unpack('>Q!Q', data[:16])
         ts = np.datetime64(ts, 'ns')
         if len(data) > 16:
             s = data[16:]
@@ -328,7 +328,7 @@ class _TimestampUuidKeysMixin(object):
         assert len(data) == 24
 
         data1, data2 = data[0:8], data[8:24]
-        key1 = np.datetime64(data1, 'ns')
+        key1 = np.frombuffer(data1, dtype='datetime64[ns]')[0]
         key2 = uuid.UUID(bytes=data2)
         return key1, key2
 
@@ -353,7 +353,7 @@ class _UuidTimestampKeysMixin(object):
 
         data1, data2 = data[0:16], data[16:24]
         key1 = uuid.UUID(bytes=data1)
-        key2 = np.datetime64(data2, 'ns')
+        key2 = np.frombuffer(data2, dtype='datetime64[ns]')[0]
         return key1, key2
 
 
