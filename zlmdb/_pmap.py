@@ -906,6 +906,15 @@ class MapOidTimestampStringOid(_types._OidTimestampStringKeysMixin, _types._OidV
 #
 
 
+class MapBytes32Bytes32(_types._Bytes32KeysMixin, _types._Bytes32ValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes32 keys and Bytes32 values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapBytes32FlatBuffers(_types._Bytes32KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with Bytes32 keys and Flatbuffers values.
