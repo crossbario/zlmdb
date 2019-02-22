@@ -457,6 +457,67 @@ class _Bytes32StringKeysMixin(object):
         return data1, data2.decode('utf8')
 
 
+class _Bytes20KeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(20)
+
+    def _serialize_key(self, key):
+        assert key is None or type(key) == six.binary_type
+        if key:
+            return key
+        else:
+            return b'\x00' * 20
+
+    def _deserialize_key(self, data):
+        assert data is None or type(data) == six.binary_type
+        if data:
+            return data
+        else:
+            return None
+
+
+class _Bytes20Bytes20KeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.binary_type
+        assert len(key1) == 20
+
+        assert type(key2) == six.binary_type
+        assert len(key2) == 20
+
+        return key1 + key2
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 40
+
+        data1, data2 = data[0:20], data[20:40]
+        return data1, data2
+
+
+class _Bytes20StringKeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.binary_type
+        assert len(key1) == 20
+
+        assert type(key2) == six.text_type
+
+        return key1 + key2.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 20
+        data1, data2 = data[:20], data[20:]
+
+        return data1, data2.decode('utf8')
+
+
 #
 # Value Types
 #
@@ -530,6 +591,22 @@ class _Bytes32ValuesMixin(object):
 
     def _deserialize_value(self, data):
         assert data is None or (type(data) == six.binary_type and len(data) == 32)
+        if data:
+            return data
+        else:
+            return None
+
+
+class _Bytes20ValuesMixin(object):
+    def _serialize_value(self, value):
+        assert value is None or (type(value) == six.binary_type and len(value) == 20)
+        if value:
+            return value
+        else:
+            return b'\x00' * 20
+
+    def _deserialize_value(self, data):
+        assert data is None or (type(data) == six.binary_type and len(data) == 20)
         if data:
             return data
         else:

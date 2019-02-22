@@ -943,3 +943,48 @@ class MapBytes32StringFlatBuffers(_types._Bytes32StringKeysMixin, _types._FlatBu
     def __init__(self, slot=None, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
+#
+# Key types: Bytes20, (Bytes20, Bytes20), (Bytes20, String)
+# Value type: FlatBuffers
+#
+
+
+class MapBytes20Bytes20(_types._Bytes20KeysMixin, _types._Bytes20ValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes20 keys and Bytes20 values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapBytes20FlatBuffers(_types._Bytes20KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes20 keys and Flatbuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
+class MapBytes20Bytes20FlatBuffers(_types._Bytes20Bytes20KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (Bytes20, Bytes20) keys and Flatbuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
+class MapBytes20StringFlatBuffers(_types._Bytes20StringKeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (Bytes20, String) keys and Flatbuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)

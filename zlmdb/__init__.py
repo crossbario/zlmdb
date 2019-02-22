@@ -75,7 +75,11 @@ from ._pmap import PersistentMap, \
                    MapBytes32Bytes32, \
                    MapBytes32FlatBuffers, \
                    MapBytes32Bytes32FlatBuffers, \
-                   MapBytes32StringFlatBuffers
+                   MapBytes32StringFlatBuffers, \
+                   MapBytes20Bytes20, \
+                   MapBytes20FlatBuffers, \
+                   MapBytes20Bytes20FlatBuffers, \
+                   MapBytes20StringFlatBuffers
 
 from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database
@@ -163,6 +167,14 @@ __all__ = (
     'MapBytes32FlatBuffers',
     'MapBytes32Bytes32FlatBuffers',
     'MapBytes32StringFlatBuffers',
+
+    #
+    # Bytes20 pmaps
+    #
+    'MapBytes20Bytes20',
+    'MapBytes20FlatBuffers',
+    'MapBytes20Bytes20FlatBuffers',
+    'MapBytes20StringFlatBuffers',
 )
 
 TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]
