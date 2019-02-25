@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import struct
 import random
+import binascii
 import pickle
 import os
 import uuid
@@ -262,7 +263,7 @@ class _StringKeysMixin(object):
         if data:
             return data.decode('utf8')
         else:
-            return None
+            return u''
 
 
 class _UuidKeysMixin(object):
@@ -280,7 +281,7 @@ class _UuidKeysMixin(object):
         if key:
             return key.bytes
         else:
-            return b''
+            return b'\x00' * 16
 
     def _deserialize_key(self, data):
         assert data is None or type(data) == six.binary_type
@@ -288,7 +289,7 @@ class _UuidKeysMixin(object):
         if data:
             return uuid.UUID(bytes=data)
         else:
-            return None
+            return uuid.UUID(bytes=b'\x00' * 16)
 
 
 class _UuidUuidKeysMixin(object):
@@ -421,6 +422,12 @@ class _Bytes32Bytes32KeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
+        if key1 is None:
+            key1 = b'\x00' * 32
+
+        if key2 is None:
+            key2 = b'\x00' * 32
+
         assert type(key1) == six.binary_type
         assert len(key1) == 32
 
@@ -442,6 +449,12 @@ class _Bytes32StringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
+        if key1 is None:
+            key1 = b'\x00' * 32
+
+        if key2 is None:
+            key2 = u''
+
         assert type(key1) == six.binary_type
         assert len(key1) == 32
 
@@ -452,8 +465,8 @@ class _Bytes32StringKeysMixin(object):
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
         assert len(data) > 32
-        data1, data2 = data[:32], data[32:]
 
+        data1, data2 = data[:32], data[32:]
         return data1, data2.decode('utf8')
 
 
@@ -463,14 +476,14 @@ class _Bytes20KeysMixin(object):
         return os.urandom(20)
 
     def _serialize_key(self, key):
-        assert key is None or type(key) == six.binary_type
+        assert key is None or (type(key) == six.binary_type and len(key) == 20)
         if key:
             return key
         else:
             return b'\x00' * 20
 
     def _deserialize_key(self, data):
-        assert data is None or type(data) == six.binary_type
+        assert data is None or (type(data) == six.binary_type and len(data) == 20)
         if data:
             return data
         else:
@@ -478,9 +491,19 @@ class _Bytes20KeysMixin(object):
 
 
 class _Bytes20Bytes20KeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(20), os.urandom(20)
+
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = b'\x00' * 20
+
+        if key2 is None:
+            key2 = b'\x00' * 20
 
         assert type(key1) == six.binary_type
         assert len(key1) == 20
@@ -499,9 +522,19 @@ class _Bytes20Bytes20KeysMixin(object):
 
 
 class _Bytes20StringKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(20), binascii.b2a_base64(os.urandom(8)).decode().strip()
+
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = b'\x00' * 20
+
+        if key2 is None:
+            key2 = u''
 
         assert type(key1) == six.binary_type
         assert len(key1) == 20
@@ -563,22 +596,28 @@ class _OidSetValuesMixin(object):
     def _deserialize_value(self, data):
         VLEN = 8
         assert len(data) % VLEN == 0
-        cnt = len(data) / VLEN
+        cnt = len(data) // VLEN
         return set([struct.unpack('>Q', data[i:i + VLEN])[0] for i in range(0, cnt, VLEN)])
 
 
 class _UuidValuesMixin(object):
     def _serialize_value(self, value):
+        assert value is None or isinstance(value, uuid.UUID)
+
+        # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
+        # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
         if value:
             return value.bytes
         else:
-            return b''
+            return b'\x00' * 16
 
     def _deserialize_value(self, data):
+        assert data is None or type(data) == six.binary_type
+
         if data:
             return uuid.UUID(bytes=data)
         else:
-            return None
+            return uuid.UUID(bytes=b'\x00' * 16)
 
 
 class _Bytes32ValuesMixin(object):
@@ -621,7 +660,7 @@ class _UuidSetValuesMixin(object):
     def _deserialize_value(self, data):
         VLEN = 16
         assert len(data) % VLEN == 0
-        cnt = len(data) / VLEN
+        cnt = len(data) // VLEN
         return set([uuid.UUID(bytes=data[i:i + VLEN]) for i in range(0, cnt, VLEN)])
 
 
