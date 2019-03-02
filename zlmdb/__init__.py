@@ -45,7 +45,9 @@ from ._pmap import PersistentMap, \
                    MapUuidPickle, \
                    MapUuidFlatBuffers, \
                    MapUuidTimestampFlatBuffers, \
+                   MapUuidTimestampCbor, \
                    MapTimestampUuidFlatBuffers, \
+                   MapTimestampUuidCbor, \
                    MapUuidStringUuid, \
                    MapUuidUuidCbor, \
                    MapUuidUuidSet, \
