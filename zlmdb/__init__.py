@@ -123,6 +123,8 @@ __all__ = (
     # UUID-UUID based pmap types
     'MapUuidUuidCbor',
     'MapUuidUuidUuid',
+    'MapUuidTimestampCbor',
+    'MapTimestampUuidCbor',
 
     #
     # String pmaps
