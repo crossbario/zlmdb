@@ -370,7 +370,7 @@ class _StringTimestampKeysMixin(object):
         assert type(key1) == six.text_type
         assert isinstance(key2, np.datetime64)
 
-        return key2.encode('utf8') + key1.tobytes()
+        return key1.encode('utf8') + key2.tobytes()
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
