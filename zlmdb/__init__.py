@@ -59,6 +59,8 @@ from ._pmap import PersistentMap, \
                    MapStringCbor, \
                    MapStringPickle, \
                    MapStringFlatBuffers, \
+                   MapStringTimestampCbor, \
+                   MapTimestampStringCbor, \
                    MapOidString, \
                    MapOidOid, \
                    MapOidUuid, \
@@ -137,6 +139,8 @@ __all__ = (
     'MapStringCbor',
     'MapStringPickle',
     'MapStringFlatBuffers',
+    'MapStringTimestampCbor',
+    'MapTimestampStringCbor',
 
     # String (utf8) based pmap types for indexes
     'MapStringString',

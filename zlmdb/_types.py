@@ -334,6 +334,55 @@ class _TimestampUuidKeysMixin(object):
         return key1, key2
 
 
+class _TimestampStringKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return np.datetime64(time.time_ns(), 'ns'), _StringKeysMixin.new_key()
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert isinstance(key1, np.datetime64)
+        assert type(key2) == six.text_type
+
+        return key1.tobytes() + key2.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 8
+
+        data1, data2 = data[0:8], data[8:]
+        key1 = np.frombuffer(data1, dtype='datetime64[ns]')[0]
+        key2 = data2.decode('utf8')
+        return key1, key2
+
+
+class _StringTimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return _StringKeysMixin.new_key(), np.datetime64(time.time_ns(), 'ns')
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.text_type
+        assert isinstance(key2, np.datetime64)
+
+        return key2.encode('utf8') + key1.tobytes()
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 8
+
+        l = len(data) - 8
+        data1, data2 = data[0:l], data[l:]
+        key1 = data1.decode('utf8')
+        key2 = np.frombuffer(data2, dtype='datetime64[ns]')[0]
+        return key1, key2
+
+
 class _UuidTimestampKeysMixin(object):
     @staticmethod
     def new_key():
