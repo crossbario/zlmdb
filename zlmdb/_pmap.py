@@ -722,6 +722,7 @@ class MapTimestampStringCbor(_types._TimestampStringKeysMixin, _types._CborValue
         PersistentMap.__init__(self, slot=slot, compress=compress)
         _types._CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
 
+
 #
 # Key: String -> Value: String, OID, UUID, JSON, CBOR, Pickle, FlatBuffers
 #

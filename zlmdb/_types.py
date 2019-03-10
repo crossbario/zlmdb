@@ -376,8 +376,8 @@ class _StringTimestampKeysMixin(object):
         assert type(data) == six.binary_type
         assert len(data) > 8
 
-        l = len(data) - 8
-        data1, data2 = data[0:l], data[l:]
+        slen = len(data) - 8
+        data1, data2 = data[0:slen], data[slen:]
         key1 = data1.decode('utf8')
         key2 = np.frombuffer(data2, dtype='datetime64[ns]')[0]
         return key1, key2
