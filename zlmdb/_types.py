@@ -525,7 +525,10 @@ class _Bytes20KeysMixin(object):
         return os.urandom(20)
 
     def _serialize_key(self, key):
-        assert key is None or (type(key) == six.binary_type and len(key) == 20)
+        assert key is None or (type(key) == six.binary_type
+                               and len(key) == 20), 'key must be 20 bytes, was type {}, len {}'.format(
+                                   key,
+                                   len(key) if isinstance(key, bytes) else None)
         if key:
             return key
         else:
