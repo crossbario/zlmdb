@@ -49,11 +49,11 @@ else:
 
 
 @pytest.fixture(scope='function')
-def testset1():
+def testset1(N=10, M=100):
     users = []
-    for j in range(2):
-        for i in range(3):
-            user = User.create_test_user(oid=j * 100 + i, realm_oid=j)
+    for j in range(N):
+        for i in range(M):
+            user = User.create_test_user(oid=j * M + i, realm_oid=j)
             users.append(user)
     return users
 
