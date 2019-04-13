@@ -92,6 +92,59 @@ def test_fill_unique_indexes(testset1):
                     assert user.oid == user_oid
 
 
+def test_fill_unique_indexes_nullable(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    user.email = None
+                    schema.users[txn, user.oid] = user
+
+                for rec in schema.users.select(txn):
+                    print(rec)
+
+                for rec in schema.idx_users_by_email.select(txn):
+                    print(rec)
+
+                for rec in schema.idx_users_by_authid.select(txn):
+                    print(rec)
+
+            return
+
+            # check indexes has been written to (in addition to the table itself)
+            num_indexes = len(schema.users.indexes())
+            assert stats.puts == len(testset1) * (1 + num_indexes)
+
+            # check saved objects
+            with db.begin() as txn:
+                for user in testset1:
+                    obj = schema.users[txn, user.oid]
+
+                    assert user == obj
+
+            # check unique indexes
+            with db.begin() as txn:
+                for rec in schema.idx_users_by_email.select(txn):
+                    print(rec)
+
+                for user in testset1:
+                    user.email = None
+
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
+                    assert user.oid == user_oid
+
+                    # user_oid = schema.idx_users_by_email[txn, user.email]
+                    user_oid = schema.idx_users_by_email[txn, None]
+                    print('*' * 100, user_oid)
+                    assert user_oid is None
+
+
 def test_fill_nonunique_indexes(testset1):
     with TemporaryDirectory() as dbpath:
 
