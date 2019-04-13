@@ -412,8 +412,8 @@ class _UuidStringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        assert isinstance(key1, uuid.UUID)
-        assert type(key2) == six.text_type
+        assert isinstance(key1, uuid.UUID), 'key1 must be of type UUID, but was {}'.format(type(key1))
+        assert type(key2) == six.text_type, 'key2 must be of type string, but was {}'.format(type(key2))
 
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
@@ -735,8 +735,8 @@ class _JsonValuesMixin(object):
         assert self._unmarshal
 
     def _serialize_value(self, value):
-        return json.dumps(
-            self._marshal(value), separators=(',', ':'), ensure_ascii=False, sort_keys=False).encode('utf8')
+        return json.dumps(self._marshal(value), separators=(',', ':'), ensure_ascii=False,
+                          sort_keys=False).encode('utf8')
 
     def _deserialize_value(self, data):
         return self._unmarshal(json.loads(data.decode('utf8')))

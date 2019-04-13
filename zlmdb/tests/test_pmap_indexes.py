@@ -186,8 +186,10 @@ def test_delete_nonunique_indexes2(testset1):
                         fullset.discard(user_oid)
 
                         user_oids = set(
-                            schema.idx_users_by_realm.select(
-                                txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+                            schema.idx_users_by_realm.select(txn,
+                                                             return_keys=False,
+                                                             from_key=(j, 0),
+                                                             to_key=(j + 1, 0)))
 
                         assert fullset == user_oids
 
