@@ -116,6 +116,8 @@ publish: dist
 	twine upload dist/*
 
 install:
+	-pip uninstall -y pytest_asyncio # remove the broken shit
+	-pip uninstall -y pytest_cov # remove the broken shit
 	pip install -e .
 	pip install -r requirements-dev.txt
 

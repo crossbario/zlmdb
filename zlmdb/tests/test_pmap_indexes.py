@@ -48,7 +48,7 @@ else:
     from _schema_py2 import User, Schema4
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def testset1():
     users = []
     for j in range(10):
@@ -106,20 +106,9 @@ def test_fill_unique_indexes_nullable(testset1):
                     user.email = None
                     schema.users[txn, user.oid] = user
 
-                for rec in schema.users.select(txn):
-                    print(rec)
-
-                for rec in schema.idx_users_by_email.select(txn):
-                    print(rec)
-
-                for rec in schema.idx_users_by_authid.select(txn):
-                    print(rec)
-
-            return
-
             # check indexes has been written to (in addition to the table itself)
             num_indexes = len(schema.users.indexes())
-            assert stats.puts == len(testset1) * (1 + num_indexes)
+            assert stats.puts == len(testset1) * (1 + num_indexes - 1)
 
             # check saved objects
             with db.begin() as txn:
@@ -130,19 +119,9 @@ def test_fill_unique_indexes_nullable(testset1):
 
             # check unique indexes
             with db.begin() as txn:
-                for rec in schema.idx_users_by_email.select(txn):
-                    print(rec)
-
                 for user in testset1:
-                    user.email = None
-
                     user_oid = schema.idx_users_by_authid[txn, user.authid]
                     assert user.oid == user_oid
-
-                    # user_oid = schema.idx_users_by_email[txn, user.email]
-                    user_oid = schema.idx_users_by_email[txn, None]
-                    print('*' * 100, user_oid)
-                    assert user_oid is None
 
 
 def test_fill_nonunique_indexes(testset1):

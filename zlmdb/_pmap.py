@@ -337,9 +337,11 @@ class PersistentMap(MutableMapping):
 
         # insert records into indexes
         for index in self._indexes.values():
-            _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(index.fkey(value))
-            _data = index.pmap._serialize_value(key)
-            txn.put(_key, _data)
+            _fkey = index.fkey(value)
+            if _fkey:
+                _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
+                _data = index.pmap._serialize_value(key)
+                txn.put(_key, _data)
 
     def __delitem__(self, txn_key):
         """
