@@ -162,43 +162,84 @@ class PersistentMapIterator(object):
 
 class Index(object):
     """
-    Holds book keeping info for indexes on tables (pmaps).
+    Holds book-keeping metadata for indexes on tables (pmaps).
     """
 
-    def __init__(self, name, fkey, pmap):
+    def __init__(self, name, fkey, pmap, nullable=False, unique=True):
         """
 
-        :param name:
-        :param fkey:
-        :param pmap:
+        :param name: Index name.
+        :type name: str
+
+        :param fkey: Function that extracts the indexed value from the indexed table.
+        :type fkey: callable
+
+        :param pmap: Persistent map for index storage.
+        :type pmap: :class:`zlmdb._pmap.PersistentMap`
+
+        :param nullable: Whether the indexed table column is allowed to
+            take ``None`` values.
+        :type nullable: bool
+
+        :param unique: Whether the indexed table column must take unique values.
+        :type unique: bool
         """
         self._name = name
         self._fkey = fkey
         self._pmap = pmap
+        self._nullable = nullable
+        self._unique = unique
 
     @property
     def name(self):
         """
+        Index name property.
 
-        :return:
+        :return: Name of the index (on the indexed table).
+        :rtype: str
         """
         return self._name
 
     @property
     def fkey(self):
         """
+        Indexed value extractor property.
 
-        :return:
+        :return: Function to extract indexed value from the indexed table.
+        :rtype: callable
         """
         return self._fkey
 
     @property
     def pmap(self):
         """
+        Index table (pmap) property.
 
-        :return:
+        :return: Persistent map for index storage.
+        :rtype: :class:`zlmdb._pmap.PersistentMap`
         """
         return self._pmap
+
+    @property
+    def nullable(self):
+        """
+        Index nullable property.
+
+        :return: Whether the indexed table column is allowed to
+            take ``None`` values.
+        :rtype: bool
+        """
+        return self._nullable
+
+    @property
+    def unique(self):
+        """
+        Index uniqueness property-
+
+        :return: Whether the indexed table column must take unique values.
+        :rtype: bool
+        """
+        return self._unique
 
 
 class PersistentMap(MutableMapping):
@@ -245,20 +286,25 @@ class PersistentMap(MutableMapping):
         """
         return sorted(self._indexes.keys())
 
-    def attach_index(self, name, pmap, fkey):
+    def attach_index(self, name, pmap, fkey, nullable=False, unique=True):
         """
 
         :param name:
         :param pmap:
         :param fkey:
+        :param nullable:
+        :param unique:
         :return:
         """
         assert type(name) == str
         assert callable(fkey)
         assert isinstance(pmap, PersistentMap)
+        assert type(nullable) == bool
+        assert type(unique) == bool
+
         if name in self._indexes:
             raise Exception('index with name "{}" already exists'.format(name))
-        self._indexes[name] = Index(name, fkey, pmap)
+        self._indexes[name] = Index(name, fkey, pmap, nullable, unique)
 
     def detach_index(self, name):
         """
@@ -267,6 +313,7 @@ class PersistentMap(MutableMapping):
         :return:
         """
         assert type(name) == str
+
         if name in self._indexes:
             del self._indexes[name]
 
@@ -338,10 +385,13 @@ class PersistentMap(MutableMapping):
         # insert records into indexes
         for index in self._indexes.values():
             _fkey = index.fkey(value)
-            if _fkey:
+            if _fkey is not None:
                 _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
                 _data = index.pmap._serialize_value(key)
                 txn.put(_key, _data)
+            else:
+                if not index.nullable:
+                    raise RuntimeError('cannot insert NULL value into non-nullable index {}'.format(index.name))
 
     def __delitem__(self, txn_key):
         """

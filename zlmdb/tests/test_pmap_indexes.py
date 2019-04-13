@@ -51,8 +51,8 @@ else:
 @pytest.fixture(scope='function')
 def testset1():
     users = []
-    for j in range(10):
-        for i in range(100):
+    for j in range(2):
+        for i in range(3):
             user = User.create_test_user(oid=j * 100 + i, realm_oid=j)
             users.append(user)
     return users
