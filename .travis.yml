@@ -1,10 +1,18 @@
-sudo: false
-dist: trusty
-
+# py3.7/travis: https://github.com/travis-ci/travis-ci/issues/9815#issue-336465122
 language: python
+python: 3.7
+dist: xenial
+sudo: true
 
-python:
-  - "3.6"
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+addons:
+  apt:
+    update: true
+    packages:
+      - liblmdb-dev
 
 cache:
   directories:
