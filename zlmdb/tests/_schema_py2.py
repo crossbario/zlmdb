@@ -141,7 +141,7 @@ class User(object):
             user.realm_oid = realm_oid
         else:
             user.realm_oid = random.randint(0, 9007199254740992)
-        user.icecream = random.choice(['vanilla', 'lemon', 'strawberry'])
+        user.icecream = random.choice([u'vanilla', u'lemon', u'strawberry'])
         return user
 
 
