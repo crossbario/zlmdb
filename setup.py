@@ -39,7 +39,7 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 # enforce use of CFFI for LMDB
-os.environ['LMDB_FORCE_CFFI'] = '1'
+# os.environ['LMDB_FORCE_CFFI'] = '1'
 
 # enforce use of bundled libsodium with PyNaCl
 os.environ['SODIUM_INSTALL'] = 'bundled'
