@@ -48,12 +48,12 @@ else:
     from _schema_py2 import User, Schema4
 
 
-@pytest.fixture(scope='module')
-def testset1():
+@pytest.fixture(scope='function')
+def testset1(N=10, M=100):
     users = []
-    for j in range(10):
-        for i in range(100):
-            user = User.create_test_user(oid=j * 100 + i, realm_oid=j)
+    for j in range(N):
+        for i in range(M):
+            user = User.create_test_user(oid=j * M + i, realm_oid=j)
             users.append(user)
     return users
 
@@ -89,6 +89,38 @@ def test_fill_unique_indexes(testset1):
                     assert user.oid == user_oid
 
                     user_oid = schema.idx_users_by_email[txn, user.email]
+                    assert user.oid == user_oid
+
+
+def test_fill_unique_indexes_nullable(testset1):
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    user.email = None
+                    schema.users[txn, user.oid] = user
+
+            # check indexes has been written to (in addition to the table itself)
+            num_indexes = len(schema.users.indexes())
+            assert stats.puts == len(testset1) * (1 + num_indexes - 1)
+
+            # check saved objects
+            with db.begin() as txn:
+                for user in testset1:
+                    obj = schema.users[txn, user.oid]
+
+                    assert user == obj
+
+            # check unique indexes
+            with db.begin() as txn:
+                for user in testset1:
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
                     assert user.oid == user_oid
 
 

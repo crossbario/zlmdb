@@ -180,14 +180,11 @@ class _OidTimestampStringKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
-        assert len(data) >= 16
+        assert len(data) > 16
 
         oid, ts = struct.unpack('>Q!Q', data[:16])
         ts = np.datetime64(ts, 'ns')
-        if len(data) > 16:
-            s = data[16:]
-        else:
-            s = ''
+        s = data[16:]
         return oid, ts, s
 
 
@@ -207,13 +204,10 @@ class _OidStringKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
-        assert len(data) >= 8
+        assert len(data) > 8
         oid = struct.unpack('>Q', data[:8])
-        if len(data) > 8:
-            data = data[8:]
-            s = data.decode('utf8')
-        else:
-            s = ''
+        data = data[8:]
+        s = data.decode('utf8')
         return oid, s
 
 
@@ -250,20 +244,14 @@ class _StringKeysMixin(object):
             return token_value
 
     def _serialize_key(self, key):
-        assert key is None or type(key) == six.text_type
+        assert type(key) == six.text_type
 
-        if key:
-            return key.encode('utf8')
-        else:
-            return b''
+        return key.encode('utf8')
 
     def _deserialize_key(self, data):
-        assert data is None or type(data) == six.binary_type
+        assert type(data) == six.binary_type
 
-        if data:
-            return data.decode('utf8')
-        else:
-            return u''
+        return data.decode('utf8')
 
 
 class _UuidKeysMixin(object):
@@ -274,22 +262,16 @@ class _UuidKeysMixin(object):
         return uuid.uuid4()
 
     def _serialize_key(self, key):
-        assert key is None or isinstance(key, uuid.UUID)
+        assert isinstance(key, uuid.UUID)
 
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
-        if key:
-            return key.bytes
-        else:
-            return b'\x00' * 16
+        return key.bytes
 
     def _deserialize_key(self, data):
-        assert data is None or type(data) == six.binary_type
+        assert type(data) == six.binary_type
 
-        if data:
-            return uuid.UUID(bytes=data)
-        else:
-            return uuid.UUID(bytes=b'\x00' * 16)
+        return uuid.UUID(bytes=data)
 
 
 class _UuidUuidKeysMixin(object):
@@ -452,30 +434,22 @@ class _Bytes32KeysMixin(object):
         return os.urandom(32)
 
     def _serialize_key(self, key):
-        assert key is None or type(key) == six.binary_type
-        if key:
-            return key
-        else:
-            return b'\x00' * 32
+        assert type(key) == six.binary_type
+        assert len(key) == 32
+
+        return key
 
     def _deserialize_key(self, data):
-        assert data is None or type(data) == six.binary_type
-        if data:
-            return data
-        else:
-            return None
+        assert type(data) == six.binary_type
+        assert len(data) == 32
+
+        return data
 
 
 class _Bytes32Bytes32KeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
-
-        if key1 is None:
-            key1 = b'\x00' * 32
-
-        if key2 is None:
-            key2 = b'\x00' * 32
 
         assert type(key1) == six.binary_type
         assert len(key1) == 32
@@ -498,16 +472,11 @@ class _Bytes32StringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        if key1 is None:
-            key1 = b'\x00' * 32
-
-        if key2 is None:
-            key2 = u''
-
         assert type(key1) == six.binary_type
         assert len(key1) == 32
 
         assert type(key2) == six.text_type
+        assert len(key2) > 0
 
         return key1 + key2.encode('utf8')
 
@@ -525,21 +494,14 @@ class _Bytes20KeysMixin(object):
         return os.urandom(20)
 
     def _serialize_key(self, key):
-        assert key is None or (type(key) == six.binary_type
-                               and len(key) == 20), 'key must be 20 bytes, was type {}, len {}'.format(
-                                   key,
-                                   len(key) if isinstance(key, bytes) else None)
-        if key:
-            return key
-        else:
-            return b'\x00' * 20
+        assert type(key) == six.binary_type and len(key) == 20
+
+        return key
 
     def _deserialize_key(self, data):
-        assert data is None or (type(data) == six.binary_type and len(data) == 20)
-        if data:
-            return data
-        else:
-            return None
+        assert type(data) == six.binary_type and len(data) == 20
+
+        return data
 
 
 class _Bytes20Bytes20KeysMixin(object):
@@ -550,12 +512,6 @@ class _Bytes20Bytes20KeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
-
-        if key1 is None:
-            key1 = b'\x00' * 20
-
-        if key2 is None:
-            key2 = b'\x00' * 20
 
         assert type(key1) == six.binary_type
         assert len(key1) == 20
@@ -582,16 +538,11 @@ class _Bytes20StringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        if key1 is None:
-            key1 = b'\x00' * 20
-
-        if key2 is None:
-            key2 = u''
-
         assert type(key1) == six.binary_type
         assert len(key1) == 20
 
         assert type(key2) == six.text_type
+        assert len(key2) > 0
 
         return key1 + key2.encode('utf8')
 
@@ -610,7 +561,9 @@ class _Bytes20StringKeysMixin(object):
 
 class _StringValuesMixin(object):
     def _serialize_value(self, value):
-        if value:
+        assert value is None or type(value) == six.text_type
+
+        if value is not None:
             return value.encode('utf8')
         else:
             return b''
@@ -625,15 +578,21 @@ class _StringValuesMixin(object):
 class _StringSetValuesMixin(object):
     def _serialize_value(self, value_set):
         assert type(value_set) == set
-        return b'\0'.join([value.encode('utf8') for value in value_set])
+        for v in value_set:
+            assert v is None or type(v) == six.text_type
+
+        return b'\0'.join([(value.encode('utf8') if value else b'') for value in value_set])
 
     def _deserialize_value(self, data):
         assert type(data) == bytes
-        return set([d.decode('utf8') for d in data.split('\0')])
+        return set([(d.decode('utf8') if d else None) for d in data.split('\0')])
 
 
 class _OidValuesMixin(object):
     def _serialize_value(self, value):
+        assert type(value) in six.integer_types
+        assert value >= 0 and value <= _OidKeysMixin.MAX_OID
+
         return struct.pack('>Q', value)
 
     def _deserialize_value(self, data):
@@ -643,6 +602,8 @@ class _OidValuesMixin(object):
 class _OidSetValuesMixin(object):
     def _serialize_value(self, value_set):
         assert type(value_set) == set
+        for value in value_set:
+            assert value >= 0 and value <= _OidKeysMixin.MAX_OID
         return b''.join([struct.pack('>Q', value) for value in value_set])
 
     def _deserialize_value(self, data):

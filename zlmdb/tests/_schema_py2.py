@@ -181,10 +181,11 @@ class Schema4(zlmdb.Schema):
         self.users = zlmdb.MapOidPickle(1)
 
         self.idx_users_by_authid = zlmdb.MapStringOid(2)
-        self.users.attach_index('idx1', self.idx_users_by_authid, lambda user: user.authid)
+        self.users.attach_index(
+            'idx1', self.idx_users_by_authid, lambda user: user.authid, nullable=False, unique=True)
 
         self.idx_users_by_email = zlmdb.MapStringOid(3)
-        self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email)
+        self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email, nullable=True, unique=True)
 
         self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
         self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid))

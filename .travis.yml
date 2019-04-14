@@ -1,14 +1,19 @@
-sudo: false
-dist: trusty
-
+# py3.7/travis:
+# https://github.com/travis-ci/travis-ci/issues/9815#issue-336465122
+# https://github.com/travis-ci/travis-ci/issues/9069#issuecomment-425720905
 language: python
+dist: xenial
+sudo: true
 
-python:
-  - "3.6"
+addons:
+  apt:
+    update: true
+    packages:
+      # needed for compression
+      - libsnappy-dev
 
-cache:
-  directories:
-    - $HOME/.cache/pip
+      # needed for vmprof
+      - libunwind-dev
 
 before_install:
   - export PATH=$PATH:$HOME/.local/bin
@@ -17,11 +22,21 @@ before_install:
   - export ZLMDB_BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})"
 
 install:
-  - pip install tox codecov
+  - pip install -U pip setuptools wheel tox codecov
 
 script:
   - tox -c tox.ini -e $TOX_ENV
 
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+# https://blog.travis-ci.com/2017-09-12-build-stages-order-and-conditions
+stages:
+  - test
+  - name: deploy
+    if: repo = crossbario/zlmdb AND branch = master AND type != pull_request
+    
 after_success:
   # since we use --parallel-mode to coverage inside Tox we use
   # "coverage combine" so the filename is always ".coverage"
@@ -34,71 +49,55 @@ matrix:
     #
     # General
     #
-    - python: 3.6
+    - python: "3.7"
       env:
       - TOX_ENV=coverage
 
-    - python: 3.6
+    - python: "3.7"
       env:
       - TOX_ENV=sphinx
 
-    - python: 3.6
+    - python: "3.7"
       env:
       - TOX_ENV=flake8
 
-    - python: 3.6
+    - python: "3.7"
       env:
       - TOX_ENV=mypy
 
-    - python: 3.6
+    - python: "3.7"
       env:
       - TOX_ENV=yapf
 
     #
-    # CPython 3.7
+    # CPython 2.7 + 3.5-3.7
     #
-    - python: 3.7
-      dist: xenial
-      sudo: required
+    - python: "3.7"
       env:
       - TOX_ENV=py37
 
-    #
-    # CPython 3.6 - 2.7
-    #
-    - python: 3.6
+    - python: "3.6"
       env:
       - TOX_ENV=py36
 
-    - python: 3.5
+    - python: "3.5"
       env:
       - TOX_ENV=py35
 
-    - python: 3.4
-      env:
-      - TOX_ENV=py34
-
-    - python: 2.7
+    - python: "2.7"
       env:
       - TOX_ENV=py27
 
     #
-    # PyPy
+    # PyPy 3
     #
-    - python: pypy3
+    - python: "pypy3.5"
       env:
       - TOX_ENV=pypy3
 
-    - python: pypy
-      env:
-      - TOX_ENV=pypy
-
-
     # https://docs.travis-ci.com/user/build-stages/matrix-expansion/
     - stage: deploy
-      python: "3.7"
-      dist: xenial
-      sudo: required
+      python: 3.7
       if: repo = crossbario/zlmdb AND branch = master AND type != pull_request
       #on:
       #  repo: crossbario/zlmdb
