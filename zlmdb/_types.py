@@ -61,6 +61,35 @@ else:
         return int(time.perf_counter() * 1000000000.)
 
 
+CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
+"""
+Charset from which to generate random key IDs.
+
+.. note::
+
+    We take out the following 9 chars (leaving 27), because there is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z.
+"""
+
+CHAR_GROUPS = 4
+CHARS_PER_GROUP = 6
+GROUP_SEP = u'-'
+
+
+def _random_string():
+    """
+    Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
+    The generated value is cryptographically strong and has (at least) 114 bits of entropy.
+
+    :return: new random string key
+    """
+    rng = random.SystemRandom()
+    token_value = u''.join(rng.choice(CHARSET) for _ in range(CHAR_GROUPS * CHARS_PER_GROUP))
+    if CHARS_PER_GROUP > 1:
+        return GROUP_SEP.join(map(u''.join, zip(*[iter(token_value)] * CHARS_PER_GROUP)))
+    else:
+        return token_value
+
+
 #
 # Key Types
 #
@@ -205,43 +234,39 @@ class _OidStringKeysMixin(object):
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
         assert len(data) > 8
-        oid = struct.unpack('>Q', data[:8])
+        oid = struct.unpack('>Q', data[:8])[0]
         data = data[8:]
         s = data.decode('utf8')
         return oid, s
 
 
+class _StringOidKeysMixin(object):
+    @staticmethod
+    def new_key(secure=False):
+        return _random_string(), _OidKeysMixin.new_key(secure=secure)
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.text_type
+        assert type(key2) in six.integer_types
+
+        return key1.encode('utf8') + struct.pack('>Q', key2)
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) > 8
+        oid = struct.unpack('>Q', data[-8:])[0]
+        data = data[0:8]
+        s = data.decode('utf8')
+        return s, oid
+
+
 class _StringKeysMixin(object):
-
-    CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
-    """
-    Charset from which to generate random key IDs.
-
-    .. note::
-
-        We take out the following 9 chars (leaving 27), because there is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z.
-    """
-    CHAR_GROUPS = 4
-    CHARS_PER_GROUP = 6
-    GROUP_SEP = u'-'
-
     @staticmethod
     def new_key():
-        """
-        Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
-        The generated value is cryptographically strong and has (at least) 114 bits of entropy.
-
-        :return: new random string key
-        """
-        rng = random.SystemRandom()
-        token_value = u''.join(
-            rng.choice(_StringKeysMixin.CHARSET)
-            for _ in range(_StringKeysMixin.CHAR_GROUPS * _StringKeysMixin.CHARS_PER_GROUP))
-        if _StringKeysMixin.CHARS_PER_GROUP > 1:
-            return _StringKeysMixin.GROUP_SEP.join(
-                map(u''.join, zip(*[iter(token_value)] * _StringKeysMixin.CHARS_PER_GROUP)))
-        else:
-            return token_value
+        return _random_string()
 
     def _serialize_key(self, key):
         assert type(key) == six.text_type

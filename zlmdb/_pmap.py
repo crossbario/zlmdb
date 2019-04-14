@@ -33,7 +33,7 @@ import zlib
 
 import six
 
-from zlmdb import _types
+from zlmdb import _types, _errors
 
 try:
     import snappy
@@ -413,7 +413,8 @@ class PersistentMap(MutableMapping):
                 txn.put(_key, _data)
             else:
                 if not index.nullable:
-                    raise RuntimeError('cannot insert NULL value into non-nullable index {}'.format(index.name))
+                    raise _errors.NullValueConstraint('cannot insert NULL value into non-nullable index {}'.format(
+                        index.name))
 
     def __delitem__(self, txn_key):
         """
@@ -813,6 +814,15 @@ class MapStringString(_types._StringKeysMixin, _types._StringValuesMixin, Persis
 class MapStringOid(_types._StringKeysMixin, _types._OidValuesMixin, PersistentMap):
     """
     Persistent map with string (utf8) keys and OID (uint64) values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapStringOidOid(_types._StringOidKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (string:utf8, OID:uint64) keys and OID:uint64 values.
     """
 
     def __init__(self, slot=None, compress=None):

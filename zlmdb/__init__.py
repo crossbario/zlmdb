@@ -35,6 +35,8 @@ from typing import Dict  # noqa
 
 from ._version import __version__
 
+from ._errors import NullValueConstraint
+
 from ._pmap import PersistentMap, \
                    MapSlotUuidUuid, \
                    MapUuidString, \
@@ -54,6 +56,7 @@ from ._pmap import PersistentMap, \
                    MapUuidUuidUuid, \
                    MapStringString, \
                    MapStringOid, \
+                   MapStringOidOid, \
                    MapStringUuid, \
                    MapStringJson, \
                    MapStringCbor, \
@@ -102,6 +105,11 @@ __all__ = (
     'MapSlotUuidUuid',
 
     #
+    # Errors
+    #
+    'NullValueConstraint',
+
+    #
     # UUID pmaps
     #
 
@@ -135,6 +143,7 @@ __all__ = (
     # String (utf8) based pmap types for object containers
     'MapStringUuid',
     'MapStringOid',
+    'MapStringOidOid',
     'MapStringJson',
     'MapStringCbor',
     'MapStringPickle',

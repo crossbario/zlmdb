@@ -45,7 +45,8 @@ class User(object):
         self.ratings = {}
         self.friends = []
         self.referred_by = None
-        self.realm_id = None
+        self.realm_oid = None
+        self.icecream = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -67,6 +68,8 @@ class User(object):
         if (self.tags and not other.tags) or (not self.tags and other.tags):
             return False
         if other.realm_oid != self.realm_oid:
+            return False
+        if other.icecream != self.icecream:
             return False
         return True
 
@@ -90,7 +93,8 @@ class User(object):
             u'ratings': self.ratings,
             u'friends': self.friends,
             u'referred_by': self.referred_by,
-            u'realm_oid': self.realm_oid
+            u'realm_oid': self.realm_oid,
+            u'icecream': self.icecream,
         }
         return obj
 
@@ -112,6 +116,7 @@ class User(object):
         user.friends = obj.get(u'friends', [])
         user.referred_by = obj.get(u'referred_by', None)
         user.realm_oid = obj.get(u'realm_oid', None)
+        user.icecream = obj.get(u'icecream', None)
         return user
 
     @staticmethod
@@ -136,6 +141,7 @@ class User(object):
             user.realm_oid = realm_oid
         else:
             user.realm_oid = random.randint(0, 9007199254740992)
+        user.icecream = random.choice(['vanilla', 'lemon', 'strawberry'])
         return user
 
 
@@ -181,11 +187,14 @@ class Schema4(zlmdb.Schema):
         self.users = zlmdb.MapOidPickle(1)
 
         self.idx_users_by_authid = zlmdb.MapStringOid(2)
-        self.users.attach_index(
-            'idx1', self.idx_users_by_authid, lambda user: user.authid, nullable=False, unique=True)
+        self.users.attach_index('idx1', self.idx_users_by_authid, lambda user: user.authid, nullable=False)
 
         self.idx_users_by_email = zlmdb.MapStringOid(3)
-        self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email, nullable=True, unique=True)
+        self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email, nullable=True)
 
         self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
         self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid))
+
+        self.idx_users_by_icecream = zlmdb.MapStringOidOid(5)
+        self.users.attach_index(
+            'idx4', self.idx_users_by_icecream, lambda user: (user.icecream, user.oid), nullable=False)

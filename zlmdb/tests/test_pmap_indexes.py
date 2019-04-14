@@ -92,6 +92,24 @@ def test_fill_unique_indexes(testset1):
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user.oid == user_oid
 
+                    user_oid = schema.idx_users_by_icecream[txn, (user.icecream, user.oid)]
+                    assert user.oid == user_oid
+
+            users_by_icecream = {}
+            for user in testset1:
+                if user.icecream not in users_by_icecream:
+                    users_by_icecream[user.icecream] = set()
+                users_by_icecream[user.icecream].add(user.oid)
+
+            MAX_OID = 9007199254740992
+            with db.begin() as txn:
+                for icecream in users_by_icecream:
+                    for _, user_oid in schema.idx_users_by_icecream.select(txn,
+                                                                           from_key=(icecream, 0),
+                                                                           to_key=(icecream, MAX_OID + 1),
+                                                                           return_values=False):
+                        assert user_oid in users_by_icecream[icecream]
+
 
 def test_fill_unique_indexes_nullable(testset1):
     with TemporaryDirectory() as dbpath:
@@ -104,6 +122,7 @@ def test_fill_unique_indexes_nullable(testset1):
 
             with db.begin(write=True, stats=stats) as txn:
                 for user in testset1:
+                    # "user.email" is an indexed column that is unique and nullable
                     user.email = None
                     schema.users[txn, user.oid] = user
 
@@ -123,6 +142,27 @@ def test_fill_unique_indexes_nullable(testset1):
                 for user in testset1:
                     user_oid = schema.idx_users_by_authid[txn, user.authid]
                     assert user.oid == user_oid
+
+
+def test_fill_unique_index_non_nullable_raises(testset1):
+    """
+    Insert a record into a table with a unique-non-nullable index with the
+    record having a NULL value in the indexed column raises an exception.
+    """
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    # "user.authid" is an indexed column that is unique and non-nullable
+                    user.authid = None
+                    with pytest.raises(zlmdb.NullValueConstraint):
+                        schema.users[txn, user.oid] = user
 
 
 def test_fill_nonunique_indexes(testset1):
