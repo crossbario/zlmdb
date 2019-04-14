@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import os
 import sys
 import pytest
+from copy import deepcopy
 
 import txaio
 txaio.use_twisted()
@@ -224,6 +225,100 @@ def test_delete_nonunique_indexes2(testset1):
                                                              to_key=(j + 1, 0)))
 
                         assert fullset == user_oids
+
+
+def test_set_null_unique_indexes_nullable(testset1):
+    """
+    Fill table with indexed column (unique-nullable) with indexed column
+    values NULL, then (in a 2nd transaction) set the indexed column
+    to NON-NULL value and check that index records are deleted.
+    """
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            # fill table with NON-NULLs in indexed column
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    schema.users[txn, user.oid] = user
+
+            # now update table with NULLs in indexed column
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    _user = schema.users[txn, user.oid]
+                    _user.email = None
+                    schema.users[txn, _user.oid] = _user
+
+            # check that the table records have their indexed
+            # column values updated to NULLs
+            with db.begin() as txn:
+                for user in testset1:
+                    _user = deepcopy(user)
+                    _user.email = None
+                    obj = schema.users[txn, user.oid]
+                    assert _user == obj
+
+            # check that the index records that previously existed
+            # have been deleted (as the indexed column values have been
+            # set to NULLs)
+            with db.begin() as txn:
+                for user in testset1:
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
+                    assert user.oid == user_oid
+
+                    user_oid = schema.idx_users_by_email[txn, user.email]
+                    assert user_oid is None
+
+
+def test_set_notnull_unique_indexes_nullable(testset1):
+    """
+    Fill table with indexed column (unique-nullable) with indexed column
+    values NON-NULL, then (in a 2nd transaction) set the indexed column
+    to NULL value and check that index records are created.
+    """
+    with TemporaryDirectory() as dbpath:
+
+        schema = Schema4()
+
+        with zlmdb.Database(dbpath) as db:
+
+            stats = zlmdb.TransactionStats()
+
+            # fill table with NULLs in indexed column
+            with db.begin(write=True) as txn:
+                for user in testset1:
+                    _user = deepcopy(user)
+                    _user.email = None
+                    schema.users[txn, _user.oid] = _user
+
+            # now update table with NON-NULLs in indexed column
+            with db.begin(write=True, stats=stats) as txn:
+                for user in testset1:
+                    _user = schema.users[txn, user.oid]
+                    _user.email = user.email
+                    schema.users[txn, _user.oid] = _user
+
+            # check that the table records have their indexed
+            # column values updated to NON-NULLs
+            with db.begin() as txn:
+                for user in testset1:
+                    obj = schema.users[txn, user.oid]
+                    assert user == obj
+
+            # check that the index records that previously not existed
+            # have been created (as the indexed column values have been
+            # set to NON-NULLs)
+            with db.begin() as txn:
+                for user in testset1:
+                    user_oid = schema.idx_users_by_authid[txn, user.authid]
+                    assert user.oid == user_oid
+
+                    user_oid = schema.idx_users_by_email[txn, user.email]
+                    assert user.oid == user_oid
 
 
 def test_truncate_table_with_index(testset1):

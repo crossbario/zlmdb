@@ -379,12 +379,34 @@ class PersistentMap(MutableMapping):
         if self._compress:
             _data = self._compress(_data)
 
+        # if there are indexes defined, get existing object (if any),
+        # so that we can properly maintain the indexes, should indexed
+        # columns be set to NULL, in which case we need to delete the
+        # respective index record
+        _old_value = None
+        if self._indexes:
+            _old_data = txn.get(_key)
+            if _old_data:
+                if self._decompress:
+                    _old_data = self._decompress(_old_data)
+                _old_value = self._deserialize_value(_old_data)
+
         # insert data record
         txn.put(_key, _data)
 
         # insert records into indexes
         for index in self._indexes.values():
+
+            # extract indexed column value, which will become the index record key
             _fkey = index.fkey(value)
+
+            if _old_value:
+                _fkey_old = index.fkey(_old_value)
+
+                if _fkey_old is not None and _fkey_old != _fkey:
+                    _idx_key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey_old)
+                    txn.delete(_idx_key)
+
             if _fkey is not None:
                 _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
                 _data = index.pmap._serialize_value(key)
