@@ -48,6 +48,7 @@ class User(object):
     referred_by: int = None
     realm_oid: int
     icecream: str
+    mrealm_authid: Tuple[uuid.UUID, str] = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):

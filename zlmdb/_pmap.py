@@ -242,6 +242,26 @@ class Index(object):
         return self._unique
 
 
+
+def is_null(value):
+    """
+    Check if the scalar value or tuple value is NULL.
+
+    :param value: Value to check.
+    :type value: a scalar or tuple
+
+    :return: Returns `True` if and only if the value is NULL (scalar value is None or all tuple elements are None)
+    :rtype: bool
+    """
+    if type(value) == tuple:
+        for v in value:
+            if v is not None:
+                return False
+        return True
+    else:
+        return value is None
+
+
 class PersistentMap(MutableMapping):
     """
     Abstract base class for persistent maps stored in LMDB.
@@ -403,11 +423,11 @@ class PersistentMap(MutableMapping):
             if _old_value:
                 _fkey_old = index.fkey(_old_value)
 
-                if _fkey_old is not None and _fkey_old != _fkey:
+                if not is_null(_fkey_old) and _fkey_old != _fkey:
                     _idx_key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey_old)
                     txn.delete(_idx_key)
 
-            if _fkey is not None:
+            if not is_null(_fkey):
                 _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
                 _data = index.pmap._serialize_value(key)
                 txn.put(_key, _data)
