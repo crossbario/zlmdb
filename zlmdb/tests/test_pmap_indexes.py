@@ -164,6 +164,10 @@ def test_fill_unique_index_non_nullable_raises(testset1):
                     with pytest.raises(zlmdb.NullValueConstraint):
                         schema.users[txn, user.oid] = user
 
+                    user.mrealm = None
+                    with pytest.raises(zlmdb.NullValueConstraint):
+                        schema.users[txn, user.oid] = user
+
 
 def test_fill_nonunique_indexes(testset1):
     with TemporaryDirectory() as dbpath:

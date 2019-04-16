@@ -242,7 +242,6 @@ class Index(object):
         return self._unique
 
 
-
 def is_null(value):
     """
     Check if the scalar value or tuple value is NULL.
@@ -703,6 +702,15 @@ class MapUuidUuidUuid(_types._UuidUuidKeysMixin, _types._UuidValuesMixin, Persis
 class MapUuidStringUuid(_types._UuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, string) keys and UUID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapUuidStringOid(_types._UuidStringKeysMixin, _types._OidValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, string) keys and Oid values.
     """
 
     def __init__(self, slot=None, compress=None):
