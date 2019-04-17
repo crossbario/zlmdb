@@ -263,7 +263,8 @@ class Schema4(zlmdb.Schema):
         self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email, nullable=True)
 
         self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
-        self.users.attach_index('idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid), nullable=False)
+        self.users.attach_index(
+            'idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid), nullable=False)
 
         self.idx_users_by_icecream = zlmdb.MapStringOidOid(5)
         self.users.attach_index(
