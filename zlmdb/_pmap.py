@@ -421,7 +421,6 @@ class PersistentMap(MutableMapping):
         # insert data record
         txn.put(_key, _data)
 
-
         # insert records into indexes
         for index in self._indexes.values():
 
