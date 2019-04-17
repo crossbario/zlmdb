@@ -43,12 +43,30 @@ class User(object):
     birthday: datetime.date
     is_friendly: bool
     tags: Optional[List[str]]
-    ratings: Dict[str, float] = {}
-    friends: List[int] = []
-    referred_by: int = None
+    ratings: Dict[str, float]
+    friends: List[int]
+    referred_by: int
     realm_oid: int
     icecream: str
     mrealm: uuid.UUID
+    mrealm_notnull: uuid.UUID
+
+    def __init__(self):
+        self.oid = None
+        self.name = None
+        self.authid = None
+        self.uuid = None
+        self.email = None
+        self.birthday = None
+        self.is_friendly = None
+        self.tags = None
+        self.ratings = {}
+        self.friends = []
+        self.referred_by = None
+        self.realm_oid = None
+        self.icecream = None
+        self.mrealm = None
+        self.mrealm_notnull = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -75,6 +93,8 @@ class User(object):
             return False
         if other.mrealm != self.mrealm:
             return False
+        if other.mrealm_notnull != self.mrealm_notnull:
+            return False
         return True
 
     def __ne__(self, other):
@@ -100,6 +120,7 @@ class User(object):
             'realm_oid': self.realm_oid,
             'icecream': self.icecream,
             'mrealm': self.mrealm.hex if self.mrealm else None,
+            'mrealm_notnull': self.mrealm_notnull.hex if self.mrealm_notnull else None,
         }
         return obj
 
@@ -124,6 +145,8 @@ class User(object):
         user.icecream = obj.get('icecream', None)
         if 'mrealm' in obj and obj['mrealm']:
             user.mrealm = uuid.UUID(hex=obj['mrealm'])
+        if 'mrealm_notnull' in obj and obj['mrealm_notnull']:
+            user.mrealm_notnull = uuid.UUID(hex=obj['mrealm_notnull'])
         return user
 
     @staticmethod
@@ -150,6 +173,7 @@ class User(object):
             user.realm_oid = random.randint(0, 9007199254740992)
         user.icecream = random.choice(['vanilla', 'lemon', 'strawberry'])
         user.mrealm = uuid.uuid4()
+        user.mrealm_notnull = uuid.uuid4()
         return user
 
 
@@ -223,6 +247,10 @@ class Schema4(zlmdb.Schema):
 
     idx_users_by_icecream: zlmdb.MapStringOidOid
 
+    idx_users_by_mrealm_authid: zlmdb.MapUuidStringOid
+
+    idx_users_by_mrealm_authid_notnull: zlmdb.MapUuidStringOid
+
     def __init__(self):
         super(Schema4, self).__init__()
 
@@ -244,3 +272,7 @@ class Schema4(zlmdb.Schema):
         self.idx_users_by_mrealm_authid = zlmdb.MapUuidStringOid(6)
         self.users.attach_index(
             'idx5', self.idx_users_by_mrealm_authid, lambda user: (user.mrealm, user.authid), nullable=True)
+
+        self.idx_users_by_mrealm_notnull_authid = zlmdb.MapUuidStringOid(7)
+        self.users.attach_index(
+            'idx6', self.idx_users_by_mrealm_notnull_authid, lambda user: (user.mrealm_notnull, user.authid), nullable=False)

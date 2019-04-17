@@ -244,20 +244,20 @@ class Index(object):
 
 def is_null(value):
     """
-    Check if the scalar value or tuple value is NULL.
+    Check if the scalar value or tuple/list value is NULL.
 
     :param value: Value to check.
     :type value: a scalar or tuple or list
 
-    :return: Returns ``True`` if and only if the value is NULL (scalar value is None or
-        all tuple/list elements are None).
+    :return: Returns ``True`` if and only if the value is NULL (scalar value is None
+        or _any_ tuple/list elements are None).
     :rtype: bool
     """
     if type(value) in (tuple, list):
         for v in value:
-            if v is not None:
-                return False
-        return True
+            if v is None:
+                return True
+        return False
     else:
         return value is None
 
@@ -421,6 +421,7 @@ class PersistentMap(MutableMapping):
         # insert data record
         txn.put(_key, _data)
 
+
         # insert records into indexes
         for index in self._indexes.values():
 
@@ -434,14 +435,14 @@ class PersistentMap(MutableMapping):
                     _idx_key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey_old)
                     txn.delete(_idx_key)
 
-            if not is_null(_fkey):
-                _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
-                _data = index.pmap._serialize_value(key)
-                txn.put(_key, _data)
-            else:
+            if is_null(_fkey):
                 if not index.nullable:
                     raise _errors.NullValueConstraint(
                         'cannot insert NULL value into non-nullable index "{}::{}"'.format(qual(self), index.name))
+            else:
+                _key = struct.pack('>H', index.pmap._slot) + index.pmap._serialize_key(_fkey)
+                _data = index.pmap._serialize_value(key)
+                txn.put(_key, _data)
 
     def __delitem__(self, txn_key):
         """

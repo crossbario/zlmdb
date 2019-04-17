@@ -44,8 +44,10 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
+    print('Using _schema_py3 !')
     from _schema_py3 import User, Schema4
 else:
+    print('Using _schema_py2 !')
     from _schema_py2 import User, Schema4
 
 
@@ -155,18 +157,19 @@ def test_fill_unique_index_non_nullable_raises(testset1):
 
         with zlmdb.Database(dbpath) as db:
 
-            stats = zlmdb.TransactionStats()
-
-            with db.begin(write=True, stats=stats) as txn:
+            with db.begin(write=True) as txn:
                 for user in testset1:
-                    # "user.authid" is an indexed column that is unique and non-nullable
-                    user.authid = None
+                    # "user.authid" is an indexed column that is non-nullable
+                    _user = deepcopy(user)
+                    _user.authid = None
                     with pytest.raises(zlmdb.NullValueConstraint):
-                        schema.users[txn, user.oid] = user
+                        schema.users[txn, _user.oid] = _user
 
-                    user.mrealm = None
+                    # "user.mrealm_notnull" is an indexed (composite) column that is non-nullable
+                    _user = deepcopy(user)
+                    _user.mrealm_notnull = None
                     with pytest.raises(zlmdb.NullValueConstraint):
-                        schema.users[txn, user.oid] = user
+                        schema.users[txn, _user.oid] = _user
 
 
 def test_fill_nonunique_indexes(testset1):

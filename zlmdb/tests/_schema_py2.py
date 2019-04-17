@@ -48,6 +48,7 @@ class User(object):
         self.realm_oid = None
         self.icecream = None
         self.mrealm = None
+        self.mrealm_notnull = None
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -74,6 +75,8 @@ class User(object):
             return False
         if other.mrealm != self.mrealm:
             return False
+        if other.mrealm_notnull != self.mrealm_notnull:
+            return False
         return True
 
     def __ne__(self, other):
@@ -99,6 +102,7 @@ class User(object):
             u'realm_oid': self.realm_oid,
             u'icecream': self.icecream,
             u'mrealm': self.mrealm.hex if self.mrealm else None,
+            u'mrealm_notnull': self.mrealm_notnull.hex if self.mrealm_notnull else None,
         }
         return obj
 
@@ -123,6 +127,8 @@ class User(object):
         user.icecream = obj.get(u'icecream', None)
         if 'mrealm' in obj and obj['mrealm']:
             user.mrealm = uuid.UUID(hex=obj['mrealm'])
+        if 'mrealm_notnull' in obj and obj['mrealm_notnull']:
+            user.mrealm_notnull = uuid.UUID(hex=obj['mrealm_notnull'])
         return user
 
     @staticmethod
@@ -149,6 +155,7 @@ class User(object):
             user.realm_oid = random.randint(0, 9007199254740992)
         user.icecream = random.choice([u'vanilla', u'lemon', u'strawberry'])
         user.mrealm = uuid.uuid4()
+        user.mrealm_notnull = uuid.uuid4()
         return user
 
 
@@ -209,3 +216,7 @@ class Schema4(zlmdb.Schema):
         self.idx_users_by_mrealm_authid = zlmdb.MapUuidStringOid(6)
         self.users.attach_index(
             'idx5', self.idx_users_by_mrealm_authid, lambda user: (user.mrealm, user.authid), nullable=True)
+
+        self.idx_users_by_mrealm_notnull_authid = zlmdb.MapUuidStringOid(7)
+        self.users.attach_index(
+            'idx6', self.idx_users_by_mrealm_notnull_authid, lambda user: (user.mrealm_notnull, user.authid), nullable=False)
