@@ -247,18 +247,26 @@ def is_null(value):
     Check if the scalar value or tuple value is NULL.
 
     :param value: Value to check.
-    :type value: a scalar or tuple
+    :type value: a scalar or tuple or list
 
-    :return: Returns `True` if and only if the value is NULL (scalar value is None or all tuple elements are None)
+    :return: Returns ``True`` if and only if the value is NULL (scalar value is None or
+        all tuple/list elements are None).
     :rtype: bool
     """
-    if type(value) == tuple:
+    if type(value) in (tuple, list):
         for v in value:
             if v is not None:
                 return False
         return True
     else:
         return value is None
+
+
+def qual(obj):
+    """
+    Return fully qualified name of a class.
+    """
+    return u'{}.{}'.format(obj.__class__.__module__, obj.__class__.__name__)
 
 
 class PersistentMap(MutableMapping):
@@ -432,8 +440,8 @@ class PersistentMap(MutableMapping):
                 txn.put(_key, _data)
             else:
                 if not index.nullable:
-                    raise _errors.NullValueConstraint('cannot insert NULL value into non-nullable index {}'.format(
-                        index.name))
+                    raise _errors.NullValueConstraint(
+                        'cannot insert NULL value into non-nullable index "{}::{}"'.format(qual(self), index.name))
 
     def __delitem__(self, txn_key):
         """
