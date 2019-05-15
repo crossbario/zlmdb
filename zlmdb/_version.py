@@ -26,4 +26,4 @@
 
 from __future__ import absolute_import
 
-__version__ = u'19.4.1'
+__version__ = u'19.5.1'
