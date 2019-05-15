@@ -48,6 +48,7 @@ from ._pmap import PersistentMap, \
                    MapUuidFlatBuffers, \
                    MapUuidTimestampFlatBuffers, \
                    MapUuidTimestampCbor, \
+                   MapTimestampStringFlatBuffers, \
                    MapTimestampUuidFlatBuffers, \
                    MapTimestampUuidCbor, \
                    MapUuidStringUuid, \
@@ -125,6 +126,7 @@ __all__ = (
     # UUID/Timestamp-combined pmap types for flatbuffers values
     'MapUuidTimestampFlatBuffers',
     'MapTimestampUuidFlatBuffers',
+    'MapTimestampStringFlatBuffers',
 
     # UUID (uint128) based pmap types for indexes
     'MapUuidUuid',

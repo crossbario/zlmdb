@@ -793,6 +793,16 @@ class MapTimestampUuidFlatBuffers(_types._TimestampUuidKeysMixin, _types._FlatBu
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
+class MapTimestampStringFlatBuffers(_types._TimestampStringKeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (Timestamp, String) keys and FlatBuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
 class MapUuidTimestampCbor(_types._UuidTimestampKeysMixin, _types._CborValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, Timestamp) keys and CBOR values.
