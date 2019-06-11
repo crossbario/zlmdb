@@ -68,6 +68,9 @@ test-pmaps:
 test-indexes:
 	clear && pytest -v -s zlmdb/tests/test_pmap_indexes.py
 
+test-select:
+	clear && pytest -v -s zlmdb/tests/test_select.py
+
 #
 # test ZLMDB high level API
 #
