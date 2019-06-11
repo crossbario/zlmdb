@@ -26,27 +26,22 @@
 
 from __future__ import absolute_import
 
-import os
-import sys
 import uuid
-import pytest
-from copy import deepcopy
 
 import numpy as np
 
-import txaio
-txaio.use_twisted()
-
 import zlmdb  # noqa
 from zlmdb import time_ns
+
+from _schema_mnode_log import Schema, MNodeLog
+
+import txaio
+txaio.use_twisted()
 
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
     from backports.tempfile import TemporaryDirectory
-
-from crossbarfx.master.database.mrealmschema import MrealmSchema
-from crossbarfx.cfxdb.log import MNodeLog
 
 
 def test_1():
@@ -54,7 +49,7 @@ def test_1():
 
         with zlmdb.Database(dbpath) as db:
 
-            schema = MrealmSchema.attach(db)
+            schema = Schema.attach(db)
 
             with db.begin(write=True) as txn:
                 for i in range(1000):
@@ -66,7 +61,7 @@ def test_1():
                     key = (rec.timestamp, rec.node_id)
 
                     schema.mnode_logs[txn, key] = rec
-                
+
             with db.begin() as txn:
                 cnt = schema.mnode_logs.count(txn)
                 print('XXX', cnt)
