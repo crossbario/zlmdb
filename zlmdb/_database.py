@@ -219,7 +219,7 @@ class Schema(object):
                 assert _index not in slots
 
                 _name = slot.get('name', None)
-                assert type(_name) == six.text_type
+                assert type(_name) == six.text_type or (six.PY2 and type(_name) == six.binary_type)
                 assert _name not in slots_byname
 
                 _key = slot.get('key', None)
@@ -232,7 +232,7 @@ class Schema(object):
                 assert _schema is None or type(_schema) == six.text_type
 
                 _description = slot.get('description', None)
-                assert _description is None or type(_description) == six.text_type
+                assert _description is None or type(_description) == six.text_type or (six.PY2 and type(_description) == six.binary_type)
 
                 if _schema:
                     _kv_type = '{}-{}-{}'.format(_key, _value, _schema)
