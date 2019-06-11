@@ -232,7 +232,8 @@ class Schema(object):
                 assert _schema is None or type(_schema) == six.text_type
 
                 _description = slot.get('description', None)
-                assert _description is None or type(_description) == six.text_type or (six.PY2 and type(_description) == six.binary_type)
+                assert (_description is None or type(_description) == six.text_type
+                        or (six.PY2 and type(_description) == six.binary_type))
 
                 if _schema:
                     _kv_type = '{}-{}-{}'.format(_key, _value, _schema)
@@ -542,8 +543,9 @@ class Database(object):
 
         assert type(create) == bool
 
-        assert name is None or type(name) == six.text_type
-        assert description is None or type(description) == six.text_type
+        assert name is None or type(name) == six.text_type or (six.PY2 and type(name) == six.binary_type)
+        assert (description is None or type(description) == six.text_type
+                or (six.PY2 and type(description) == six.binary_type))
 
         if oid not in self._slots_by_index:
             self.log.debug('No slot found in database for DB table <{oid}>: <{name}>', name=name, oid=oid)
