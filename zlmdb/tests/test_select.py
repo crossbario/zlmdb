@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import os
 import uuid
 import random
 import struct
@@ -61,7 +60,7 @@ def rfloat():
 
 def fill_mnodelog(obj):
 
-    obj.timestamp = np.datetime64(time_ns(), 'ns')
+    obj.timestamp = np.datetime64(time_ns(), 'ns') + np.timedelta64(random.randint(0, 120), 's')
     obj.node_id = uuid.uuid4()
     obj.run_id = uuid.uuid4()
     obj.state = random.randint(0, 2)
@@ -222,6 +221,8 @@ def test_mnodelog_insert(N=1000):
 
             data = {}
 
+            # insert test data
+            #
             with db.begin(write=True) as txn:
                 for i in range(N):
                     rec = MNodeLog()
@@ -231,15 +232,23 @@ def test_mnodelog_insert(N=1000):
 
                     data[key] = rec
 
+            # do test scans over inserted data
+            #
             with db.begin() as txn:
                 cnt = schema.mnode_logs.count(txn)
                 assert cnt == N
 
+                # do a simple full scan and compare to original data
+                #
                 for mnodelog in schema.mnode_logs.select(txn, return_keys=False):
                     key = (mnodelog.timestamp, mnodelog.node_id)
 
                     _mnodelog = data.get(key, None)
 
+                    # check that we have the record in the original data
+                    assert _mnodelog
+
+                    # check that the record data is equal to the original data
                     assert mnodelog.timestamp == _mnodelog.timestamp
                     assert mnodelog.node_id == _mnodelog.node_id
                     assert mnodelog.run_id == _mnodelog.run_id
@@ -303,3 +312,71 @@ def test_mnodelog_insert(N=1000):
                     assert mnodelog.disk_write_count == _mnodelog.disk_write_count
                     assert mnodelog.disk_write_merged_count == _mnodelog.disk_write_merged_count
                     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
+
+                # do some record counting queries
+                #
+                skeys = sorted(data.keys())
+                for key in skeys:
+                    mnodelog = schema.mnode_logs[txn, key]
+                    assert mnodelog
+
+                first_key = (np.datetime64(0, 'ns'), uuid.UUID(bytes=b'\0' * 16))
+                last_key = (np.datetime64(2**63 - 1, 'ns'), uuid.UUID(bytes=b'\xff' * 16))
+                cnt = schema.mnode_logs.count_range(txn, from_key=first_key, to_key=last_key)
+                assert cnt == N
+
+                cnt = schema.mnode_logs.count_range(txn, from_key=skeys[0], to_key=skeys[-1])
+                assert cnt == N - 1
+
+                from_key = skeys[0]
+                to_key = (skeys[-1][0], uuid.UUID(bytes=b'\xff' * 16))
+                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                assert cnt == N
+
+                K = len(skeys) // 2
+                cnt = schema.mnode_logs.count_range(txn, from_key=skeys[0], to_key=skeys[K])
+                assert cnt == N - K
+
+                K = 10
+                from_key = skeys[-K]
+                to_key = (skeys[-1][0], uuid.UUID(bytes=b'\xff' * 16))
+                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                assert cnt == K
+
+                print()
+                for key in schema.mnode_logs.select(txn,
+                                                    return_values=False,
+                                                    from_key=from_key,
+                                                    to_key=to_key,
+                                                    reverse=False):
+                    print(key)
+
+                print()
+                for key in schema.mnode_logs.select(txn,
+                                                    return_values=False,
+                                                    from_key=from_key,
+                                                    to_key=to_key,
+                                                    reverse=True):
+                    print(key)
+
+                if False:
+                    print()
+                    for key in schema.mnode_logs.select(txn,
+                                                        return_values=False,
+                                                        from_key=skeys[0],
+                                                        to_key=skeys[-1],
+                                                        reverse=True):
+                        print(key)
+
+                    print()
+                    for key in schema.mnode_logs.select(txn,
+                                                        return_values=False,
+                                                        from_key=first_key,
+                                                        to_key=last_key,
+                                                        reverse=True):
+                        print(key)
+
+                # * get first record
+                # * get last record
+                # * scan range (forward)
+                # * scan range reverse

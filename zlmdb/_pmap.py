@@ -105,9 +105,12 @@ class PersistentMapIterator(object):
         if self._reverse:
             # seek to the first record starting from to_key (and going reverse)
             self._found = self._cursor.set_range(self._to_key)
+
             if self._found:
                 # to_key is _not_ inclusive, so we move on one record
                 self._found = self._cursor.prev()
+            else:
+                self._found = self._cursor.last()
         else:
             # seek to the first record starting from from_key
             self._found = self._cursor.set_range(self._from_key)

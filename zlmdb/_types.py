@@ -329,13 +329,28 @@ class _TimestampUuidKeysMixin(object):
         assert isinstance(key1, np.datetime64)
         assert isinstance(key2, uuid.UUID)
 
-        return key1.tobytes() + key2.bytes
+        if False:
+            key1 = key1.tobytes()
+        else:
+            key1 = bytearray(key1.tobytes())
+            key1.reverse()
+            key1 = bytes(key1)
+
+        return key1 + key2.bytes
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
         assert len(data) == 24
 
         data1, data2 = data[0:8], data[8:24]
+
+        if False:
+            pass
+        else:
+            a1 = bytearray(data1)
+            a1.reverse()
+            data1 = bytes(a1)
+
         key1 = np.frombuffer(data1, dtype='datetime64[ns]')[0]
         key2 = uuid.UUID(bytes=data2)
         return key1, key2
