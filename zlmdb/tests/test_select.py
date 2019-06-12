@@ -429,5 +429,38 @@ def test_mnodelog_queries(N=1000):
                 assert len(keys2) == K
                 assert skeys[:K] == list(reversed(keys2))
 
-                # * get first record
-                # * get last record
+                # scan a range with 2 boundaries
+                #
+                K = 10
+                from_key = skeys[K]
+                to_key = skeys[-K]
+
+                _skeys = skeys[K:-K]
+                L = len(_skeys)
+
+                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                assert cnt == L
+
+                # scan [from_key, to_key[
+                keys1 = []
+                for key in schema.mnode_logs.select(txn,
+                                                    return_values=False,
+                                                    from_key=from_key,
+                                                    to_key=to_key,
+                                                    reverse=False):
+                    keys1.append(key)
+
+                assert len(keys1) == L
+                assert _skeys == keys1
+
+                # reverse scan [from_key, to_key[
+                keys2 = []
+                for key in schema.mnode_logs.select(txn,
+                                                    return_values=False,
+                                                    from_key=from_key,
+                                                    to_key=to_key,
+                                                    reverse=True):
+                    keys2.append(key)
+
+                assert len(keys2) == L
+                assert _skeys == list(reversed(keys2))
