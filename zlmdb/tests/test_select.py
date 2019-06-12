@@ -27,8 +27,11 @@
 from __future__ import absolute_import
 
 import uuid
+import random
 
+import flatbuffers
 import numpy as np
+import pytest
 
 import zlmdb  # noqa
 from zlmdb import time_ns
@@ -44,24 +47,75 @@ except ImportError:
     from backports.tempfile import TemporaryDirectory
 
 
-def test_1():
+@pytest.fixture(scope='function')
+def builder():
+    _builder = flatbuffers.Builder(0)
+    return _builder
+
+
+def fill_mnodelog(obj):
+
+    obj.timestamp = np.datetime64(time_ns(), 'ns')
+    obj.node_id = uuid.uuid4()
+    obj.run_id = uuid.uuid4()
+    obj.state = random.randint(0, 2)
+    obj.ended = obj.timestamp + np.timedelta64(random.randint(0, 120), 's')
+    obj.session = random.randint(0, 9007199254740992)
+    obj.sent = obj.timestamp
+    obj.seq = random.randint(0, 10000)
+
+    obj.routers = random.randint(0, 32)
+    obj.containers = random.randint(0, 32)
+    obj.guests = random.randint(0, 32)
+    obj.proxies = random.randint(0, 32)
+    obj.marketmakers = random.randint(0, 32)
+
+
+@pytest.fixture(scope='function')
+def mnodelog():
+    _mnodelog = MNodeLog()
+    fill_mnodelog(_mnodelog)
+    return _mnodelog
+
+
+def test_mnodelog_roundtrip(mnodelog, builder):
+    # serialize to bytes (flatbuffers) from python object
+    obj = mnodelog.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+    assert len(data) in [152, 160]
+
+    # create python object from bytes (flatbuffes)
+    _mnodelog = MNodeLog.cast(data)
+
+    assert mnodelog.timestamp == _mnodelog.timestamp
+    assert mnodelog.node_id == _mnodelog.node_id
+    assert mnodelog.run_id == _mnodelog.run_id
+    assert mnodelog.state == _mnodelog.state
+    assert mnodelog.ended == _mnodelog.ended
+    assert mnodelog.session == _mnodelog.session
+    assert mnodelog.sent == _mnodelog.sent
+    assert mnodelog.seq == _mnodelog.seq
+
+    assert mnodelog.routers == _mnodelog.routers
+    assert mnodelog.containers == _mnodelog.containers
+    assert mnodelog.guests == _mnodelog.guests
+    assert mnodelog.proxies == _mnodelog.proxies
+    assert mnodelog.marketmakers == _mnodelog.marketmakers
+
+
+def test_mnodelog_insert(N=1000):
     with TemporaryDirectory() as dbpath:
-
         with zlmdb.Database(dbpath) as db:
-
             schema = Schema.attach(db)
 
             with db.begin(write=True) as txn:
-                for i in range(1000):
+                for i in range(N):
                     rec = MNodeLog()
-                    rec.timestamp = np.datetime64(time_ns(), 'ns')
-                    rec.node_id = uuid.uuid4()
-                    rec.run_id = uuid.uuid4()
-
+                    fill_mnodelog(rec)
                     key = (rec.timestamp, rec.node_id)
-
                     schema.mnode_logs[txn, key] = rec
 
             with db.begin() as txn:
                 cnt = schema.mnode_logs.count(txn)
-                print('XXX', cnt)
+                assert cnt == N
