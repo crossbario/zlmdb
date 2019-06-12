@@ -56,7 +56,7 @@ def builder():
 
 
 def rfloat():
-    return struct.unpack('>f', os.urandom(4))[0]
+    return struct.unpack('>f', struct.pack('>f', random.random() * 10**10))[0]
 
 
 def fill_mnodelog(obj):
@@ -215,10 +215,12 @@ def test_mnodelog_roundtrip(mnodelog, builder):
     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
-def test_mnodelog_insert(N=2):
+def test_mnodelog_insert(N=1000):
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:
             schema = Schema.attach(db)
+
+            data = {}
 
             with db.begin(write=True) as txn:
                 for i in range(N):
@@ -227,6 +229,77 @@ def test_mnodelog_insert(N=2):
                     key = (rec.timestamp, rec.node_id)
                     schema.mnode_logs[txn, key] = rec
 
+                    data[key] = rec
+
             with db.begin() as txn:
                 cnt = schema.mnode_logs.count(txn)
                 assert cnt == N
+
+                for mnodelog in schema.mnode_logs.select(txn, return_keys=False):
+                    key = (mnodelog.timestamp, mnodelog.node_id)
+
+                    _mnodelog = data.get(key, None)
+
+                    assert mnodelog.timestamp == _mnodelog.timestamp
+                    assert mnodelog.node_id == _mnodelog.node_id
+                    assert mnodelog.run_id == _mnodelog.run_id
+                    assert mnodelog.state == _mnodelog.state
+                    assert mnodelog.ended == _mnodelog.ended
+                    assert mnodelog.session == _mnodelog.session
+                    assert mnodelog.sent == _mnodelog.sent
+                    assert mnodelog.seq == _mnodelog.seq
+
+                    assert mnodelog.routers == _mnodelog.routers
+                    assert mnodelog.containers == _mnodelog.containers
+                    assert mnodelog.guests == _mnodelog.guests
+                    assert mnodelog.proxies == _mnodelog.proxies
+                    assert mnodelog.marketmakers == _mnodelog.marketmakers
+
+                    assert mnodelog.cpu_ctx_switches == _mnodelog.cpu_ctx_switches
+                    assert mnodelog.cpu_freq == _mnodelog.cpu_freq
+                    assert mnodelog.cpu_guest == _mnodelog.cpu_guest
+                    assert mnodelog.cpu_guest_nice == _mnodelog.cpu_guest_nice
+                    assert mnodelog.cpu_idle == _mnodelog.cpu_idle
+                    assert mnodelog.cpu_interrupts == _mnodelog.cpu_interrupts
+                    assert mnodelog.cpu_iotwait == _mnodelog.cpu_iotwait
+                    assert mnodelog.cpu_irq == _mnodelog.cpu_irq
+                    assert mnodelog.cpu_nice == _mnodelog.cpu_nice
+                    assert mnodelog.cpu_soft_interrupts == _mnodelog.cpu_soft_interrupts
+                    assert mnodelog.cpu_softirq == _mnodelog.cpu_softirq
+                    assert mnodelog.cpu_steal == _mnodelog.cpu_steal
+                    assert mnodelog.cpu_system == _mnodelog.cpu_system
+                    assert mnodelog.cpu_user == _mnodelog.cpu_user
+
+                    assert mnodelog.network_bytes_recv == _mnodelog.network_bytes_recv
+                    assert mnodelog.network_bytes_sent == _mnodelog.network_bytes_sent
+                    assert mnodelog.network_connection_af_inet == _mnodelog.network_connection_af_inet
+                    assert mnodelog.network_connection_af_inet6 == _mnodelog.network_connection_af_inet6
+                    assert mnodelog.network_connection_af_unix == _mnodelog.network_connection_af_unix
+                    assert mnodelog.network_dropin == _mnodelog.network_dropin
+                    assert mnodelog.network_dropout == _mnodelog.network_dropout
+                    assert mnodelog.network_errin == _mnodelog.network_errin
+                    assert mnodelog.network_errout == _mnodelog.network_errout
+                    assert mnodelog.network_packets_recv == _mnodelog.network_packets_recv
+                    assert mnodelog.network_packets_sent == _mnodelog.network_packets_sent
+
+                    assert mnodelog.memory_active == _mnodelog.memory_active
+                    assert mnodelog.memory_available == _mnodelog.memory_available
+                    assert mnodelog.memory_buffers == _mnodelog.memory_buffers
+                    assert mnodelog.memory_cached == _mnodelog.memory_cached
+                    assert mnodelog.memory_free == _mnodelog.memory_free
+                    assert mnodelog.memory_inactive == _mnodelog.memory_inactive
+                    assert mnodelog.memory_percent == _mnodelog.memory_percent
+                    assert mnodelog.memory_shared == _mnodelog.memory_shared
+                    assert mnodelog.memory_slab == _mnodelog.memory_slab
+                    assert mnodelog.memory_total == _mnodelog.memory_total
+                    assert mnodelog.memory_used == _mnodelog.memory_used
+
+                    assert mnodelog.disk_busy_time == _mnodelog.disk_busy_time
+                    assert mnodelog.disk_read_bytes == _mnodelog.disk_read_bytes
+                    assert mnodelog.disk_read_count == _mnodelog.disk_read_count
+                    assert mnodelog.disk_read_merged_count == _mnodelog.disk_read_merged_count
+                    assert mnodelog.disk_read_time == _mnodelog.disk_read_time
+                    assert mnodelog.disk_write_bytes == _mnodelog.disk_write_bytes
+                    assert mnodelog.disk_write_count == _mnodelog.disk_write_count
+                    assert mnodelog.disk_write_merged_count == _mnodelog.disk_write_merged_count
+                    assert mnodelog.disk_write_time == _mnodelog.disk_write_time
