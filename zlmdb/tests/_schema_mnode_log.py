@@ -333,7 +333,7 @@ class MNodeLog(object):
         if self._node_id is None and self._from_fbs:
             if self._from_fbs.NodeIdLength():
                 _node_id = self._from_fbs.NodeIdAsBytes()
-                self._node_id = uuid.UUID(bytes=bytes(_node_id))
+                self._node_id = uuid.UUID(bytes=_node_id.tobytes())
         return self._node_id
 
     @node_id.setter
@@ -346,7 +346,7 @@ class MNodeLog(object):
         if self._run_id is None and self._from_fbs:
             if self._from_fbs.RunIdLength():
                 _run_id = self._from_fbs.RunIdAsBytes()
-                self._run_id = uuid.UUID(bytes=bytes(_run_id))
+                self._run_id = uuid.UUID(bytes=_run_id.tobytes())
         return self._run_id
 
     @run_id.setter
