@@ -78,9 +78,10 @@ class PersistentMapIterator(object):
         self._txn = txn
         self._pmap = pmap
 
-        self._from_key = struct.pack('>H', pmap._slot)
         if from_key:
-            self._from_key += pmap._serialize_key(from_key)
+            self._from_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(from_key)
+        else:
+            self._from_key = struct.pack('>H', pmap._slot)
 
         if to_key:
             self._to_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(to_key)

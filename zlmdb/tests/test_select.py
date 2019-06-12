@@ -316,6 +316,29 @@ def test_mnodelog_insert(N=1000):
                     assert mnodelog.disk_write_merged_count == _mnodelog.disk_write_merged_count
                     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_queries(N=1000):
+    with TemporaryDirectory() as dbpath:
+        with zlmdb.Database(dbpath) as db:
+            schema = Schema.attach(db)
+
+            data = {}
+
+            # insert test data
+            #
+            with db.begin(write=True) as txn:
+                for i in range(N):
+                    rec = MNodeLog()
+                    fill_mnodelog(rec)
+                    key = (rec.timestamp, rec.node_id)
+                    schema.mnode_logs[txn, key] = rec
+
+                    data[key] = rec
+
+            # do test scans over inserted data
+            #
+            with db.begin() as txn:
                 # do some record counting queries
                 #
                 skeys = sorted(data.keys())
@@ -346,40 +369,65 @@ def test_mnodelog_insert(N=1000):
                 cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
                 assert cnt == K
 
-                print()
+                # do some scanning queries
+                #
+
+                # full scan
+                keys1 = []
+                for key in schema.mnode_logs.select(txn, return_values=False, reverse=False):
+                    keys1.append(key)
+
+                assert len(keys1) == N
+
+                # full reverse scan
+                keys2 = []
+                for key in schema.mnode_logs.select(txn, return_values=False, reverse=True):
+                    keys2.append(key)
+
+                assert len(keys2) == N
+                assert keys1 == list(reversed(keys2))
+
+                # scan [from_key, to_key[
+                keys1 = []
                 for key in schema.mnode_logs.select(txn,
                                                     return_values=False,
                                                     from_key=from_key,
                                                     to_key=to_key,
                                                     reverse=False):
-                    print(key)
+                    keys1.append(key)
 
-                print()
+                assert len(keys1) == K
+
+                # reverse scan [from_key, to_key[
+                keys2 = []
                 for key in schema.mnode_logs.select(txn,
                                                     return_values=False,
                                                     from_key=from_key,
                                                     to_key=to_key,
                                                     reverse=True):
-                    print(key)
+                    keys2.append(key)
 
-                if False:
-                    print()
-                    for key in schema.mnode_logs.select(txn,
-                                                        return_values=False,
-                                                        from_key=skeys[0],
-                                                        to_key=skeys[-1],
-                                                        reverse=True):
-                        print(key)
+                assert len(keys2) == K
+                assert keys1 == list(reversed(keys2))
 
-                    print()
-                    for key in schema.mnode_logs.select(txn,
-                                                        return_values=False,
-                                                        from_key=first_key,
-                                                        to_key=last_key,
-                                                        reverse=True):
-                        print(key)
+                K = len(skeys) // 2
+                anchor_key = skeys[K]
+
+                # scan [from_key, ..
+                keys1 = []
+                for key in schema.mnode_logs.select(txn, return_values=False, from_key=anchor_key, reverse=False):
+                    keys1.append(key)
+
+                assert len(keys1) == K
+                assert skeys[K:] == keys1
+
+                # reverse scan ..., to_key[
+                keys2 = []
+                for key in schema.mnode_logs.select(txn, return_values=False, to_key=anchor_key, reverse=True):
+                    keys2.append(key)
+
+                assert len(keys2) == K
+                assert skeys[:K] == list(reversed(keys2))
 
                 # * get first record
                 # * get last record
-                # * scan range (forward)
-                # * scan range reverse
