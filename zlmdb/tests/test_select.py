@@ -464,3 +464,86 @@ def test_mnodelog_queries(N=1000):
 
                 assert len(keys2) == L
                 assert _skeys == list(reversed(keys2))
+
+
+def _test_mnodelog_bigtable(N, M, K):
+    with TemporaryDirectory() as dbpath:
+        with zlmdb.Database(dbpath, maxsize=(5 * 2**30)) as db:
+            schema = Schema.attach(db)
+
+            data = {}
+            print()
+
+            # fill table
+            #
+            started = time_ns()
+            with db.begin(write=True) as txn:
+                for i in range(N):
+                    rec = MNodeLog()
+                    fill_mnodelog(rec)
+                    key = (rec.timestamp, rec.node_id)
+                    schema.mnode_logs[txn, key] = rec
+                    data[key] = rec
+            duration = (time_ns() - started) / 1000000000.
+            rps = int(round(N / duration))
+            duration = int(round(duration))
+            print('Inserted {} records in {} seconds [{} records/sec]'.format(N, duration, rps))
+
+            skeys = sorted(data.keys())
+
+            # random single record selects
+            #
+            if True:
+                started = time_ns()
+                with db.begin() as txn:
+                    for i in range(M):
+                        key = random.choice(skeys)
+                        mnodelog = schema.mnode_logs[txn, key]
+                        assert mnodelog
+                duration = (time_ns() - started) / 1000000000.
+                rps = int(round(M / duration))
+                duration = int(round(duration))
+                print('Selected {} records in {} seconds [{} records/sec]'.format(M, duration, rps))
+
+            # random range counts
+            #
+            if True:
+                started = time_ns()
+                with db.begin() as txn:
+                    for i in range(K):
+                        # we select a fixed range of (max) 1000 elements:
+                        i1 = random.randint(0, len(skeys) - 1)
+                        i2 = random.randint(i1, min(len(skeys) - 1, i1 + 1000))
+                        key1 = skeys[i1]
+                        key2 = skeys[i2]
+                        cnt = schema.mnode_logs.count_range(txn, from_key=key1, to_key=key2)
+                        assert cnt == len(skeys[i1:i2])
+                duration = (time_ns() - started) / 1000000000.
+                rps = int(round(K / duration))
+                duration = int(round(duration))
+                print('Performed {} range counts in {} seconds [{} queries/sec]'.format(K, duration, rps))
+
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_bigtable_size10k():
+    _test_mnodelog_bigtable(N=10000, M=500000, K=10000)
+
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_bigtable_size20k():
+    _test_mnodelog_bigtable(N=20000, M=1000000, K=20000)
+
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_bigtable_size40k():
+    _test_mnodelog_bigtable(N=40000, M=2000000, K=40000)
+
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_bigtable_size80k():
+    _test_mnodelog_bigtable(N=80000, M=4000000, K=80000)
+
+
+@pytest.mark.skipif(six.PY2, reason="FIXME")
+def test_mnodelog_bigtable_size160k():
+    _test_mnodelog_bigtable(N=160000, M=8000000, K=160000)
