@@ -90,6 +90,35 @@ def _random_string():
         return token_value
 
 
+def dt_to_bytes(dt):
+    """
+    Serialize a timestamp in big-endian byte order.
+
+    :param dt: Timestamp to serialize.
+    :return: Serialized bytes.
+    """
+    assert isinstance(dt, np.datetime64)
+
+    data = bytearray(dt.tobytes())
+    data.reverse()
+    return bytes(data)
+
+
+def bytes_to_dt(data):
+    """
+    Deserialize a timestamp from big-endian byte order data.
+
+    :param data: Data to deserialize.
+    :return: Deserialized timestamp.
+    """
+    assert type(data) == six.binary_type
+
+    data = bytearray(data)
+    data.reverse()
+    dt = np.frombuffer(bytes(data), dtype='datetime64[ns]')[0]
+    return dt
+
+
 #
 # Key Types
 #
@@ -329,14 +358,7 @@ class _TimestampUuidKeysMixin(object):
         assert isinstance(key1, np.datetime64)
         assert isinstance(key2, uuid.UUID)
 
-        if False:
-            key1 = key1.tobytes()
-        else:
-            key1 = bytearray(key1.tobytes())
-            key1.reverse()
-            key1 = bytes(key1)
-
-        return key1 + key2.bytes
+        return dt_to_bytes(key1) + key2.bytes
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
@@ -344,14 +366,7 @@ class _TimestampUuidKeysMixin(object):
 
         data1, data2 = data[0:8], data[8:24]
 
-        if False:
-            pass
-        else:
-            a1 = bytearray(data1)
-            a1.reverse()
-            data1 = bytes(a1)
-
-        key1 = np.frombuffer(data1, dtype='datetime64[ns]')[0]
+        key1 = bytes_to_dt(data1)
         key2 = uuid.UUID(bytes=data2)
         return key1, key2
 
@@ -368,14 +383,14 @@ class _TimestampStringKeysMixin(object):
         assert isinstance(key1, np.datetime64)
         assert type(key2) == six.text_type
 
-        return key1.tobytes() + key2.encode('utf8')
+        return dt_to_bytes(key1) + key2.encode('utf8')
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
         assert len(data) > 8
 
         data1, data2 = data[0:8], data[8:]
-        key1 = np.frombuffer(data1, dtype='datetime64[ns]')[0]
+        key1 = bytes_to_dt(data1)
         key2 = data2.decode('utf8')
         return key1, key2
 
@@ -392,7 +407,7 @@ class _StringTimestampKeysMixin(object):
         assert type(key1) == six.text_type
         assert isinstance(key2, np.datetime64)
 
-        return key1.encode('utf8') + key2.tobytes()
+        return key1.encode('utf8') + dt_to_bytes(key2)
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
@@ -401,7 +416,7 @@ class _StringTimestampKeysMixin(object):
         slen = len(data) - 8
         data1, data2 = data[0:slen], data[slen:]
         key1 = data1.decode('utf8')
-        key2 = np.frombuffer(data2, dtype='datetime64[ns]')[0]
+        key2 = bytes_to_dt(data2)
         return key1, key2
 
 
@@ -417,7 +432,7 @@ class _UuidTimestampKeysMixin(object):
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, np.datetime64)
 
-        return key1.bytes + key2.tobytes()
+        return key1.bytes + dt_to_bytes(key2)
 
     def _deserialize_key(self, data):
         assert type(data) == six.binary_type
@@ -425,7 +440,7 @@ class _UuidTimestampKeysMixin(object):
 
         data1, data2 = data[0:16], data[16:24]
         key1 = uuid.UUID(bytes=data1)
-        key2 = np.frombuffer(data2, dtype='datetime64[ns]')[0]
+        key2 = bytes_to_dt(data2)
         return key1, key2
 
 
