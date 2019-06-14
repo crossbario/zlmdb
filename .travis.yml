@@ -36,7 +36,7 @@ stages:
   - test
   - name: deploy
     if: repo = crossbario/zlmdb AND branch = master AND type != pull_request
-    
+
 after_success:
   # since we use --parallel-mode to coverage inside Tox we use
   # "coverage combine" so the filename is always ".coverage"
@@ -52,6 +52,8 @@ matrix:
     - python: "3.7"
       env:
       - TOX_ENV=coverage
+      # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
+      script: travis_wait tox -c tox.ini -e $TOX_ENV
 
     - python: "3.7"
       env:
