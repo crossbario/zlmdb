@@ -333,6 +333,11 @@ class _UuidUuidKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
+        if key1 is None:
+            key1 = uuid.UUID(bytes=b'\x00'*16)
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00'*16)
+
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, uuid.UUID)
 
@@ -354,6 +359,11 @@ class _TimestampUuidKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = np.datetime64(0, 'ns')
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00'*16)
 
         assert isinstance(key1, np.datetime64)
         assert isinstance(key2, uuid.UUID)
@@ -379,6 +389,11 @@ class _TimestampBytes32KeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = np.datetime64(0, 'ns')
+        if key2 is None:
+            key2 = b'\x00' * 32
 
         assert isinstance(key1, np.datetime64), 'first key element must be np.datetime64, but got {}'.format(type(key1))
         assert isinstance(key2, six.binary_type), 'second key element must be binary, but got {}'.format(type(key2))
@@ -406,6 +421,11 @@ class _TimestampStringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
+        if key1 is None:
+            key1 = np.datetime64(0, 'ns')
+        if key2 is None:
+            key2 = u''
+
         assert isinstance(key1, np.datetime64)
         assert type(key2) == six.text_type
 
@@ -429,6 +449,11 @@ class _StringTimestampKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = u''
+        if key2 is None:
+            key2 = np.datetime64(0, 'ns')
 
         assert type(key1) == six.text_type
         assert isinstance(key2, np.datetime64)
@@ -455,6 +480,11 @@ class _UuidTimestampKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
+        if key1 is None:
+            key1 = uuid.UUID(bytes=b'\x00'*16)
+        if key2 is None:
+            key2 = np.datetime64(0, 'ns')
+
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, np.datetime64)
 
@@ -474,6 +504,11 @@ class _UuidStringKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = uuid.UUID(bytes=b'\x00'*16)
+        if key2 is None:
+            key2 = u''
 
         assert isinstance(key1, uuid.UUID), 'key1 must be of type UUID, but was {}'.format(type(key1))
         assert type(key2) == six.text_type, 'key2 must be of type string, but was {}'.format(type(key2))
