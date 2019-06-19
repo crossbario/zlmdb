@@ -749,6 +749,24 @@ class _UuidValuesMixin(object):
             return uuid.UUID(bytes=b'\x00' * 16)
 
 
+class _TimestampValuesMixin(object):
+    def _serialize_value(self, value):
+        assert value is None or isinstance(value, np.datetime64)
+
+        if value:
+            return dt_to_bytes(value)
+        else:
+            return b'\x00' * 8
+
+    def _deserialize_value(self, data):
+        assert data is None or type(data) == six.binary_type and len(data) == 8
+
+        if data:
+            return bytes_to_dt(data)
+        else:
+            return None
+
+
 class _Bytes32ValuesMixin(object):
     def _serialize_value(self, value):
         assert value is None or (type(value) == six.binary_type and len(value) == 32)
