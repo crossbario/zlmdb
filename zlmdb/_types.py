@@ -334,9 +334,9 @@ class _UuidUuidKeysMixin(object):
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = uuid.UUID(bytes=b'\x00'*16)
+            key1 = uuid.UUID(bytes=b'\x00' * 16)
         if key2 is None:
-            key2 = uuid.UUID(bytes=b'\x00'*16)
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
 
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, uuid.UUID)
@@ -363,7 +363,7 @@ class _TimestampUuidKeysMixin(object):
         if key1 is None:
             key1 = np.datetime64(0, 'ns')
         if key2 is None:
-            key2 = uuid.UUID(bytes=b'\x00'*16)
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
 
         assert isinstance(key1, np.datetime64)
         assert isinstance(key2, uuid.UUID)
@@ -395,9 +395,9 @@ class _TimestampBytes32KeysMixin(object):
         if key2 is None:
             key2 = b'\x00' * 32
 
-        assert isinstance(key1, np.datetime64), 'first key element must be np.datetime64, but got {}'.format(type(key1))
-        assert isinstance(key2, six.binary_type), 'second key element must be binary, but got {}'.format(type(key2))
-        assert isinstance(key2, six.binary_type) and len(key2) == 32, 'second key element must have len 32, but got {}'.format(len(key2))
+        assert isinstance(key1, np.datetime64)
+        assert isinstance(key2, six.binary_type)
+        assert isinstance(key2, six.binary_type) and len(key2) == 32
 
         return dt_to_bytes(key1) + key2
 
@@ -481,7 +481,7 @@ class _UuidTimestampKeysMixin(object):
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = uuid.UUID(bytes=b'\x00'*16)
+            key1 = uuid.UUID(bytes=b'\x00' * 16)
         if key2 is None:
             key2 = np.datetime64(0, 'ns')
 
@@ -506,7 +506,7 @@ class _UuidStringKeysMixin(object):
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = uuid.UUID(bytes=b'\x00'*16)
+            key1 = uuid.UUID(bytes=b'\x00' * 16)
         if key2 is None:
             key2 = u''
 
