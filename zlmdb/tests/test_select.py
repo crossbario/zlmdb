@@ -49,7 +49,6 @@ try:
 except ImportError:
     from backports.tempfile import TemporaryDirectory
 
-
 if 'COVERAGE_PROCESS_START' in os.environ:
     COVERAGE = True
 else:
