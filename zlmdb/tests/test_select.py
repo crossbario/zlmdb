@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import os
 import uuid
 import random
 import struct
@@ -47,6 +48,12 @@ try:
     from tempfile import TemporaryDirectory
 except ImportError:
     from backports.tempfile import TemporaryDirectory
+
+
+if 'COVERAGE_PROCESS_START' in os.environ or 'COVERAGE_FILE' in os environ:
+    COVERAGE = True
+else:
+    COVERAGE = False
 
 
 @pytest.fixture(scope='function')
@@ -530,20 +537,24 @@ def test_mnodelog_bigtable_size10k():
 
 
 @pytest.mark.skipif(six.PY2, reason="FIXME")
+@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size20k():
     _test_mnodelog_bigtable(N=20000, M=1000000, K=20000)
 
 
 @pytest.mark.skipif(six.PY2, reason="FIXME")
+@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size40k():
     _test_mnodelog_bigtable(N=40000, M=2000000, K=40000)
 
 
 @pytest.mark.skipif(six.PY2, reason="FIXME")
+@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size80k():
     _test_mnodelog_bigtable(N=80000, M=4000000, K=80000)
 
 
 @pytest.mark.skipif(six.PY2, reason="FIXME")
+@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size160k():
     _test_mnodelog_bigtable(N=160000, M=8000000, K=160000)
