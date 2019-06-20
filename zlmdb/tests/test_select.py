@@ -50,7 +50,7 @@ except ImportError:
     from backports.tempfile import TemporaryDirectory
 
 
-if 'COVERAGE_PROCESS_START' in os.environ or 'COVERAGE_FILE' in os environ:
+if 'COVERAGE_PROCESS_START' in os.environ:
     COVERAGE = True
 else:
     COVERAGE = False
