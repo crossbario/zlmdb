@@ -381,6 +381,40 @@ class _TimestampUuidKeysMixin(object):
         return key1, key2
 
 
+class _TimestampUuidStringKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return np.datetime64(time.time_ns(), 'ns'), uuid.uuid4(), ''
+
+    def _serialize_key(self, key1_key2_key3):
+        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
+        key1, key2, key3 = key1_key2_key3
+
+        if key1 is None:
+            key1 = np.datetime64(0, 'ns')
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
+        if key3 is None:
+            key3 = u''
+
+        assert isinstance(key1, np.datetime64)
+        assert isinstance(key2, uuid.UUID)
+        assert type(key3) == six.text_type
+
+        return dt_to_bytes(key1) + key2.bytes + key3.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) >= 24
+
+        data1, data2, data3 = data[0:8], data[8:24], data[24:]
+
+        key1 = bytes_to_dt(data1)
+        key2 = uuid.UUID(bytes=data2)
+        key3 = data3.decode('utf8') if data3 else u''
+        return key1, key2, key3
+
+
 class _TimestampBytes32KeysMixin(object):
     @staticmethod
     def new_key():
