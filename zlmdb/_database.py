@@ -388,7 +388,35 @@ class Database(object):
     def stats(self):
         assert self._env is not None
 
-        return self._env.stat()
+        current_size = os.path.getsize(os.path.join(self._dbpath, 'data.mdb'))
+
+        res = {
+            'zlmdb_slots': len(self._slots),
+            'current_size': current_size,
+            'max_size': self._maxsize,
+            'free': 1. - float(current_size) / float(self._maxsize),
+            'read_only': self._readonly,
+            'sync_enabled': self._sync,
+        }
+
+        # psize 	        Size of a database page in bytes.
+        # depth 	        Height of the B-tree.
+        # branch_pages 	    Number of internal (non-leaf) pages.
+        # leaf_pages 	    Number of leaf pages.
+        # overflow_pages 	Number of overflow pages.
+        # entries 	        Number of data items.
+        res.update(self._env.stat())
+
+        # map_addr 	        Address of database map in RAM.
+        # map_size 	        Size of database map in RAM.
+        # last_pgno 	    ID of last used page.
+        # last_txnid 	    ID of last committed transaction.
+        # max_readers 	    Number of reader slots allocated in the lock file. Equivalent to the value of
+        #                   maxreaders= specified by the first process opening the Environment.
+        # num_readers 	    Maximum number of reader slots in simultaneous use since the lock file was initialized.
+        res.update(self._env.info())
+
+        return res
 
     def _cache_slots(self):
         slots = {}
