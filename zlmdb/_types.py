@@ -351,6 +351,23 @@ class _UuidUuidKeysMixin(object):
         return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
 
 
+class _TimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return np.datetime64(time.time_ns(), 'ns')
+
+    def _serialize_key(self, key1):
+        assert isinstance(key1, np.datetime64)
+
+        return dt_to_bytes(key1)
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 8
+
+        return bytes_to_dt(data[0:8])
+
+
 class _TimestampUuidKeysMixin(object):
     @staticmethod
     def new_key():
