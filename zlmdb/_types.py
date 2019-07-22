@@ -671,6 +671,22 @@ class _Bytes20KeysMixin(object):
         return data
 
 
+class _Bytes16KeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(16)
+
+    def _serialize_key(self, key):
+        assert type(key) == six.binary_type and len(key) == 16
+
+        return key
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type and len(data) == 16
+
+        return data
+
+
 class _Bytes20Bytes20KeysMixin(object):
     @staticmethod
     def new_key():
@@ -844,6 +860,22 @@ class _Bytes20ValuesMixin(object):
 
     def _deserialize_value(self, data):
         assert data is None or (type(data) == six.binary_type and len(data) == 20)
+        if data:
+            return data
+        else:
+            return None
+
+
+class _Bytes16ValuesMixin(object):
+    def _serialize_value(self, value):
+        assert value is None or (type(value) == six.binary_type and len(value) == 16)
+        if value:
+            return value
+        else:
+            return b'\x00' * 16
+
+    def _deserialize_value(self, data):
+        assert data is None or (type(data) == six.binary_type and len(data) == 16)
         if data:
             return data
         else:

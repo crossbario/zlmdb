@@ -89,7 +89,9 @@ from ._pmap import PersistentMap, \
                    MapBytes32Bytes32FlatBuffers, \
                    MapBytes32StringFlatBuffers, \
                    MapTimestampBytes32FlatBuffers, \
+                   MapBytes20Bytes16, \
                    MapBytes20Bytes20, \
+                   MapBytes16FlatBuffers, \
                    MapBytes20FlatBuffers, \
                    MapBytes20Bytes20FlatBuffers, \
                    MapBytes20StringFlatBuffers
@@ -200,10 +202,16 @@ __all__ = (
     #
     # Bytes20 pmaps
     #
+    'MapBytes20Bytes16',
     'MapBytes20Bytes20',
     'MapBytes20FlatBuffers',
     'MapBytes20Bytes20FlatBuffers',
     'MapBytes20StringFlatBuffers',
+
+    #
+    # Bytes16 pmaps
+    #
+    'MapBytes16FlatBuffers',
 )
 
 TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]

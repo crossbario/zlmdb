@@ -1173,9 +1173,28 @@ class MapBytes20Bytes20(_types._Bytes20KeysMixin, _types._Bytes20ValuesMixin, Pe
         PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
+class MapBytes20Bytes16(_types._Bytes20KeysMixin, _types._Bytes16ValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes20 keys and Bytes16 values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapBytes20FlatBuffers(_types._Bytes20KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with Bytes20 keys and Flatbuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
+class MapBytes16FlatBuffers(_types._Bytes16KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes16 keys and Flatbuffers values.
     """
 
     def __init__(self, slot=None, compress=None, build=None, cast=None):
