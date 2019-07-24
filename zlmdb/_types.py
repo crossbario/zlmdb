@@ -601,13 +601,13 @@ class _Bytes32KeysMixin(object):
         return os.urandom(32)
 
     def _serialize_key(self, key):
-        assert type(key) == six.binary_type
+        assert type(key) == six.binary_type, 'key must be bytes[32], was "{}"'.format(key)
         assert len(key) == 32
 
         return key
 
     def _deserialize_key(self, data):
-        assert type(data) == six.binary_type
+        assert type(data) == six.binary_type, 'data must be bytes[32], was "{}"'.format(data)
         assert len(data) == 32
 
         return data
@@ -661,12 +661,12 @@ class _Bytes20KeysMixin(object):
         return os.urandom(20)
 
     def _serialize_key(self, key):
-        assert type(key) == six.binary_type and len(key) == 20
+        assert type(key) == six.binary_type and len(key) == 20, 'key must be bytes[20], was "{}"'.format(key)
 
         return key
 
     def _deserialize_key(self, data):
-        assert type(data) == six.binary_type and len(data) == 20
+        assert type(data) == six.binary_type and len(data) == 20, 'data must be bytes[20], was "{}"'.format(data)
 
         return data
 
@@ -677,12 +677,12 @@ class _Bytes16KeysMixin(object):
         return os.urandom(16)
 
     def _serialize_key(self, key):
-        assert type(key) == six.binary_type and len(key) == 16
+        assert type(key) == six.binary_type and len(key) == 16, 'key must be bytes[16], was "{}"'.format(key)
 
         return key
 
     def _deserialize_key(self, data):
-        assert type(data) == six.binary_type and len(data) == 16
+        assert type(data) == six.binary_type and len(data) == 16, 'data must be bytes[16], was "{}"'.format(data)
 
         return data
 
