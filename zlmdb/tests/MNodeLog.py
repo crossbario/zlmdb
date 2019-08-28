@@ -4,6 +4,7 @@
 
 import flatbuffers
 
+
 # /// Logs of runs (from node start to end) of managed CF nodes .
 class MNodeLog(object):
     __slots__ = ['_tab']
@@ -20,7 +21,8 @@ class MNodeLog(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
 # /// Unix time in ns when this log record was received (from CFC node clock).
-    # MNodeLog
+# MNodeLog
+
     def Timestamp(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
@@ -28,12 +30,14 @@ class MNodeLog(object):
         return 0
 
 # /// CF node ID.
-    # MNodeLog
+# MNodeLog
+
     def NodeId(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags,
+                                 a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # MNodeLog
@@ -51,12 +55,14 @@ class MNodeLog(object):
         return 0
 
 # /// CFC run ID (this is unique over all start-stop cycles of CFC, and constant per run).
-    # MNodeLog
+# MNodeLog
+
     def RunId(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags,
+                                 a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # MNodeLog
@@ -74,7 +80,8 @@ class MNodeLog(object):
         return 0
 
 # /// Current state of CF node.
-    # MNodeLog
+# MNodeLog
+
     def State(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
@@ -82,7 +89,8 @@ class MNodeLog(object):
         return 0
 
 # /// When the state is ENDED, the end timestamp (Unix time in ns).
-    # MNodeLog
+# MNodeLog
+
     def Ended(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
@@ -90,7 +98,8 @@ class MNodeLog(object):
         return 0
 
 # /// WAMP session ID of the CF node uplink management session to this CFC instance.
-    # MNodeLog
+# MNodeLog
+
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
@@ -98,7 +107,8 @@ class MNodeLog(object):
         return 0
 
 # /// Unix time in ns. This timestamp is from the original received event payload (from CF node clock).
-    # MNodeLog
+# MNodeLog
+
     def Sent(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
@@ -106,7 +116,8 @@ class MNodeLog(object):
         return 0
 
 # /// Sequence number as sent in the log record by the CF node (started at 0 for CF start and incremented by one on each heartbeat).
-    # MNodeLog
+# MNodeLog
+
     def Seq(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
@@ -114,7 +125,8 @@ class MNodeLog(object):
         return 0
 
 # /// Number of router workers currently running in the CF node.
-    # MNodeLog
+# MNodeLog
+
     def Routers(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
@@ -122,7 +134,8 @@ class MNodeLog(object):
         return 0
 
 # /// Number of container workers currently running in the CF node.
-    # MNodeLog
+# MNodeLog
+
     def Containers(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
@@ -130,7 +143,8 @@ class MNodeLog(object):
         return 0
 
 # /// Number of guest workers currently running in the CF node.
-    # MNodeLog
+# MNodeLog
+
     def Guests(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
@@ -138,7 +152,8 @@ class MNodeLog(object):
         return 0
 
 # /// Number of proxy workers currently running in the CF node.
-    # MNodeLog
+# MNodeLog
+
     def Proxies(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
@@ -146,15 +161,18 @@ class MNodeLog(object):
         return 0
 
 # /// Number of XBR market maker workers currently running in the CF node.
-    # MNodeLog
+# MNodeLog
+
     def Marketmakers(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
+
 # /// CF node system statistics.
-    # MNodeLog
+# MNodeLog
+
     def CpuCtxSwitches(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
@@ -469,65 +487,250 @@ class MNodeLog(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def MNodeLogStart(builder): builder.StartObject(58)
-def MNodeLogAddTimestamp(builder, timestamp): builder.PrependUint64Slot(0, timestamp, 0)
-def MNodeLogAddNodeId(builder, nodeId): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(nodeId), 0)
-def MNodeLogStartNodeIdVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def MNodeLogAddRunId(builder, runId): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(runId), 0)
-def MNodeLogStartRunIdVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def MNodeLogAddState(builder, state): builder.PrependUint8Slot(3, state, 0)
-def MNodeLogAddEnded(builder, ended): builder.PrependUint64Slot(4, ended, 0)
-def MNodeLogAddSession(builder, session): builder.PrependUint64Slot(5, session, 0)
-def MNodeLogAddSent(builder, sent): builder.PrependUint64Slot(6, sent, 0)
-def MNodeLogAddSeq(builder, seq): builder.PrependUint64Slot(7, seq, 0)
-def MNodeLogAddRouters(builder, routers): builder.PrependUint16Slot(8, routers, 0)
-def MNodeLogAddContainers(builder, containers): builder.PrependUint16Slot(9, containers, 0)
-def MNodeLogAddGuests(builder, guests): builder.PrependUint16Slot(10, guests, 0)
-def MNodeLogAddProxies(builder, proxies): builder.PrependUint16Slot(11, proxies, 0)
-def MNodeLogAddMarketmakers(builder, marketmakers): builder.PrependUint16Slot(12, marketmakers, 0)
-def MNodeLogAddCpuCtxSwitches(builder, cpuCtxSwitches): builder.PrependUint64Slot(13, cpuCtxSwitches, 0)
-def MNodeLogAddCpuFreq(builder, cpuFreq): builder.PrependFloat32Slot(14, cpuFreq, 0.0)
-def MNodeLogAddCpuGuest(builder, cpuGuest): builder.PrependFloat32Slot(15, cpuGuest, 0.0)
-def MNodeLogAddCpuGuestNice(builder, cpuGuestNice): builder.PrependFloat32Slot(16, cpuGuestNice, 0.0)
-def MNodeLogAddCpuIdle(builder, cpuIdle): builder.PrependFloat32Slot(17, cpuIdle, 0.0)
-def MNodeLogAddCpuInterrupts(builder, cpuInterrupts): builder.PrependUint64Slot(18, cpuInterrupts, 0)
-def MNodeLogAddCpuIowait(builder, cpuIowait): builder.PrependFloat32Slot(19, cpuIowait, 0.0)
-def MNodeLogAddCpuIrq(builder, cpuIrq): builder.PrependFloat32Slot(20, cpuIrq, 0.0)
-def MNodeLogAddCpuNice(builder, cpuNice): builder.PrependFloat32Slot(21, cpuNice, 0.0)
-def MNodeLogAddCpuSoftInterrupts(builder, cpuSoftInterrupts): builder.PrependUint64Slot(22, cpuSoftInterrupts, 0)
-def MNodeLogAddCpuSoftirq(builder, cpuSoftirq): builder.PrependFloat32Slot(23, cpuSoftirq, 0.0)
-def MNodeLogAddCpuSteal(builder, cpuSteal): builder.PrependFloat32Slot(24, cpuSteal, 0.0)
-def MNodeLogAddCpuSystem(builder, cpuSystem): builder.PrependFloat32Slot(25, cpuSystem, 0.0)
-def MNodeLogAddCpuUser(builder, cpuUser): builder.PrependFloat32Slot(26, cpuUser, 0.0)
-def MNodeLogAddDiskBusyTime(builder, diskBusyTime): builder.PrependUint64Slot(27, diskBusyTime, 0)
-def MNodeLogAddDiskReadBytes(builder, diskReadBytes): builder.PrependUint64Slot(28, diskReadBytes, 0)
-def MNodeLogAddDiskReadCount(builder, diskReadCount): builder.PrependUint64Slot(29, diskReadCount, 0)
-def MNodeLogAddDiskReadMergedCount(builder, diskReadMergedCount): builder.PrependUint64Slot(30, diskReadMergedCount, 0)
-def MNodeLogAddDiskReadTime(builder, diskReadTime): builder.PrependUint64Slot(31, diskReadTime, 0)
-def MNodeLogAddDiskWriteBytes(builder, diskWriteBytes): builder.PrependUint64Slot(32, diskWriteBytes, 0)
-def MNodeLogAddDiskWriteCount(builder, diskWriteCount): builder.PrependUint64Slot(33, diskWriteCount, 0)
-def MNodeLogAddDiskWriteMergedCount(builder, diskWriteMergedCount): builder.PrependUint64Slot(34, diskWriteMergedCount, 0)
-def MNodeLogAddDiskWriteTime(builder, diskWriteTime): builder.PrependUint64Slot(35, diskWriteTime, 0)
-def MNodeLogAddMemoryActive(builder, memoryActive): builder.PrependUint64Slot(36, memoryActive, 0)
-def MNodeLogAddMemoryAvailable(builder, memoryAvailable): builder.PrependUint64Slot(37, memoryAvailable, 0)
-def MNodeLogAddMemoryBuffers(builder, memoryBuffers): builder.PrependUint64Slot(38, memoryBuffers, 0)
-def MNodeLogAddMemoryCached(builder, memoryCached): builder.PrependUint64Slot(39, memoryCached, 0)
-def MNodeLogAddMemoryFree(builder, memoryFree): builder.PrependUint64Slot(40, memoryFree, 0)
-def MNodeLogAddMemoryInactive(builder, memoryInactive): builder.PrependUint64Slot(41, memoryInactive, 0)
-def MNodeLogAddMemoryPercent(builder, memoryPercent): builder.PrependFloat32Slot(42, memoryPercent, 0.0)
-def MNodeLogAddMemoryShared(builder, memoryShared): builder.PrependUint64Slot(43, memoryShared, 0)
-def MNodeLogAddMemorySlab(builder, memorySlab): builder.PrependUint64Slot(44, memorySlab, 0)
-def MNodeLogAddMemoryTotal(builder, memoryTotal): builder.PrependUint64Slot(45, memoryTotal, 0)
-def MNodeLogAddMemoryUsed(builder, memoryUsed): builder.PrependUint64Slot(46, memoryUsed, 0)
-def MNodeLogAddNetworkBytesRecv(builder, networkBytesRecv): builder.PrependUint64Slot(47, networkBytesRecv, 0)
-def MNodeLogAddNetworkBytesSent(builder, networkBytesSent): builder.PrependUint64Slot(48, networkBytesSent, 0)
-def MNodeLogAddNetworkConnectionAfInet(builder, networkConnectionAfInet): builder.PrependUint32Slot(49, networkConnectionAfInet, 0)
-def MNodeLogAddNetworkConnectionAfInet6(builder, networkConnectionAfInet6): builder.PrependUint32Slot(50, networkConnectionAfInet6, 0)
-def MNodeLogAddNetworkConnectionAfUnix(builder, networkConnectionAfUnix): builder.PrependUint32Slot(51, networkConnectionAfUnix, 0)
-def MNodeLogAddNetworkDropin(builder, networkDropin): builder.PrependUint32Slot(52, networkDropin, 0)
-def MNodeLogAddNetworkDropout(builder, networkDropout): builder.PrependUint32Slot(53, networkDropout, 0)
-def MNodeLogAddNetworkErrin(builder, networkErrin): builder.PrependUint32Slot(54, networkErrin, 0)
-def MNodeLogAddNetworkErrout(builder, networkErrout): builder.PrependUint32Slot(55, networkErrout, 0)
-def MNodeLogAddNetworkPacketsRecv(builder, networkPacketsRecv): builder.PrependUint64Slot(56, networkPacketsRecv, 0)
-def MNodeLogAddNetworkPacketsSent(builder, networkPacketsSent): builder.PrependUint64Slot(57, networkPacketsSent, 0)
-def MNodeLogEnd(builder): return builder.EndObject()
+
+def MNodeLogStart(builder):
+    builder.StartObject(58)
+
+
+def MNodeLogAddTimestamp(builder, timestamp):
+    builder.PrependUint64Slot(0, timestamp, 0)
+
+
+def MNodeLogAddNodeId(builder, nodeId):
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(nodeId), 0)
+
+
+def MNodeLogStartNodeIdVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
+def MNodeLogAddRunId(builder, runId):
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(runId), 0)
+
+
+def MNodeLogStartRunIdVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
+def MNodeLogAddState(builder, state):
+    builder.PrependUint8Slot(3, state, 0)
+
+
+def MNodeLogAddEnded(builder, ended):
+    builder.PrependUint64Slot(4, ended, 0)
+
+
+def MNodeLogAddSession(builder, session):
+    builder.PrependUint64Slot(5, session, 0)
+
+
+def MNodeLogAddSent(builder, sent):
+    builder.PrependUint64Slot(6, sent, 0)
+
+
+def MNodeLogAddSeq(builder, seq):
+    builder.PrependUint64Slot(7, seq, 0)
+
+
+def MNodeLogAddRouters(builder, routers):
+    builder.PrependUint16Slot(8, routers, 0)
+
+
+def MNodeLogAddContainers(builder, containers):
+    builder.PrependUint16Slot(9, containers, 0)
+
+
+def MNodeLogAddGuests(builder, guests):
+    builder.PrependUint16Slot(10, guests, 0)
+
+
+def MNodeLogAddProxies(builder, proxies):
+    builder.PrependUint16Slot(11, proxies, 0)
+
+
+def MNodeLogAddMarketmakers(builder, marketmakers):
+    builder.PrependUint16Slot(12, marketmakers, 0)
+
+
+def MNodeLogAddCpuCtxSwitches(builder, cpuCtxSwitches):
+    builder.PrependUint64Slot(13, cpuCtxSwitches, 0)
+
+
+def MNodeLogAddCpuFreq(builder, cpuFreq):
+    builder.PrependFloat32Slot(14, cpuFreq, 0.0)
+
+
+def MNodeLogAddCpuGuest(builder, cpuGuest):
+    builder.PrependFloat32Slot(15, cpuGuest, 0.0)
+
+
+def MNodeLogAddCpuGuestNice(builder, cpuGuestNice):
+    builder.PrependFloat32Slot(16, cpuGuestNice, 0.0)
+
+
+def MNodeLogAddCpuIdle(builder, cpuIdle):
+    builder.PrependFloat32Slot(17, cpuIdle, 0.0)
+
+
+def MNodeLogAddCpuInterrupts(builder, cpuInterrupts):
+    builder.PrependUint64Slot(18, cpuInterrupts, 0)
+
+
+def MNodeLogAddCpuIowait(builder, cpuIowait):
+    builder.PrependFloat32Slot(19, cpuIowait, 0.0)
+
+
+def MNodeLogAddCpuIrq(builder, cpuIrq):
+    builder.PrependFloat32Slot(20, cpuIrq, 0.0)
+
+
+def MNodeLogAddCpuNice(builder, cpuNice):
+    builder.PrependFloat32Slot(21, cpuNice, 0.0)
+
+
+def MNodeLogAddCpuSoftInterrupts(builder, cpuSoftInterrupts):
+    builder.PrependUint64Slot(22, cpuSoftInterrupts, 0)
+
+
+def MNodeLogAddCpuSoftirq(builder, cpuSoftirq):
+    builder.PrependFloat32Slot(23, cpuSoftirq, 0.0)
+
+
+def MNodeLogAddCpuSteal(builder, cpuSteal):
+    builder.PrependFloat32Slot(24, cpuSteal, 0.0)
+
+
+def MNodeLogAddCpuSystem(builder, cpuSystem):
+    builder.PrependFloat32Slot(25, cpuSystem, 0.0)
+
+
+def MNodeLogAddCpuUser(builder, cpuUser):
+    builder.PrependFloat32Slot(26, cpuUser, 0.0)
+
+
+def MNodeLogAddDiskBusyTime(builder, diskBusyTime):
+    builder.PrependUint64Slot(27, diskBusyTime, 0)
+
+
+def MNodeLogAddDiskReadBytes(builder, diskReadBytes):
+    builder.PrependUint64Slot(28, diskReadBytes, 0)
+
+
+def MNodeLogAddDiskReadCount(builder, diskReadCount):
+    builder.PrependUint64Slot(29, diskReadCount, 0)
+
+
+def MNodeLogAddDiskReadMergedCount(builder, diskReadMergedCount):
+    builder.PrependUint64Slot(30, diskReadMergedCount, 0)
+
+
+def MNodeLogAddDiskReadTime(builder, diskReadTime):
+    builder.PrependUint64Slot(31, diskReadTime, 0)
+
+
+def MNodeLogAddDiskWriteBytes(builder, diskWriteBytes):
+    builder.PrependUint64Slot(32, diskWriteBytes, 0)
+
+
+def MNodeLogAddDiskWriteCount(builder, diskWriteCount):
+    builder.PrependUint64Slot(33, diskWriteCount, 0)
+
+
+def MNodeLogAddDiskWriteMergedCount(builder, diskWriteMergedCount):
+    builder.PrependUint64Slot(34, diskWriteMergedCount, 0)
+
+
+def MNodeLogAddDiskWriteTime(builder, diskWriteTime):
+    builder.PrependUint64Slot(35, diskWriteTime, 0)
+
+
+def MNodeLogAddMemoryActive(builder, memoryActive):
+    builder.PrependUint64Slot(36, memoryActive, 0)
+
+
+def MNodeLogAddMemoryAvailable(builder, memoryAvailable):
+    builder.PrependUint64Slot(37, memoryAvailable, 0)
+
+
+def MNodeLogAddMemoryBuffers(builder, memoryBuffers):
+    builder.PrependUint64Slot(38, memoryBuffers, 0)
+
+
+def MNodeLogAddMemoryCached(builder, memoryCached):
+    builder.PrependUint64Slot(39, memoryCached, 0)
+
+
+def MNodeLogAddMemoryFree(builder, memoryFree):
+    builder.PrependUint64Slot(40, memoryFree, 0)
+
+
+def MNodeLogAddMemoryInactive(builder, memoryInactive):
+    builder.PrependUint64Slot(41, memoryInactive, 0)
+
+
+def MNodeLogAddMemoryPercent(builder, memoryPercent):
+    builder.PrependFloat32Slot(42, memoryPercent, 0.0)
+
+
+def MNodeLogAddMemoryShared(builder, memoryShared):
+    builder.PrependUint64Slot(43, memoryShared, 0)
+
+
+def MNodeLogAddMemorySlab(builder, memorySlab):
+    builder.PrependUint64Slot(44, memorySlab, 0)
+
+
+def MNodeLogAddMemoryTotal(builder, memoryTotal):
+    builder.PrependUint64Slot(45, memoryTotal, 0)
+
+
+def MNodeLogAddMemoryUsed(builder, memoryUsed):
+    builder.PrependUint64Slot(46, memoryUsed, 0)
+
+
+def MNodeLogAddNetworkBytesRecv(builder, networkBytesRecv):
+    builder.PrependUint64Slot(47, networkBytesRecv, 0)
+
+
+def MNodeLogAddNetworkBytesSent(builder, networkBytesSent):
+    builder.PrependUint64Slot(48, networkBytesSent, 0)
+
+
+def MNodeLogAddNetworkConnectionAfInet(builder, networkConnectionAfInet):
+    builder.PrependUint32Slot(49, networkConnectionAfInet, 0)
+
+
+def MNodeLogAddNetworkConnectionAfInet6(builder, networkConnectionAfInet6):
+    builder.PrependUint32Slot(50, networkConnectionAfInet6, 0)
+
+
+def MNodeLogAddNetworkConnectionAfUnix(builder, networkConnectionAfUnix):
+    builder.PrependUint32Slot(51, networkConnectionAfUnix, 0)
+
+
+def MNodeLogAddNetworkDropin(builder, networkDropin):
+    builder.PrependUint32Slot(52, networkDropin, 0)
+
+
+def MNodeLogAddNetworkDropout(builder, networkDropout):
+    builder.PrependUint32Slot(53, networkDropout, 0)
+
+
+def MNodeLogAddNetworkErrin(builder, networkErrin):
+    builder.PrependUint32Slot(54, networkErrin, 0)
+
+
+def MNodeLogAddNetworkErrout(builder, networkErrout):
+    builder.PrependUint32Slot(55, networkErrout, 0)
+
+
+def MNodeLogAddNetworkPacketsRecv(builder, networkPacketsRecv):
+    builder.PrependUint64Slot(56, networkPacketsRecv, 0)
+
+
+def MNodeLogAddNetworkPacketsSent(builder, networkPacketsSent):
+    builder.PrependUint64Slot(57, networkPacketsSent, 0)
+
+
+def MNodeLogEnd(builder):
+    return builder.EndObject()

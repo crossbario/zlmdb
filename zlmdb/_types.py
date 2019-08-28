@@ -737,6 +737,38 @@ class _Bytes20StringKeysMixin(object):
         return data1, data2.decode('utf8')
 
 
+class _Bytes20TimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(20), np.datetime64(time.time_ns(), 'ns')
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
+            self.__class__.__name__, keys)
+        assert len(keys) == 2
+        key1, key2 = keys
+
+        if not key1:
+            key1 = b'\x00' * 20
+
+        assert key1 is None or (type(key1) == six.binary_type and len(key1) == 20)
+        assert isinstance(key2, np.datetime64)
+
+        return key1 + key2.tobytes()
+
+    def _deserialize_key(self, data):
+        assert data is None or (type(data) == six.binary_type and len(data) == 28)
+
+        if data:
+            key1 = data[:20]
+            key2 = np.datetime64(struct.unpack('>Q!Q', data[20:]), 'ns')
+        else:
+            key1 = b'\x00' * 20
+            key2 = np.datetime64(0, 'ns')
+
+        return key1, key2
+
+
 #
 # Value Types
 #
@@ -866,6 +898,33 @@ class _Bytes20ValuesMixin(object):
             return None
 
 
+class _Bytes20TimestampValuesMixin(object):
+    def _serialize_value(self, values):
+        assert type(values) == tuple
+        assert len(values) == 2
+        value1, value2 = values
+
+        if not value1:
+            value1 = b'\x00' * 20
+
+        assert value1 is None or (type(value1) == six.binary_type and len(value1) == 20)
+        assert isinstance(value2, np.datetime64)
+
+        return value1 + value2.tobytes()
+
+    def _deserialize_value(self, data):
+        assert data is None or (type(data) == six.binary_type and len(data) == 28)
+
+        if data:
+            value1 = data[:20]
+            value2 = np.datetime64(struct.unpack('>Q!Q', data[20:]), 'ns')
+        else:
+            value1 = b'\x00' * 20
+            value2 = np.datetime64(0, 'ns')
+
+        return value1, value2
+
+
 class _Bytes16ValuesMixin(object):
     def _serialize_value(self, value):
         assert value is None or (type(value) == six.binary_type and len(value) == 16)
@@ -913,8 +972,8 @@ class _JsonValuesMixin(object):
         assert self._unmarshal
 
     def _serialize_value(self, value):
-        return json.dumps(self._marshal(value), separators=(',', ':'), ensure_ascii=False,
-                          sort_keys=False).encode('utf8')
+        return json.dumps(
+            self._marshal(value), separators=(',', ':'), ensure_ascii=False, sort_keys=False).encode('utf8')
 
     def _deserialize_value(self, data):
         return self._unmarshal(json.loads(data.decode('utf8')))

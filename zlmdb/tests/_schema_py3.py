@@ -275,7 +275,8 @@ class Schema4(zlmdb.Schema):
             'idx5', self.idx_users_by_mrealm_authid, lambda user: (user.mrealm, user.authid), nullable=True)
 
         self.idx_users_by_mrealm_notnull_authid = zlmdb.MapUuidStringOid(7)
-        self.users.attach_index('idx6',
-                                self.idx_users_by_mrealm_notnull_authid,
-                                lambda user: (user.mrealm_notnull, user.authid),
-                                nullable=False)
+        self.users.attach_index(
+            'idx6',
+            self.idx_users_by_mrealm_notnull_authid,
+            lambda user: (user.mrealm_notnull, user.authid),
+            nullable=False)

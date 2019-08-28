@@ -505,14 +505,15 @@ class PersistentMap(MutableMapping):
         assert type(reverse) == bool
         assert limit is None or (type(limit) == int and limit > 0 and limit < 10000000)
 
-        return PersistentMapIterator(txn,
-                                     self,
-                                     from_key=from_key,
-                                     to_key=to_key,
-                                     return_keys=return_keys,
-                                     return_values=return_values,
-                                     reverse=reverse,
-                                     limit=limit)
+        return PersistentMapIterator(
+            txn,
+            self,
+            from_key=from_key,
+            to_key=to_key,
+            return_keys=return_keys,
+            return_values=return_values,
+            reverse=reverse,
+            limit=limit)
 
     def count(self, txn, prefix=None):
         """
@@ -1167,6 +1168,24 @@ class MapBytes32StringFlatBuffers(_types._Bytes32StringKeysMixin, _types._FlatBu
 class MapBytes20Bytes20(_types._Bytes20KeysMixin, _types._Bytes20ValuesMixin, PersistentMap):
     """
     Persistent map with Bytes20 keys and Bytes20 values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapBytes20Bytes20Timestamp(_types._Bytes20KeysMixin, _types._Bytes20TimestampValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes20 keys and (Bytes20, Timestamp) values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapBytes20TimestampBytes20(_types._Bytes20TimestampKeysMixin, _types._Bytes20ValuesMixin, PersistentMap):
+    """
+    Persistent map with (Bytes20, Timestamp) keys and Bytes20 values.
     """
 
     def __init__(self, slot=None, compress=None):

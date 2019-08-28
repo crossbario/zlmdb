@@ -395,22 +395,16 @@ def test_mnodelog_queries(N=1000):
 
                 # scan [from_key, to_key[
                 keys1 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=False):
+                for key in schema.mnode_logs.select(
+                        txn, return_values=False, from_key=from_key, to_key=to_key, reverse=False):
                     keys1.append(key)
 
                 assert len(keys1) == K
 
                 # reverse scan [from_key, to_key[
                 keys2 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=True):
+                for key in schema.mnode_logs.select(
+                        txn, return_values=False, from_key=from_key, to_key=to_key, reverse=True):
                     keys2.append(key)
 
                 assert len(keys2) == K
@@ -449,11 +443,8 @@ def test_mnodelog_queries(N=1000):
 
                 # scan [from_key, to_key[
                 keys1 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=False):
+                for key in schema.mnode_logs.select(
+                        txn, return_values=False, from_key=from_key, to_key=to_key, reverse=False):
                     keys1.append(key)
 
                 assert len(keys1) == L
@@ -461,11 +452,8 @@ def test_mnodelog_queries(N=1000):
 
                 # reverse scan [from_key, to_key[
                 keys2 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=True):
+                for key in schema.mnode_logs.select(
+                        txn, return_values=False, from_key=from_key, to_key=to_key, reverse=True):
                     keys2.append(key)
 
                 assert len(keys2) == L
