@@ -216,7 +216,7 @@ class _OidTimestampKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert len(data) == 16
-        key1, key2 = struct.unpack('>Q!Q', data)
+        key1, key2 = struct.unpack('>Q>Q', data)
         key2 = np.datetime64(key2, 'ns')
         return key1, key2
 
@@ -240,7 +240,7 @@ class _OidTimestampStringKeysMixin(object):
         assert type(data) == six.binary_type
         assert len(data) > 16
 
-        oid, ts = struct.unpack('>Q!Q', data[:16])
+        oid, ts = struct.unpack('>Q>Q', data[:16])
         ts = np.datetime64(ts, 'ns')
         s = data[16:]
         return oid, ts, s
@@ -754,14 +754,14 @@ class _Bytes20TimestampKeysMixin(object):
         assert key1 is None or (type(key1) == six.binary_type and len(key1) == 20)
         assert isinstance(key2, np.datetime64)
 
-        return key1 + key2.tobytes()
+        return key1 + dt_to_bytes(key2)
 
     def _deserialize_key(self, data):
         assert data is None or (type(data) == six.binary_type and len(data) == 28)
 
         if data:
             key1 = data[:20]
-            key2 = np.datetime64(struct.unpack('>Q!Q', data[20:]), 'ns')
+            key2 = bytes_to_dt(data[20:])
         else:
             key1 = b'\x00' * 20
             key2 = np.datetime64(0, 'ns')
@@ -910,14 +910,14 @@ class _Bytes20TimestampValuesMixin(object):
         assert value1 is None or (type(value1) == six.binary_type and len(value1) == 20)
         assert isinstance(value2, np.datetime64)
 
-        return value1 + value2.tobytes()
+        return value1 + dt_to_bytes(value2)
 
     def _deserialize_value(self, data):
         assert data is None or (type(data) == six.binary_type and len(data) == 28)
 
         if data:
             value1 = data[:20]
-            value2 = np.datetime64(struct.unpack('>Q!Q', data[20:]), 'ns')
+            value2 = bytes_to_dt(data[20:])
         else:
             value1 = b'\x00' * 20
             value2 = np.datetime64(0, 'ns')
