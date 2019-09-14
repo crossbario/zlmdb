@@ -124,6 +124,10 @@ install:
 	pip install -e .
 	pip install -r requirements-dev.txt
 
+yapf:
+	yapf --version
+	yapf -rd --style=yapf.ini --exclude="zlmdb/flatbuffers/*" --exclude="zlmdb/tests/MNodeLog.py" zlmdb
+
 # auto-format code - WARNING: this my change files, in-place!
 autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
