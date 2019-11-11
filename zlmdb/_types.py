@@ -316,7 +316,7 @@ class _UuidKeysMixin(object):
         return uuid.uuid4()
 
     def _serialize_key(self, key):
-        assert isinstance(key, uuid.UUID)
+        assert isinstance(key, uuid.UUID), 'key must be an UUID, but was "{}"'.format(key)
 
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
@@ -661,6 +661,26 @@ class _Bytes32Bytes32KeysMixin(object):
 
         data1, data2 = data[0:32], data[32:64]
         return data1, data2
+
+
+class _Bytes32UuidKeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == six.binary_type
+        assert len(key1) == 32
+
+        assert isinstance(key2, uuid.UUID)
+
+        return key1 + key2.bytes
+
+    def _deserialize_key(self, data):
+        assert type(data) == six.binary_type
+        assert len(data) == 48
+
+        data1, data2 = data[0:32], data[32:48]
+        return data1, uuid.UUID(bytes=data2)
 
 
 class _Bytes32StringKeysMixin(object):

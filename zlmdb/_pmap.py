@@ -1149,6 +1149,16 @@ class MapBytes32FlatBuffers(_types._Bytes32KeysMixin, _types._FlatBuffersValuesM
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
+class MapBytes32UuidFlatBuffers(_types._Bytes32UuidKeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+    """
+    Persistent map with (Bytes32, UUID) keys and Flatbuffers values.
+    """
+
+    def __init__(self, slot=None, compress=None, build=None, cast=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+        _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
+
+
 class MapBytes32Bytes32FlatBuffers(_types._Bytes32Bytes32KeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
     """
     Persistent map with (Bytes32, Bytes32) keys and Flatbuffers values.

@@ -574,7 +574,7 @@ class Database(object):
                 slot = Slot(oid=oid, creator='unknown', slot=slot_index, name=name, description=description)
                 self._set_slot(slot_index, slot)
                 self.log.info(
-                    'Allocated new slot {slot_index:03d} for DB table <{oid}>: {name}',
+                    'Allocated new slot {slot_index:03d} for database table <{oid}>: {name}',
                     slot_index=slot_index,
                     oid=oid,
                     name=name)
@@ -582,15 +582,14 @@ class Database(object):
                 raise Exception('No slot found in database for DB table <{oid}>: {name}', name=name, oid=oid)
         else:
             slot_index = self._slots_by_index[oid]
-            pmap = _pmap.PersistentMap(slot_index)
-            with self.begin() as txn:
-                records = pmap.count(txn)
-            self.log.debug(
-                'DB table <{oid}> attached from existing slot <{slot_index:03d}>: <{name}> [{records} records]',
+            # pmap = _pmap.PersistentMap(slot_index)
+            # with self.begin() as txn:
+            #     records = pmap.count(txn)
+            self.log.info(
+                'Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
                 name=name,
                 oid=oid,
-                slot_index=slot_index,
-                records=records)
+                slot_index=slot_index)
 
         if marshal:
             slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)
