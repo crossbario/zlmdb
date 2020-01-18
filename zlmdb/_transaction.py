@@ -34,12 +34,11 @@ import lmdb
 
 # Select the most precise wallclock measurement function available on the platform
 if sys.platform.startswith('win'):
-    # On Windows, this function returns wall-clock seconds elapsed since the
-    # first call to this function, as a floating point number, based on the
-    # Win32 function QueryPerformanceCounter(). The resolution is typically
-    # better than one microsecond
-    walltime = time.clock
-    _ = walltime()  # this starts wallclock
+    # On Windows, this function returns the value (in fractional seconds) of
+    # a performance counter. It does include time elapsed during sleep and is
+    # system-wide. The reference point of the returned value is undefined, so
+    # that only the diference between the results of consecutive calls is valid.
+    walltime = time.perf_counter
 else:
     # On Unix-like platforms, this used the first available from this list:
     # (1) gettimeofday() -- resolution in microseconds
