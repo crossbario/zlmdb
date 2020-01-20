@@ -230,7 +230,7 @@ class _OidTimestampStringKeysMixin(object):
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert isinstance(key2, np.datetime64)
-        assert type(key3) == six.text_type
+        assert type(key3) == str
         return struct.pack('>Q', key1) + key2.tobytes() + key3.encode('utf8')
 
     def _deserialize_key(self, data):
@@ -253,7 +253,7 @@ class _OidStringKeysMixin(object):
         key1, key2 = key1_key2
 
         assert type(key1) == int
-        assert type(key2) == six.text_type
+        assert type(key2) == str
 
         return struct.pack('>Q', key1) + key2.encode('utf8')
 
@@ -275,7 +275,7 @@ class _StringOidKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        assert type(key1) == six.text_type
+        assert type(key1) == str
         assert type(key2) == int
 
         return key1.encode('utf8') + struct.pack('>Q', key2)
@@ -295,7 +295,7 @@ class _StringKeysMixin(object):
         return _random_string()
 
     def _serialize_key(self, key):
-        assert type(key) == six.text_type
+        assert type(key) == str
 
         return key.encode('utf8')
 
@@ -442,7 +442,7 @@ class _TimestampUuidStringKeysMixin(object):
 
         assert isinstance(key1, np.datetime64)
         assert isinstance(key2, uuid.UUID)
-        assert type(key3) == six.text_type
+        assert type(key3) == str
 
         return dt_to_bytes(key1) + key2.bytes + key3.encode('utf8')
 
@@ -504,7 +504,7 @@ class _TimestampStringKeysMixin(object):
             key2 = u''
 
         assert isinstance(key1, np.datetime64)
-        assert type(key2) == six.text_type
+        assert type(key2) == str
 
         return dt_to_bytes(key1) + key2.encode('utf8')
 
@@ -532,7 +532,7 @@ class _StringTimestampKeysMixin(object):
         if key2 is None:
             key2 = np.datetime64(0, 'ns')
 
-        assert type(key1) == six.text_type
+        assert type(key1) == str
         assert isinstance(key2, np.datetime64)
 
         return key1.encode('utf8') + dt_to_bytes(key2)
@@ -588,7 +588,7 @@ class _UuidStringKeysMixin(object):
             key2 = u''
 
         assert isinstance(key1, uuid.UUID), 'key1 must be of type UUID, but was {}'.format(type(key1))
-        assert type(key2) == six.text_type, 'key2 must be of type string, but was {}'.format(type(key2))
+        assert type(key2) == str, 'key2 must be of type string, but was {}'.format(type(key2))
 
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
@@ -688,7 +688,7 @@ class _Bytes32StringKeysMixin(object):
         assert type(key1) == bytes
         assert len(key1) == 32
 
-        assert type(key2) == six.text_type
+        assert type(key2) == str
         assert len(key2) > 0
 
         return key1 + key2.encode('utf8')
@@ -770,7 +770,7 @@ class _Bytes20StringKeysMixin(object):
         assert type(key1) == bytes
         assert len(key1) == 20
 
-        assert type(key2) == six.text_type
+        assert type(key2) == str
         assert len(key2) > 0
 
         return key1 + key2.encode('utf8')
@@ -822,7 +822,7 @@ class _Bytes20TimestampKeysMixin(object):
 
 class _StringValuesMixin(object):
     def _serialize_value(self, value):
-        assert value is None or type(value) == six.text_type
+        assert value is None or type(value) == str
 
         if value is not None:
             return value.encode('utf8')
@@ -840,7 +840,7 @@ class _StringSetValuesMixin(object):
     def _serialize_value(self, value_set):
         assert type(value_set) == set
         for v in value_set:
-            assert v is None or type(v) == six.text_type
+            assert v is None or type(v) == str
 
         return b'\0'.join([(value.encode('utf8') if value else b'') for value in value_set])
 

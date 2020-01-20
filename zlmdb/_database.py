@@ -213,7 +213,7 @@ class Schema(object):
                 assert _index not in slots
 
                 _name = slot.get('name', None)
-                assert type(_name) == six.text_type or (six.PY2 and type(_name) == bytes)
+                assert type(_name) == str or (six.PY2 and type(_name) == bytes)
                 assert _name not in slots_byname
 
                 _key = slot.get('key', None)
@@ -223,10 +223,10 @@ class Schema(object):
                 assert _value in ['json', 'cbor']
 
                 _schema = slot.get('schema', None)
-                assert _schema is None or type(_schema) == six.text_type
+                assert _schema is None or type(_schema) == str
 
                 _description = slot.get('description', None)
-                assert (_description is None or type(_description) == six.text_type
+                assert (_description is None or type(_description) == str
                         or (six.PY2 and type(_description) == bytes))
 
                 if _schema:
@@ -560,8 +560,8 @@ class Database(object):
 
         assert type(create) == bool
 
-        assert name is None or type(name) == six.text_type or (six.PY2 and type(name) == bytes)
-        assert (description is None or type(description) == six.text_type
+        assert name is None or type(name) == str or (six.PY2 and type(name) == bytes)
+        assert (description is None or type(description) == str
                 or (six.PY2 and type(description) == bytes))
 
         if oid not in self._slots_by_index:
