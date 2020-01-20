@@ -27,7 +27,6 @@
 
 import uuid
 
-
 from typing import Dict  # noqa
 
 from ._version import __version__

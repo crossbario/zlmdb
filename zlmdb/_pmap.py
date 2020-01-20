@@ -29,7 +29,6 @@ import struct
 import sys
 import zlib
 
-
 from zlmdb import _types, _errors
 
 try:
