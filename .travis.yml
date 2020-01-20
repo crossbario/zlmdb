@@ -72,8 +72,12 @@ matrix:
       - TOX_ENV=yapf
 
     #
-    # 3.5-3.7
+    # 3.5-3.8
     #
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38
+
     - python: "3.7"
       env:
       - TOX_ENV=py37
