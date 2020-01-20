@@ -35,7 +35,6 @@ import uuid
 import json
 import time
 
-import six
 import cbor2
 import flatbuffers
 

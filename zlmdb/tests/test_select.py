@@ -34,7 +34,6 @@ import struct
 import flatbuffers
 import numpy as np
 import pytest
-import six
 
 import zlmdb  # noqa
 from zlmdb import time_ns

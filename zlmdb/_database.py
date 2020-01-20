@@ -33,7 +33,6 @@ import uuid
 import pprint
 import struct
 
-import six
 import lmdb
 import yaml
 import cbor2

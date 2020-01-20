@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 import uuid
 
-import six
 
 from typing import Dict  # noqa
 

@@ -31,7 +31,6 @@ import struct
 import sys
 import zlib
 
-import six
 
 from zlmdb import _types, _errors
 
