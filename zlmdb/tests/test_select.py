@@ -148,7 +148,7 @@ def test_mnodelog_roundtrip(mnodelog, builder):
     obj = mnodelog.build(builder)
     builder.Finish(obj)
     data = builder.Output()
-    assert len(data) in [528, 536, 544]
+    assert len(data) == 544
 
     # create python object from bytes (flatbuffes)
     _mnodelog = MNodeLog.cast(data)
