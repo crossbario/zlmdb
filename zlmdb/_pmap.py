@@ -283,7 +283,7 @@ class PersistentMap(MutableMapping):
         :param slot:
         :param compress:
         """
-        assert slot is None or type(slot) in six.integer_types
+        assert slot is None or type(slot) == int
         assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
 
         self._slot = slot

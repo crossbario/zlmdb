@@ -146,7 +146,7 @@ class _OidKeysMixin(object):
             random.randint(0, _OidKeysMixin.MAX_OID)
 
     def _serialize_key(self, key):
-        assert type(key) in six.integer_types
+        assert type(key) == int
         assert key >= 0 and key <= _OidKeysMixin.MAX_OID
         return struct.pack('>Q', key)
 
@@ -163,9 +163,9 @@ class _OidOidKeysMixin(object):
         assert type(keys) == tuple
         assert len(keys) == 2
         key1, key2 = keys
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
-        assert type(key2) in six.integer_types
+        assert type(key2) == int
         assert key2 >= 0 and key2 <= _OidKeysMixin.MAX_OID
         return struct.pack('>QQ', key1, key2)
 
@@ -184,11 +184,11 @@ class _Oid3KeysMixin(object):
         assert type(keys) == tuple
         assert len(keys) == 3
         key1, key2, key3 = keys
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
-        assert type(key2) in six.integer_types
+        assert type(key2) == int
         assert key2 >= 0 and key2 <= _OidKeysMixin.MAX_OID
-        assert type(key3) in six.integer_types
+        assert type(key3) == int
         assert key3 >= 0 and key3 <= _OidKeysMixin.MAX_OID
         return struct.pack('>QQQ', key1, key2, key3)
 
@@ -206,7 +206,7 @@ class _OidTimestampKeysMixin(object):
         assert type(keys) == tuple
         assert len(keys) == 2
         key1, key2 = keys
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert isinstance(key2, np.datetime64)
         return struct.pack('>Q', key1) + key2.tobytes()
@@ -227,7 +227,7 @@ class _OidTimestampStringKeysMixin(object):
         assert type(keys) == tuple
         assert len(keys) == 3
         key1, key2, key3 = keys
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert isinstance(key2, np.datetime64)
         assert type(key3) == six.text_type
@@ -252,7 +252,7 @@ class _OidStringKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert type(key2) == six.text_type
 
         return struct.pack('>Q', key1) + key2.encode('utf8')
@@ -276,7 +276,7 @@ class _StringOidKeysMixin(object):
         key1, key2 = key1_key2
 
         assert type(key1) == six.text_type
-        assert type(key2) in six.integer_types
+        assert type(key2) == int
 
         return key1.encode('utf8') + struct.pack('>Q', key2)
 
@@ -607,7 +607,7 @@ class _SlotUuidKeysMixin(object):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
-        assert type(key1) in six.integer_types
+        assert type(key1) == int
         assert key1 >= 0 and key1 < 2**16
         assert isinstance(key2, uuid.UUID)
 
@@ -851,7 +851,7 @@ class _StringSetValuesMixin(object):
 
 class _OidValuesMixin(object):
     def _serialize_value(self, value):
-        assert type(value) in six.integer_types
+        assert type(value) == int
         assert value >= 0 and value <= _OidKeysMixin.MAX_OID
 
         return struct.pack('>Q', value)

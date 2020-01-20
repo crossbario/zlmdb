@@ -209,7 +209,7 @@ class Schema(object):
 
             for slot in _meta.get('slots', []):
                 _index = slot.get('index', None)
-                assert type(_index) in six.integer_types and _index >= 100 and _index < 65536
+                assert type(_index) == int and _index >= 100 and _index < 65536
                 assert _index not in slots
 
                 _name = slot.get('name', None)
@@ -284,7 +284,7 @@ class Database(object):
         :type sync: bool
         """
         assert dbpath is None or type(dbpath) == str
-        assert type(maxsize) in six.integer_types
+        assert type(maxsize) == int
         assert type(readonly) == bool
         assert type(sync) == bool
 
@@ -465,7 +465,7 @@ class Database(object):
         :param meta:
         :return:
         """
-        assert type(slot_index) in six.integer_types
+        assert type(slot_index) == int
         assert slot_index > 0 and slot_index < 65536
         assert slot is None or isinstance(slot, Slot)
         if slot:
