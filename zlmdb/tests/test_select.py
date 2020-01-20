@@ -145,7 +145,6 @@ def mnodelog():
     return _mnodelog
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_roundtrip(mnodelog, builder):
     # serialize to bytes (flatbuffers) from python object
     obj = mnodelog.build(builder)
@@ -221,7 +220,6 @@ def test_mnodelog_roundtrip(mnodelog, builder):
     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_insert(N=1000):
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:
@@ -322,7 +320,6 @@ def test_mnodelog_insert(N=1000):
                     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_queries(N=1000):
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:
@@ -517,30 +514,25 @@ def _test_mnodelog_bigtable(N, M, K):
                 print('Performed {} range counts in {} seconds [{} queries/sec]'.format(K, duration, rps))
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_bigtable_size10k():
     _test_mnodelog_bigtable(N=10000, M=500000, K=10000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size20k():
     _test_mnodelog_bigtable(N=20000, M=1000000, K=20000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size40k():
     _test_mnodelog_bigtable(N=40000, M=2000000, K=40000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size80k():
     _test_mnodelog_bigtable(N=80000, M=4000000, K=80000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size160k():
     _test_mnodelog_bigtable(N=160000, M=8000000, K=160000)
