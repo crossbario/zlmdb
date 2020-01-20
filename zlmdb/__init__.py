@@ -226,7 +226,7 @@ Map of table UUIDs to persistant maps stored in slots in a KV store.
 
 
 def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
-    if type(oid) == str or (six.PY2 and type(oid) == bytes):
+    if type(oid) == str:
         oid = uuid.UUID(oid)
 
     assert isinstance(oid, uuid.UUID)
