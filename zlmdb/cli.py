@@ -25,8 +25,6 @@
 ###############################################################################
 """Console script for zlmdb."""
 
-from __future__ import absolute_import
-
 import sys
 import click
 

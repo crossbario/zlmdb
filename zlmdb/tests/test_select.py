@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 import uuid
 import random
@@ -34,7 +32,6 @@ import struct
 import flatbuffers
 import numpy as np
 import pytest
-import six
 
 import zlmdb  # noqa
 from zlmdb import time_ns
@@ -67,22 +64,22 @@ def rfloat():
 
 def fill_mnodelog(obj):
 
-    obj.timestamp = np.datetime64(time_ns(), 'ns') + np.timedelta64(random.randint(0, 120), 's')
+    obj.timestamp = np.datetime64(time_ns(), 'ns') + np.timedelta64(random.randint(1, 120), 's')
     obj.node_id = uuid.uuid4()
     obj.run_id = uuid.uuid4()
-    obj.state = random.randint(0, 2)
-    obj.ended = obj.timestamp + np.timedelta64(random.randint(0, 120), 's')
-    obj.session = random.randint(0, 9007199254740992)
+    obj.state = random.randint(1, 2)
+    obj.ended = obj.timestamp + np.timedelta64(random.randint(1, 120), 's')
+    obj.session = random.randint(1, 9007199254740992)
     obj.sent = obj.timestamp
-    obj.seq = random.randint(0, 10000)
+    obj.seq = random.randint(1, 10000)
 
-    obj.routers = random.randint(0, 32)
-    obj.containers = random.randint(0, 32)
-    obj.guests = random.randint(0, 32)
-    obj.proxies = random.randint(0, 32)
-    obj.marketmakers = random.randint(0, 32)
+    obj.routers = random.randint(1, 32)
+    obj.containers = random.randint(1, 32)
+    obj.guests = random.randint(1, 32)
+    obj.proxies = random.randint(1, 32)
+    obj.marketmakers = random.randint(1, 32)
 
-    obj.cpu_ctx_switches = random.randint(0, 1000000)
+    obj.cpu_ctx_switches = random.randint(1, 1000000)
 
     # we can't just use random() here, since it won't work for roundtrip
     # data checking (eg 33.42830630594208 != 33.428306579589844)
@@ -92,51 +89,51 @@ def fill_mnodelog(obj):
     obj.cpu_guest = rfloat()
     obj.cpu_guest_nice = rfloat()
     obj.cpu_idle = rfloat()
-    obj.cpu_interrupts = random.randint(0, 100000)
+    obj.cpu_interrupts = random.randint(1, 100000)
     obj.cpu_iotwait = rfloat()
     obj.cpu_irq = rfloat()
     obj.cpu_nice = rfloat()
-    obj.cpu_soft_interrupts = random.randint(0, 100000)
+    obj.cpu_soft_interrupts = random.randint(1, 100000)
     obj.cpu_softirq = rfloat()
     obj.cpu_steal = rfloat()
     obj.cpu_system = rfloat()
     obj.cpu_user = rfloat()
 
-    obj.network_bytes_recv = random.randint(0, 2**32)
-    obj.network_bytes_sent = random.randint(0, 2**32)
-    obj.network_connection_af_inet = random.randint(0, 1000)
-    obj.network_connection_af_inet6 = random.randint(0, 1000)
-    obj.network_connection_af_unix = random.randint(0, 1000)
-    obj.network_dropin = random.randint(0, 10000)
-    obj.network_dropout = random.randint(0, 10000)
-    obj.network_errin = random.randint(0, 10000)
-    obj.network_errout = random.randint(0, 10000)
-    obj.network_packets_recv = random.randint(0, 2**32)
-    obj.network_packets_sent = random.randint(0, 2**32)
+    obj.network_bytes_recv = random.randint(1, 2**32)
+    obj.network_bytes_sent = random.randint(1, 2**32)
+    obj.network_connection_af_inet = random.randint(1, 1000)
+    obj.network_connection_af_inet6 = random.randint(1, 1000)
+    obj.network_connection_af_unix = random.randint(1, 1000)
+    obj.network_dropin = random.randint(1, 10000)
+    obj.network_dropout = random.randint(1, 10000)
+    obj.network_errin = random.randint(1, 10000)
+    obj.network_errout = random.randint(1, 10000)
+    obj.network_packets_recv = random.randint(1, 2**32)
+    obj.network_packets_sent = random.randint(1, 2**32)
 
     M = 32 * 2**30
-    obj.memory_active = random.randint(0, M)
-    obj.memory_available = random.randint(0, M)
-    obj.memory_buffers = random.randint(0, M)
-    obj.memory_cached = random.randint(0, M)
-    obj.memory_free = random.randint(0, M)
-    obj.memory_inactive = random.randint(0, M)
+    obj.memory_active = random.randint(1, M)
+    obj.memory_available = random.randint(1, M)
+    obj.memory_buffers = random.randint(1, M)
+    obj.memory_cached = random.randint(1, M)
+    obj.memory_free = random.randint(1, M)
+    obj.memory_inactive = random.randint(1, M)
     obj.memory_percent = rfloat()
-    obj.memory_shared = random.randint(0, M)
-    obj.memory_slab = random.randint(0, M)
-    obj.memory_total = random.randint(0, M)
-    obj.memory_used = random.randint(0, M)
+    obj.memory_shared = random.randint(1, M)
+    obj.memory_slab = random.randint(1, M)
+    obj.memory_total = random.randint(1, M)
+    obj.memory_used = random.randint(1, M)
 
     M = 10 * 10
-    obj.disk_busy_time = random.randint(0, M)
-    obj.disk_read_bytes = random.randint(0, M)
-    obj.disk_read_count = random.randint(0, M)
-    obj.disk_read_merged_count = random.randint(0, M)
-    obj.disk_read_time = random.randint(0, M)
-    obj.disk_write_bytes = random.randint(0, M)
-    obj.disk_write_count = random.randint(0, M)
-    obj.disk_write_merged_count = random.randint(0, M)
-    obj.disk_write_time = random.randint(0, M)
+    obj.disk_busy_time = random.randint(1, M)
+    obj.disk_read_bytes = random.randint(1, M)
+    obj.disk_read_count = random.randint(1, M)
+    obj.disk_read_merged_count = random.randint(1, M)
+    obj.disk_read_time = random.randint(1, M)
+    obj.disk_write_bytes = random.randint(1, M)
+    obj.disk_write_count = random.randint(1, M)
+    obj.disk_write_merged_count = random.randint(1, M)
+    obj.disk_write_time = random.randint(1, M)
 
 
 @pytest.fixture(scope='function')
@@ -146,13 +143,12 @@ def mnodelog():
     return _mnodelog
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_roundtrip(mnodelog, builder):
     # serialize to bytes (flatbuffers) from python object
     obj = mnodelog.build(builder)
     builder.Finish(obj)
     data = builder.Output()
-    assert len(data) in [528, 536, 544]
+    assert len(data) == 544
 
     # create python object from bytes (flatbuffes)
     _mnodelog = MNodeLog.cast(data)
@@ -222,7 +218,6 @@ def test_mnodelog_roundtrip(mnodelog, builder):
     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_insert(N=1000):
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:
@@ -323,7 +318,6 @@ def test_mnodelog_insert(N=1000):
                     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_queries(N=1000):
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:
@@ -518,30 +512,25 @@ def _test_mnodelog_bigtable(N, M, K):
                 print('Performed {} range counts in {} seconds [{} queries/sec]'.format(K, duration, rps))
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 def test_mnodelog_bigtable_size10k():
     _test_mnodelog_bigtable(N=10000, M=500000, K=10000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size20k():
     _test_mnodelog_bigtable(N=20000, M=1000000, K=20000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size40k():
     _test_mnodelog_bigtable(N=40000, M=2000000, K=40000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size80k():
     _test_mnodelog_bigtable(N=80000, M=4000000, K=80000)
 
 
-@pytest.mark.skipif(six.PY2, reason="FIXME")
 @pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size160k():
     _test_mnodelog_bigtable(N=160000, M=8000000, K=160000)

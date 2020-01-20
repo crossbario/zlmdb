@@ -25,11 +25,7 @@
 ###############################################################################
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
-from __future__ import absolute_import
-
 import uuid
-
-import six
 
 from typing import Dict  # noqa
 
@@ -229,7 +225,7 @@ Map of table UUIDs to persistant maps stored in slots in a KV store.
 
 
 def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
-    if type(oid) == six.text_type or (six.PY2 and type(oid) == six.binary_type):
+    if type(oid) == str:
         oid = uuid.UUID(oid)
 
     assert isinstance(oid, uuid.UUID)

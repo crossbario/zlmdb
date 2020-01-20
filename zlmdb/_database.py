@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 import shutil
 import tempfile
@@ -33,7 +31,6 @@ import uuid
 import pprint
 import struct
 
-import six
 import lmdb
 import yaml
 import cbor2
@@ -212,11 +209,11 @@ class Schema(object):
 
             for slot in _meta.get('slots', []):
                 _index = slot.get('index', None)
-                assert type(_index) in six.integer_types and _index >= 100 and _index < 65536
+                assert type(_index) == int and _index >= 100 and _index < 65536
                 assert _index not in slots
 
                 _name = slot.get('name', None)
-                assert type(_name) == six.text_type or (six.PY2 and type(_name) == six.binary_type)
+                assert type(_name) == str
                 assert _name not in slots_byname
 
                 _key = slot.get('key', None)
@@ -226,11 +223,10 @@ class Schema(object):
                 assert _value in ['json', 'cbor']
 
                 _schema = slot.get('schema', None)
-                assert _schema is None or type(_schema) == six.text_type
+                assert _schema is None or type(_schema) == str
 
                 _description = slot.get('description', None)
-                assert (_description is None or type(_description) == six.text_type
-                        or (six.PY2 and type(_description) == six.binary_type))
+                assert (_description is None or type(_description) == str)
 
                 if _schema:
                     _kv_type = '{}-{}-{}'.format(_key, _value, _schema)
@@ -287,7 +283,7 @@ class Database(object):
         :type sync: bool
         """
         assert dbpath is None or type(dbpath) == str
-        assert type(maxsize) in six.integer_types
+        assert type(maxsize) == int
         assert type(readonly) == bool
         assert type(sync) == bool
 
@@ -468,7 +464,7 @@ class Database(object):
         :param meta:
         :return:
         """
-        assert type(slot_index) in six.integer_types
+        assert type(slot_index) == int
         assert slot_index > 0 and slot_index < 65536
         assert slot is None or isinstance(slot, Slot)
         if slot:
@@ -563,9 +559,8 @@ class Database(object):
 
         assert type(create) == bool
 
-        assert name is None or type(name) == six.text_type or (six.PY2 and type(name) == six.binary_type)
-        assert (description is None or type(description) == six.text_type
-                or (six.PY2 and type(description) == six.binary_type))
+        assert name is None or type(name) == str
+        assert (description is None or type(description) == str)
 
         if oid not in self._slots_by_index:
             self.log.debug('No slot found in database for DB table <{oid}>: <{name}>', name=name, oid=oid)

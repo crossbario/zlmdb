@@ -1,4 +1,3 @@
-import six
 
 from twisted.internet.task import react
 from twisted.internet.defer import inlineCallbacks

@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-import six
-
 import pprint
 import uuid
 
@@ -963,7 +961,7 @@ class MNodeLog(object):
 
     @staticmethod
     def cast(buf):
-        assert type(buf) in [six.binary_type, bytearray], 'bytes expected, got {}'.format(type(buf))
+        assert type(buf) in [bytes, bytearray], 'bytes expected, got {}'.format(type(buf))
         return MNodeLog(_MNodeLogGen.GetRootAsMNodeLog(buf, 0))
 
     def build(self, builder):
