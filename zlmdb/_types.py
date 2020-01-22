@@ -43,7 +43,6 @@ except ImportError:
 else:
     HAS_NUMPY = True
 
-
 CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """
 Charset from which to generate random key IDs.
