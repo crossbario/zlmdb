@@ -45,12 +45,12 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'cbor2>=4.1.2',
+    'cbor2>=5.0.1',
     'click>=7.0',
-    'lmdb>=0.94',
-    'pynacl>=1.3',
+    'lmdb>=0.98',
+    'pynacl>=1.3.0',
     'pyyaml>=4.2b4',
-    'txaio>=18.8.1',
+    'txaio>=20.1.1',
     'numpy==1.15.4',
 ]
 
@@ -75,7 +75,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -87,6 +86,7 @@ setup(
             'zlmdb=zlmdb.cli:main',
         ],
     },
+    python_requires='>=3.5',
     install_requires=requirements,
     license="MIT license",
     long_description=readme,

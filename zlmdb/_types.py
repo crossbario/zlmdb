@@ -31,10 +31,10 @@ import pickle
 import os
 import uuid
 import json
-import time
 
 import cbor2
 import flatbuffers
+from txaio import time_ns
 
 try:
     import numpy as np
@@ -42,21 +42,6 @@ except ImportError:
     HAS_NUMPY = False
 else:
     HAS_NUMPY = True
-
-# time_ns: epoch time in ns, corresponds to pandas.Timestamp or numpy.datetime64[ns]
-# perf_counter_ns: hardware time in ns, use only in relative terms
-if hasattr(time, 'time_ns'):
-    # python 3.7
-    time_ns = time.time_ns
-    perf_counter_ns = time.perf_counter_ns
-else:
-    # python 3
-    def time_ns():
-        return int(time.time() * 1000000000.)
-
-    def perf_counter_ns():
-        return int(time.perf_counter() * 1000000000.)
-
 
 CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """
@@ -380,7 +365,7 @@ class _UuidBytes20Uint8KeysMixin(object):
 class _TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time.time_ns(), 'ns')
+        return np.datetime64(time_ns(), 'ns')
 
     def _serialize_key(self, key1):
         assert isinstance(key1, np.datetime64)
@@ -397,7 +382,7 @@ class _TimestampKeysMixin(object):
 class _TimestampUuidKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time.time_ns(), 'ns'), uuid.uuid4()
+        return np.datetime64(time_ns(), 'ns'), uuid.uuid4()
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -427,7 +412,7 @@ class _TimestampUuidKeysMixin(object):
 class _TimestampUuidStringKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time.time_ns(), 'ns'), uuid.uuid4(), ''
+        return np.datetime64(time_ns(), 'ns'), uuid.uuid4(), ''
 
     def _serialize_key(self, key1_key2_key3):
         assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
@@ -461,7 +446,7 @@ class _TimestampUuidStringKeysMixin(object):
 class _TimestampBytes32KeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time.time_ns(), 'ns'), os.urandom(32)
+        return np.datetime64(time_ns(), 'ns'), os.urandom(32)
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -492,7 +477,7 @@ class _TimestampBytes32KeysMixin(object):
 class _TimestampStringKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time.time_ns(), 'ns'), _StringKeysMixin.new_key()
+        return np.datetime64(time_ns(), 'ns'), _StringKeysMixin.new_key()
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -521,7 +506,7 @@ class _TimestampStringKeysMixin(object):
 class _StringTimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return _StringKeysMixin.new_key(), np.datetime64(time.time_ns(), 'ns')
+        return _StringKeysMixin.new_key(), np.datetime64(time_ns(), 'ns')
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -551,7 +536,7 @@ class _StringTimestampKeysMixin(object):
 class _UuidTimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return uuid.uuid4(), np.datetime64(time.time_ns(), 'ns')
+        return uuid.uuid4(), np.datetime64(time_ns(), 'ns')
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -786,7 +771,7 @@ class _Bytes20StringKeysMixin(object):
 class _Bytes20TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return os.urandom(20), np.datetime64(time.time_ns(), 'ns')
+        return os.urandom(20), np.datetime64(time_ns(), 'ns')
 
     def _serialize_key(self, keys):
         assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(

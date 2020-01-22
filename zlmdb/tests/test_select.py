@@ -34,12 +34,13 @@ import numpy as np
 import pytest
 
 import zlmdb  # noqa
-from zlmdb import time_ns
 
 from _schema_mnode_log import Schema, MNodeLog
 
 import txaio
 txaio.use_twisted()
+
+from txaio import time_ns  # noqa
 
 try:
     from tempfile import TemporaryDirectory
