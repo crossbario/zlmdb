@@ -99,12 +99,9 @@ from ._pmap import PersistentMap, \
 from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database
 from ._schema import Schema
-from ._types import perf_counter_ns, time_ns
 
 __all__ = (
     '__version__',
-    'perf_counter_ns',
-    'time_ns',
     'Schema',
     'Database',
     'Transaction',
