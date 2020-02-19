@@ -87,6 +87,7 @@ from ._pmap import PersistentMap, \
                    MapBytes32Bytes32FlatBuffers, \
                    MapBytes32StringFlatBuffers, \
                    MapTimestampBytes32FlatBuffers, \
+                   MapBytes20Uuid, \
                    MapBytes20Bytes16, \
                    MapBytes20Bytes20, \
                    MapBytes20Bytes20Timestamp, \
@@ -201,6 +202,7 @@ __all__ = (
     #
     # Bytes20 pmaps
     #
+    'MapBytes20Uuid',
     'MapBytes20Bytes16',
     'MapBytes20Bytes20',
     'MapBytes20Bytes20Timestamp',

@@ -1208,6 +1208,15 @@ class MapBytes20TimestampBytes20(_types._Bytes20TimestampKeysMixin, _types._Byte
         PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
+class MapBytes20Uuid(_types._Bytes20KeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes20 keys and UUID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapBytes20Bytes16(_types._Bytes20KeysMixin, _types._Bytes16ValuesMixin, PersistentMap):
     """
     Persistent map with Bytes20 keys and Bytes16 values.
