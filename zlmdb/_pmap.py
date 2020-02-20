@@ -1112,9 +1112,18 @@ class MapOidTimestampStringOid(_types._OidTimestampStringKeysMixin, _types._OidV
 
 
 #
-# Key types: Bytes32, (Bytes32, Bytes32), (Bytes32, String)
+# Key types: Bytes32, (Bytes32, Bytes32), (Bytes32, String), ...
 # Value type: FlatBuffers
 #
+
+
+class MapBytes32Uuid(_types._Bytes32KeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with Bytes32 keys and UUID values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
 class MapBytes32Timestamp(_types._Bytes32KeysMixin, _types._TimestampValuesMixin, PersistentMap):
