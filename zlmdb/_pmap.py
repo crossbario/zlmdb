@@ -699,6 +699,15 @@ class MapUuidUuidCbor(_types._UuidUuidKeysMixin, _types._CborValuesMixin, Persis
         _types._CborValuesMixin.__init__(self, marshal=marshal, unmarshal=unmarshal)
 
 
+class MapUuidTimestampBytes32(_types._UuidTimestampKeysMixin, _types._Bytes32ValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, Timestamp) keys and Bytes32 values.
+    """
+
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapUuidUuidUuid(_types._UuidUuidKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, UUID) keys and UUID values.
