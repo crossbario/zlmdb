@@ -25,25 +25,9 @@
 ###############################################################################
 """Transactions"""
 
-import sys
 import struct
-import time
 import lmdb
-
-# Select the most precise wallclock measurement function available on the platform
-if sys.platform.startswith('win'):
-    # On Windows, this function returns wall-clock seconds elapsed since the
-    # first call to this function, as a floating point number, based on the
-    # Win32 function QueryPerformanceCounter(). The resolution is typically
-    # better than one microsecond
-    walltime = time.clock
-    _ = walltime()  # this starts wallclock
-else:
-    # On Unix-like platforms, this used the first available from this list:
-    # (1) gettimeofday() -- resolution in microseconds
-    # (2) ftime() -- resolution in milliseconds
-    # (3) time() -- resolution in seconds
-    walltime = time.time
+from txaio import time_ns as walltime
 
 
 class TransactionStats(object):
@@ -60,7 +44,7 @@ class TransactionStats(object):
     def started(self):
         """
 
-        :return:
+        :return: start time in ns since epoch
         """
         return self._started
 
@@ -68,7 +52,7 @@ class TransactionStats(object):
     def duration(self):
         """
 
-        :return:
+        :return: duration in ns
         """
         if self._started:
             return walltime() - self._started
