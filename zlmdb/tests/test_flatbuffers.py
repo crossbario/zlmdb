@@ -103,11 +103,11 @@ def test_pmap_flatbuffers_count():
 
                 assert stats.puts == N
                 assert stats.dels == 0
-                duration = stats.duration
-                ms = int(1000. * duration)
-                rows_per_sec = int(round(float(stats.puts + stats.dels) / float(duration)))
+                duration_ns = stats.duration
+                duration_ms = int(duration_ns / 1000000.)
+                rows_per_sec = int(round(float(stats.puts + stats.dels) * 1000. / float(duration_ms)))
                 print('Transaction ended: puts={} / dels={} rows in {} ms, {} rows/sec'.format(
-                    stats.puts, stats.dels, ms, rows_per_sec))
+                    stats.puts, stats.dels, duration_ms, rows_per_sec))
 
                 stats.reset()
 
@@ -127,7 +127,8 @@ def test_pmap_flatbuffers_count():
                             user = schema.tab_oid_fbs[txn, oid]
                             assert user
                             assert user.referred_by == oid_to_referred_by.get(oid, None)
-                    duration = zlmdb.walltime() - started
-                    ms = int(1000. * duration)
-                    rows_per_sec = int(round(float(M * N) / float(duration)))
-                    print('Transaction ended: {} rows read in {} ms, {} rows/sec'.format(M * N, ms, rows_per_sec))
+                    duration_ns = zlmdb.walltime() - started
+                    duration_ms = int(duration_ns / 1000000.)
+                    rows_per_sec = int(round(float(M * N) * 1000. / float(duration_ms)))
+                    print('Transaction ended: {} rows read in {} ms, {} rows/sec'.format(
+                        M * N, duration_ms, rows_per_sec))
