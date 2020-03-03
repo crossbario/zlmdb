@@ -118,7 +118,6 @@ class _OidKeysMixin(object):
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
     """
-
     @staticmethod
     def new_key(secure=False):
         if secure:
@@ -1003,8 +1002,8 @@ class _JsonValuesMixin(object):
         assert self._unmarshal
 
     def _serialize_value(self, value):
-        return json.dumps(
-            self._marshal(value), separators=(',', ':'), ensure_ascii=False, sort_keys=False).encode('utf8')
+        return json.dumps(self._marshal(value), separators=(',', ':'), ensure_ascii=False,
+                          sort_keys=False).encode('utf8')
 
     def _deserialize_value(self, data):
         return self._unmarshal(json.loads(data.decode('utf8')))

@@ -30,6 +30,7 @@ import tempfile
 import uuid
 import pprint
 import struct
+import inspect
 
 import lmdb
 import yaml
@@ -122,11 +123,10 @@ class ConfigurationElement(object):
         oid = value.get('oid', None)
         if oid:
             oid = uuid.UUID(oid)
-        obj = ConfigurationElement(
-            oid=oid,
-            name=value.get('name', None),
-            description=value.get('description', None),
-            tags=value.get('tags', None))
+        obj = ConfigurationElement(oid=oid,
+                                   name=value.get('name', None),
+                                   description=value.get('description', None),
+                                   tags=value.get('tags', None))
         return obj
 
 
@@ -164,8 +164,12 @@ class Slot(ConfigurationElement):
         slot = data.get('slot', None)
         creator = data.get('creator', None)
 
-        drvd_obj = Slot(
-            oid=obj.oid, name=obj.name, description=obj.description, tags=obj.tags, slot=slot, creator=creator)
+        drvd_obj = Slot(oid=obj.oid,
+                        name=obj.name,
+                        description=obj.description,
+                        tags=obj.tags,
+                        slot=slot,
+                        creator=creator)
         return drvd_obj
 
 
@@ -263,7 +267,6 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
-
     def __init__(self, dbpath=None, maxsize=10485760, readonly=False, sync=True, open=True, log=None):
         """
 
@@ -322,8 +325,12 @@ class Database(object):
         if not self._env:
             # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
             # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
-            self._env = lmdb.open(
-                self._dbpath, map_size=self._maxsize, readonly=self._readonly, sync=self._sync, subdir=True, lock=True)
+            self._env = lmdb.open(self._dbpath,
+                                  map_size=self._maxsize,
+                                  readonly=self._readonly,
+                                  sync=self._sync,
+                                  subdir=True,
+                                  lock=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -478,8 +485,9 @@ class Database(object):
                 self._slots[slot.oid] = slot
                 self._slots_by_index[slot.oid] = slot_index
 
-            self.log.debug(
-                'Wrote metadata for table <{oid}> to slot {slot_index:03d}', oid=slot.oid, slot_index=slot_index)
+            self.log.debug('Wrote metadata for table <{oid}> to slot {slot_index:03d}',
+                           oid=slot.oid,
+                           slot_index=slot_index)
         else:
             with self.begin(write=True) as txn:
                 result = txn.get(key)
@@ -490,8 +498,9 @@ class Database(object):
                 if slot.oid in self._slots_by_index:
                     del self._slots_by_index[slot.oid]
 
-            self.log.debug(
-                'Deleted metadata for table <{oid}> from slot {slot_index:03d}', oid=slot.oid, slot_index=slot_index)
+            self.log.debug('Deleted metadata for table <{oid}> from slot {slot_index:03d}',
+                           oid=slot.oid,
+                           slot_index=slot_index)
 
     def attach_table(self, klass):
         """
@@ -499,9 +508,17 @@ class Database(object):
         :param klass:
         :return:
         """
-        assert issubclass(klass, _pmap.PersistentMap)
+        if not inspect.isclass(klass):
+            raise TypeError(
+                'cannot attach object {} as database table: a subclass of zlmdb.PersistentMap is required'.format(
+                    klass))
 
         name = qual(klass)
+
+        if not issubclass(klass, _pmap.PersistentMap):
+            raise TypeError(
+                'cannot attach object of class {} as a database table: a subclass of zlmdb.PersistentMap is required'.
+                format(name))
 
         if not hasattr(klass, '_zlmdb_oid') or not klass._zlmdb_oid:
             raise TypeError('{} is not decorated as table slot'.format(klass))
@@ -511,17 +528,16 @@ class Database(object):
         if self._slots is None:
             self._cache_slots()
 
-        pmap = self._attach_slot(
-            klass._zlmdb_oid,
-            klass,
-            marshal=klass._zlmdb_marshal,
-            parse=klass._zlmdb_parse,
-            build=klass._zlmdb_build,
-            cast=klass._zlmdb_cast,
-            compress=klass._zlmdb_compress,
-            create=True,
-            name=name,
-            description=description)
+        pmap = self._attach_slot(klass._zlmdb_oid,
+                                 klass,
+                                 marshal=klass._zlmdb_marshal,
+                                 parse=klass._zlmdb_parse,
+                                 build=klass._zlmdb_build,
+                                 cast=klass._zlmdb_cast,
+                                 compress=klass._zlmdb_compress,
+                                 create=True,
+                                 name=name,
+                                 description=description)
         return pmap
 
     def _attach_slot(self,
@@ -568,11 +584,10 @@ class Database(object):
                 slot_index = self._get_free_slot()
                 slot = Slot(oid=oid, creator='unknown', slot=slot_index, name=name, description=description)
                 self._set_slot(slot_index, slot)
-                self.log.info(
-                    'Allocated new slot {slot_index:03d} for database table <{oid}>: {name}',
-                    slot_index=slot_index,
-                    oid=oid,
-                    name=name)
+                self.log.info('Allocated new slot {slot_index:03d} for database table <{oid}>: {name}',
+                              slot_index=slot_index,
+                              oid=oid,
+                              name=name)
             else:
                 raise Exception('No slot found in database for DB table <{oid}>: {name}', name=name, oid=oid)
         else:
@@ -580,11 +595,10 @@ class Database(object):
             # pmap = _pmap.PersistentMap(slot_index)
             # with self.begin() as txn:
             #     records = pmap.count(txn)
-            self.log.info(
-                'Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
-                name=name,
-                oid=oid,
-                slot_index=slot_index)
+            self.log.info('Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
+                          name=name,
+                          oid=oid,
+                          slot_index=slot_index)
 
         if marshal:
             slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)

@@ -34,7 +34,6 @@ class TransactionStats(object):
     """
     Value class for holding transaction statistics.
     """
-
     def __init__(self):
         self.puts = 0
         self.dels = 0

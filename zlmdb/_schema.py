@@ -34,7 +34,6 @@ class Slot(object):
 
     The 2 bytes are interpreted as an uint16 in big endian byte order.
     """
-
     def __init__(self, slot, name, pmap):
         """
 
@@ -91,7 +90,6 @@ class Schema(object):
     """
     FIXME.
     """
-
     def __init__(self):
         self._index_to_slot = {}
         self._name_to_slot = {}
@@ -109,7 +107,6 @@ class Schema(object):
         :param compress:
         :return:
         """
-
         def decorate(o):
             assert isinstance(o, PersistentMap)
             name = o.__class__.__name__

@@ -116,8 +116,10 @@ def test_fill_indexes(testset1):
             MAX_OID = 9007199254740992
             with db.begin() as txn:
                 for icecream in users_by_icecream:
-                    for _, user_oid in schema.idx_users_by_icecream.select(
-                            txn, from_key=(icecream, 0), to_key=(icecream, MAX_OID + 1), return_values=False):
+                    for _, user_oid in schema.idx_users_by_icecream.select(txn,
+                                                                           from_key=(icecream, 0),
+                                                                           to_key=(icecream, MAX_OID + 1),
+                                                                           return_values=False):
                         assert user_oid in users_by_icecream[icecream]
 
 
@@ -326,8 +328,10 @@ def test_delete_nonindexes2(testset1):
                         fullset.discard(user_oid)
 
                         user_oids = set(
-                            schema.idx_users_by_realm.select(
-                                txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+                            schema.idx_users_by_realm.select(txn,
+                                                             return_keys=False,
+                                                             from_key=(j, 0),
+                                                             to_key=(j + 1, 0)))
 
                         assert fullset == user_oids
 

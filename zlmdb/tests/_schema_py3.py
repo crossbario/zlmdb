@@ -261,20 +261,25 @@ class Schema4(zlmdb.Schema):
         self.users.attach_index('idx2', self.idx_users_by_email, lambda user: user.email, nullable=True)
 
         self.idx_users_by_realm = zlmdb.MapOidOidOid(4)
-        self.users.attach_index(
-            'idx3', self.idx_users_by_realm, lambda user: (user.realm_oid, user.oid), nullable=False)
+        self.users.attach_index('idx3',
+                                self.idx_users_by_realm,
+                                lambda user: (user.realm_oid, user.oid),
+                                nullable=False)
 
         self.idx_users_by_icecream = zlmdb.MapStringOidOid(5)
-        self.users.attach_index(
-            'idx4', self.idx_users_by_icecream, lambda user: (user.icecream, user.oid), nullable=False)
+        self.users.attach_index('idx4',
+                                self.idx_users_by_icecream,
+                                lambda user: (user.icecream, user.oid),
+                                nullable=False)
 
         self.idx_users_by_mrealm_authid = zlmdb.MapUuidStringOid(6)
-        self.users.attach_index(
-            'idx5', self.idx_users_by_mrealm_authid, lambda user: (user.mrealm, user.authid), nullable=True)
+        self.users.attach_index('idx5',
+                                self.idx_users_by_mrealm_authid,
+                                lambda user: (user.mrealm, user.authid),
+                                nullable=True)
 
         self.idx_users_by_mrealm_notnull_authid = zlmdb.MapUuidStringOid(7)
-        self.users.attach_index(
-            'idx6',
-            self.idx_users_by_mrealm_notnull_authid,
-            lambda user: (user.mrealm_notnull, user.authid),
-            nullable=False)
+        self.users.attach_index('idx6',
+                                self.idx_users_by_mrealm_notnull_authid,
+                                lambda user: (user.mrealm_notnull, user.authid),
+                                nullable=False)
