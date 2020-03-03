@@ -43,7 +43,6 @@ class _MNodeLogGen(MNodeLogGen.MNodeLog):
 
     FIXME: come up with a PR for flatc to generated this stuff automatically.
     """
-
     @classmethod
     def GetRootAsMNodeLog(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)

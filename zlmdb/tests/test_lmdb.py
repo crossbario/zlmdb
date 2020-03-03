@@ -66,9 +66,8 @@ def test_lmdb_insert_empty_key_raises():
                 txn.put(key, data)
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy',
-    reason='behavioral difference on pypy (does not raise, but runs into traceback)')
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy',
+                    reason='behavioral difference on pypy (does not raise, but runs into traceback)')
 def test_lmdb_insert_null_key_raises():
     """
     Test that LMDB raises on inserting record with NULL key.
@@ -108,9 +107,8 @@ def test_lmdb_insert_empty_value_ok():
             assert total == 1
 
 
-@pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy',
-    reason='behavioral difference on pypy (does not raise, but runs into traceback)')
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy',
+                    reason='behavioral difference on pypy (does not raise, but runs into traceback)')
 def test_lmdb_insert_null_value_ok():
     """
     Test that LMDB allows to insert record with NULL value and
