@@ -595,10 +595,10 @@ class Database(object):
             # pmap = _pmap.PersistentMap(slot_index)
             # with self.begin() as txn:
             #     records = pmap.count(txn)
-            self.log.info('Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
-                          name=name,
-                          oid=oid,
-                          slot_index=slot_index)
+            self.log.debug('Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
+                           name=name,
+                           oid=oid,
+                           slot_index=slot_index)
 
         if marshal:
             slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)

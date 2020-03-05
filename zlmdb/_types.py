@@ -860,7 +860,7 @@ class _OidSetValuesMixin(object):
 
 class _UuidValuesMixin(object):
     def _serialize_value(self, value):
-        assert value is None or isinstance(value, uuid.UUID)
+        assert value is None or isinstance(value, uuid.UUID), 'not a UUID - value "{}"'.format(value)
 
         # The UUID as a 16-byte string (containing the six integer fields in big-endian byte order).
         # https://docs.python.org/3/library/uuid.html#uuid.UUID.bytes
