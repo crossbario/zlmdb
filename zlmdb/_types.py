@@ -693,7 +693,6 @@ class _UuidUuidStringKeysMixin(object):
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, uuid.UUID)
         assert type(key3) == str
-        assert len(key3) > 0
 
         return key1.bytes + key2.bytes + key3.encode('utf8')
 
