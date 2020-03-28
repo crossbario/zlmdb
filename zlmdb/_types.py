@@ -916,6 +916,7 @@ class _Bytes16TimestampKeysMixin(object):
 
         return key1, key2
 
+
 #
 # Value Types
 #

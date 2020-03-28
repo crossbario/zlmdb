@@ -1260,11 +1260,3 @@ class MapBytes20StringFlatBuffers(_types._Bytes20StringKeysMixin, _types._FlatBu
     def __init__(self, slot=None, compress=None, build=None, cast=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
-
-
-class MapBytes16TimestampUuid(_types._Bytes16TimestampKeysMixin, _types._UuidValuesMixin, PersistentMap):
-    """
-    Persistent map with (Bytes16, Timestamp) keys and UUID values.
-    """
-    def __init__(self, slot=None, compress=None):
-        PersistentMap.__init__(self, slot=slot, compress=compress)
