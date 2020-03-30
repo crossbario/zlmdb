@@ -10,7 +10,7 @@ ZLMDB
     :alt: Documentation
 
 .. image:: https://img.shields.io/travis/crossbario/zlmdb.svg
-    :target: https://travis-ci.org/crossbario/zlmdb
+    :target: https://travis-ci.com/crossbario/zlmdb
     :alt: TravisCI
 
 .. image:: https://codecov.io/gh/crossbario/zlmdb/branch/master/graph/badge.svg

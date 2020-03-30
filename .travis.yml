@@ -21,6 +21,10 @@ before_install:
   # build ID (eg, "20180513-28114a1")
   - export ZLMDB_BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})"
 
+  - export ZLMDB_VERSION=$(grep -E '^(__version__)' ./zlmdb/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g')
+  - export ZLMDB_VCS_REF=`git --git-dir="./.git" rev-list -n 1 v${ZLMDB_VERSION} --abbrev-commit`
+  - export BUILD_DATE=`date -u +"%Y-%m-%d"`
+
 install:
   - pip install -U pip setuptools wheel tox codecov
 

@@ -1,11 +1,13 @@
 #!/bin/bash
 
+set +o verbose -o errexit
+
+# AUTOBAHN_VERSION             : must be set in travis.yml!
 export AWS_DEFAULT_REGION=eu-central-1
 export AWS_S3_BUCKET_NAME=crossbarbuilder
-# AWS_ACCESS_KEY_ID         : must be set in Travis CI build context
-# AWS_SECRET_ACCESS_KEY     : must be set in Travis CI build context
-
-set -ev
+# AWS_ACCESS_KEY_ID         : must be set in Travis CI build context!
+# AWS_SECRET_ACCESS_KEY     : must be set in Travis CI build context!
+# WAMP_PRIVATE_KEY          : must be set in Travis CI build context!
 
 # TRAVIS_BRANCH, TRAVIS_PULL_REQUEST, TRAVIS_TAG
 
@@ -39,7 +41,6 @@ echo 'installing aws tools ..'
 pip install awscli wheel
 which aws
 aws --version
-aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/
 
 # build python source dist and wheels
 echo 'building package ..'
@@ -48,10 +49,34 @@ ls -la ./dist
 
 # upload to S3: https://s3.eu-central-1.amazonaws.com/crossbarbuilder/wheels/
 echo 'uploading package ..'
-aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
+# aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
+aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/zlmdb-${ZLMDB_VERSION}-py2.py3-none-any.whl
+aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/zlmdb-latest-py2.py3-none-any.whl
+
+aws s3 cp --acl public-read ./dist/zlmdb-${ZLMDB_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/zlmdb-${ZLMDB_VERSION}-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/zlmdb-${ZLMDB_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/zlmdb-latest-py2.py3-none-any.whl
+
+#aws s3api copy-object --acl public-read \
+#    --copy-source wheels/zlmdb-${ZLMDB_VERSION}-py2.py3-none-any.whl --bucket ${AWS_S3_BUCKET_NAME} \
+#    --key wheels/zlmdb-latest-py2.py3-none-any.whl
+
+aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/zlmdb-
 
 # tell crossbar-builder about this new wheel push
 # get 'wamp' command, always with latest autobahn master
-pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption]
+pip install -q -I https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption]
+
 # use 'wamp' to notify crossbar-builder
-wamp --max-failures 3 --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name zlmdb --keyword publish true
+wamp --max-failures 3 \
+     --authid wheel_pusher \
+     --url ws://office2dmz.crossbario.com:8008/ \
+     --realm webhook call builder.wheel_pushed \
+     --keyword name zlmdb \
+     --keyword publish true
+
+echo ''
+echo 'package uploaded to:'
+echo ''
+echo '      https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels/zlmdb-'${ZLMDB_VERSION}'-py2.py3-none-any.whl'
+echo '      https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels/zlmdb-latest-py2.py3-none-any.whl'
+echo ''
