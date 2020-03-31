@@ -45,12 +45,12 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'cbor2>=5.0.1',
+    'cbor2>=5.1.0',
     'click>=7.0',
     'lmdb>=0.98',
     'pynacl>=1.3.0',
-    'pyyaml>=4.2b4',
-    'txaio>=20.1.1',
+    'pyyaml>=5.3',
+    'txaio>=20.3.1',
     'numpy==1.15.4',
 ]
 
