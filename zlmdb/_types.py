@@ -289,6 +289,51 @@ class _StringKeysMixin(object):
         return data.decode('utf8')
 
 
+class _StringStringKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return _random_string(), _random_string()
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert type(key1) == str
+        assert type(key2) == str
+
+        return key1.encode('utf8') + b'\x00' + key2.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) > 0
+        d = data.split(b'\x00')
+        assert len(d) == 2
+        return d[0], d[1]
+
+
+class _StringStringStringKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return _random_string(), _random_string(), _random_string()
+
+    def _serialize_key(self, key1_key2_key3):
+        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
+        key1, key2, key3 = key1_key2_key3
+
+        assert type(key1) == str
+        assert type(key2) == str
+        assert type(key3) == str
+
+        return key1.encode('utf8') + b'\x00' + key2.encode('utf8') + b'\x00' + key3.encode('utf8')
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) > 0
+        d = data.split(b'\x00')
+        assert len(d) == 3
+        return d[0], d[1], d[2]
+
+
 class _UuidKeysMixin(object):
     @staticmethod
     def new_key():

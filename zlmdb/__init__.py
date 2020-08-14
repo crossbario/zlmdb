@@ -65,6 +65,8 @@ from ._pmap import PersistentMap, \
                    MapStringOid, \
                    MapStringOidOid, \
                    MapStringUuid, \
+                   MapStringStringUuid, \
+                   MapStringStringStringUuid, \
                    MapStringJson, \
                    MapStringCbor, \
                    MapStringPickle, \
@@ -169,6 +171,8 @@ __all__ = (
 
     # String (utf8) based pmap types for object containers
     'MapStringUuid',
+    'MapStringStringUuid',
+    'MapStringStringStringUuid',
     'MapStringOid',
     'MapStringOidOid',
     'MapStringJson',
