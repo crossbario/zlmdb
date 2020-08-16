@@ -109,7 +109,7 @@ from ._pmap import PersistentMap, \
                    MapBytes20Bytes20FlatBuffers, \
                    MapBytes20StringFlatBuffers
 
-from ._transaction import Transaction, TransactionStats
+from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database
 from ._schema import Schema
 
@@ -119,6 +119,7 @@ __all__ = (
     'Database',
     'Transaction',
     'TransactionStats',
+    'walltime',
     'MapSlotUuidUuid',
 
     #
