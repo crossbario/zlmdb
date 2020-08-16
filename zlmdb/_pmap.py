@@ -707,6 +707,14 @@ class MapUuidUuidUuid(_types._UuidUuidKeysMixin, _types._UuidValuesMixin, Persis
         PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
+class MapUuidTimestampUuid(_types._UuidTimestampKeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, timestamp) keys and UUID values.
+    """
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapUuidStringUuid(_types._UuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, string) keys and UUID values.

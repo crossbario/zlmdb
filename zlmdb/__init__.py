@@ -52,6 +52,7 @@ from ._pmap import PersistentMap, \
                    MapTimestampUuidFlatBuffers, \
                    MapTimestampUuidStringFlatBuffers, \
                    MapTimestampUuidCbor, \
+                   MapUuidTimestampUuid, \
                    MapUuidStringUuid, \
                    MapUuidUuidStringUuid, \
                    MapUuidUuidUuidStringUuid, \
@@ -108,7 +109,7 @@ from ._pmap import PersistentMap, \
                    MapBytes20Bytes20FlatBuffers, \
                    MapBytes20StringFlatBuffers
 
-from ._transaction import Transaction, TransactionStats, walltime
+from ._transaction import Transaction, TransactionStats
 from ._database import Database
 from ._schema import Schema
 
@@ -118,7 +119,6 @@ __all__ = (
     'Database',
     'Transaction',
     'TransactionStats',
-    'walltime',
     'MapSlotUuidUuid',
 
     #
@@ -161,6 +161,7 @@ __all__ = (
     # UUID-UUID based pmap types
     'MapUuidUuidCbor',
     'MapUuidUuidUuid',
+    'MapUuidTimestampUuid',
     'MapUuidTimestampBytes32',
     'MapUuidTimestampCbor',
     'MapTimestampUuidCbor',
