@@ -62,7 +62,6 @@ test_requirements = ['pytest', ]
 packages = [
     'zlmdb',
     'zlmdb.flatbuffers',
-    'zlmdb.flatbuffers.demo',
     'zlmdb.flatbuffers.reflection',
 ]
 
