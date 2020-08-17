@@ -28,8 +28,8 @@ import random
 import uuid
 import datetime
 
-from zlmdb.flatbuffers.demo import User as _user
-from zlmdb.flatbuffers.demo import Date as _date
+from zlmdb.tests.demo import User as _user
+from zlmdb.tests.demo import Date as _date
 
 
 class User(object):
