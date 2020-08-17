@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Type(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class Type(object):
         x = Type()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def TypeBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Type
     def Init(self, buf, pos):
@@ -39,8 +45,16 @@ class Type(object):
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
         return -1
 
-def TypeStart(builder): builder.StartObject(3)
+    # Type
+    def FixedLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
+        return 0
+
+def TypeStart(builder): builder.StartObject(4)
 def TypeAddBaseType(builder, baseType): builder.PrependInt8Slot(0, baseType, 0)
 def TypeAddElement(builder, element): builder.PrependInt8Slot(1, element, 0)
 def TypeAddIndex(builder, index): builder.PrependInt32Slot(2, index, -1)
+def TypeAddFixedLength(builder, fixedLength): builder.PrependUint16Slot(3, fixedLength, 0)
 def TypeEnd(builder): return builder.EndObject()

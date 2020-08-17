@@ -45,6 +45,7 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
+    'flatbuffers>=1.12',
     'cbor2>=5.1.0',
     'click>=7.0',
     'lmdb>=0.98',
@@ -59,7 +60,6 @@ setup_requirements = ['pytest-runner', ]
 test_requirements = ['pytest', ]
 
 packages = [
-    'flatbuffers',
     'zlmdb',
     'zlmdb.flatbuffers',
     'zlmdb.flatbuffers.demo',

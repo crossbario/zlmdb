@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Enum(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class Enum(object):
         x = Enum()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def EnumBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Enum
     def Init(self, buf, pos):
@@ -32,7 +38,7 @@ class Enum(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .EnumVal import EnumVal
+            from reflection.EnumVal import EnumVal
             obj = EnumVal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -46,6 +52,11 @@ class Enum(object):
         return 0
 
     # Enum
+    def ValuesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
+
+    # Enum
     def IsUnion(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
@@ -57,7 +68,7 @@ class Enum(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Type import Type
+            from reflection.Type import Type
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -70,7 +81,7 @@ class Enum(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -82,6 +93,11 @@ class Enum(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Enum
+    def AttributesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
 
     # Enum
     def Documentation(self, j):
@@ -97,6 +113,11 @@ class Enum(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Enum
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        return o == 0
 
 def EnumStart(builder): builder.StartObject(6)
 def EnumAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)

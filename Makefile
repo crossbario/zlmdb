@@ -133,8 +133,8 @@ autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
 
-FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
-#FLATC=/usr/local/bin/flatc
+#FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
+FLATC=/usr/local/bin/flatc
 
 update_flatbuffers:
 	git submodule foreach git pull
@@ -142,24 +142,15 @@ update_flatbuffers:
 	cp -R deps/flatbuffers/python/flatbuffers .
 
 generate_flatbuffers_reflection:
-	$(FLATC) --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/reflection.fbs
 
 generate_flatbuffers_demos:
 	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
 	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
 
 # input .fbs files for schema
-FBS_FILES=deps/flatbuffers/reflection/reflection.fbs
-FBS_OUTPUT=./crossbarfx/master/database/
-
-# flatc compiler to use (build directly from master: https://github.com/google/flatbuffers)
-# oberstet@thinkpad-t430s:~$ which flatc
-# /usr/local/bin/flatc
-# oberstet@thinkpad-t430s:~$ flatc --version
-# flatc version 1.9.0 (Jun 21 2018 14:06:19)
-# oberstet@thinkpad-t430s:~$ flatc --help | grep builtin
-#   --bfbs-builtins    Add builtin attributes to the binary schema files.
-# oberstet@thinkpad-t430s:~$
+FBS_FILES=./zlmdb/flatbuffers/reflection.fbs
+FBS_OUTPUT=./zlmdb/flatbuffers/
 
 flatc_version:
 	$(FLATC) --version

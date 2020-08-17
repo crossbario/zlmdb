@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Object(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class Object(object):
         x = Object()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def ObjectBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Object
     def Init(self, buf, pos):
@@ -32,7 +38,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .Field import Field
+            from reflection.Field import Field
             obj = Field()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -44,6 +50,11 @@ class Object(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Object
+    def FieldsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
 
     # Object
     def IsStruct(self):
@@ -73,7 +84,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -85,6 +96,11 @@ class Object(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Object
+    def AttributesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        return o == 0
 
     # Object
     def Documentation(self, j):
@@ -100,6 +116,11 @@ class Object(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Object
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        return o == 0
 
 def ObjectStart(builder): builder.StartObject(7)
 def ObjectAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)

@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Field(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class Field(object):
         x = Field()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def FieldBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Field
     def Init(self, buf, pos):
@@ -30,7 +36,7 @@ class Field(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Type import Type
+            from reflection.Type import Type
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -92,7 +98,7 @@ class Field(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -104,6 +110,11 @@ class Field(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Field
+    def AttributesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        return o == 0
 
     # Field
     def Documentation(self, j):
@@ -119,6 +130,11 @@ class Field(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Field
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        return o == 0
 
 def FieldStart(builder): builder.StartObject(11)
 def FieldAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)

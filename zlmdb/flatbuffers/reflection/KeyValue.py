@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class KeyValue(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class KeyValue(object):
         x = KeyValue()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def KeyValueBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # KeyValue
     def Init(self, buf, pos):

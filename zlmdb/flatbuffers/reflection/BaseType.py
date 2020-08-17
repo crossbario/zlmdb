@@ -20,4 +20,5 @@ class BaseType(object):
     Vector = 14
     Obj = 15
     Union = 16
+    Array = 17
 

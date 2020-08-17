@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class RPCCall(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class RPCCall(object):
         x = RPCCall()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def RPCCallBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # RPCCall
     def Init(self, buf, pos):
@@ -30,7 +36,7 @@ class RPCCall(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Object import Object
+            from reflection.Object import Object
             obj = Object()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -41,7 +47,7 @@ class RPCCall(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Object import Object
+            from reflection.Object import Object
             obj = Object()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -54,7 +60,7 @@ class RPCCall(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -66,6 +72,11 @@ class RPCCall(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # RPCCall
+    def AttributesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
 
     # RPCCall
     def Documentation(self, j):
@@ -81,6 +92,11 @@ class RPCCall(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # RPCCall
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
 
 def RPCCallStart(builder): builder.StartObject(5)
 def RPCCallAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)

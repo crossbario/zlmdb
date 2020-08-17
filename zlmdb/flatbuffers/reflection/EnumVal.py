@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class EnumVal(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class EnumVal(object):
         x = EnumVal()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def EnumValBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # EnumVal
     def Init(self, buf, pos):
@@ -37,7 +43,7 @@ class EnumVal(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Object import Object
+            from reflection.Object import Object
             obj = Object()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -48,7 +54,7 @@ class EnumVal(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Type import Type
+            from reflection.Type import Type
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -68,6 +74,11 @@ class EnumVal(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # EnumVal
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
 
 def EnumValStart(builder): builder.StartObject(5)
 def EnumValAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)

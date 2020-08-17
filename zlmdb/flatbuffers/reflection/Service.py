@@ -3,6 +3,8 @@
 # namespace: reflection
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Service(object):
     __slots__ = ['_tab']
@@ -13,6 +15,10 @@ class Service(object):
         x = Service()
         x.Init(buf, n + offset)
         return x
+
+    @classmethod
+    def ServiceBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Service
     def Init(self, buf, pos):
@@ -32,7 +38,7 @@ class Service(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .RPCCall import RPCCall
+            from reflection.RPCCall import RPCCall
             obj = RPCCall()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -46,13 +52,18 @@ class Service(object):
         return 0
 
     # Service
+    def CallsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
+
+    # Service
     def Attributes(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from .KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -64,6 +75,11 @@ class Service(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Service
+    def AttributesIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
 
     # Service
     def Documentation(self, j):
@@ -79,6 +95,11 @@ class Service(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Service
+    def DocumentationIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
 
 def ServiceStart(builder): builder.StartObject(4)
 def ServiceAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
