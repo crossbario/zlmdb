@@ -302,6 +302,10 @@ class PersistentMap(MutableMapping):
             self._compress = lambda data: data
             self._decompress = lambda data: data
 
+        # if this pmap is an index, the table-pmap the index-pmap is attached to
+        self._index_attached_to = None
+
+        # if this pmap is NOT an index, any indexes attached to this (table-)pmap
         self._indexes = {}
 
     def indexes(self):
@@ -310,6 +314,14 @@ class PersistentMap(MutableMapping):
         :return:
         """
         return sorted(self._indexes.keys())
+
+    def is_index(self):
+        """
+        Flag indicating whether this pmap is used as an index.
+
+        :return:
+        """
+        return self._index_attached_to is not None
 
     def attach_index(self, name, pmap, fkey, nullable=False, unique=True):
         """
@@ -327,9 +339,16 @@ class PersistentMap(MutableMapping):
         assert type(nullable) == bool
         assert type(unique) == bool
 
+        if self._index_attached_to:
+            raise Exception('cannot attach an index to an index (this pmap is already an index attached to {})'.format(
+                self._index_attached_to))
+        if pmap._index_attached_to:
+            raise Exception('index already attached (to {})'.format(pmap._index_attached_to))
         if name in self._indexes:
             raise Exception('index with name "{}" already exists'.format(name))
+
         self._indexes[name] = Index(name, fkey, pmap, nullable, unique)
+        pmap._index_attached_to = self
 
     def detach_index(self, name):
         """
