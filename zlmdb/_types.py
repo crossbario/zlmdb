@@ -395,6 +395,10 @@ class _UuidBytes20Uint8KeysMixin(object):
 
         assert isinstance(key1, uuid.UUID)
         assert type(key2) == bytes and len(key2) == 20
+
+        # FIXME: workaround to process eg (3,)
+        if type(key3) == tuple and len(key3) == 1:
+            key3 = key3[0]
         assert type(key3) == int and key3 >= 0 and key3 < 256
 
         return key1.bytes + key2 + struct.pack('B', key3)
