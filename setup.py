@@ -45,13 +45,14 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'cbor2>=5.1.0',
-    'click>=7.0',
-    'lmdb>=0.98',
-    'pynacl>=1.3.0',
-    'pyyaml>=5.3',
-    'txaio>=20.3.1',
-    'numpy==1.15.4',
+    'cbor2>=5.2.0',
+    'click>=7.1.2',
+    'flatbuffers>=1.12',
+    'lmdb>=1.0.0',
+    'pynacl>=1.4.0',
+    'pyyaml>=5.3.1',
+    'txaio>=20.4.1',
+    'numpy==1.19.4',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -62,7 +63,6 @@ packages = [
     'flatbuffers',
     'zlmdb',
     'zlmdb.flatbuffers',
-    'zlmdb.flatbuffers.demo',
     'zlmdb.flatbuffers.reflection',
 ]
 
@@ -70,7 +70,7 @@ setup(
     author="Crossbar.io Technologies GmbH",
     author_email='contact@crossbario.com',
     classifiers=[
-        "Development Status :: 4 - Beta",
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
@@ -78,7 +78,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     description="Object-relational zero-copy in-memory database layer for LMDB.",
     entry_points={
