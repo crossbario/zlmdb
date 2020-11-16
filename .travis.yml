@@ -94,8 +94,7 @@ matrix:
     #
     # PyPy 3
     #
-    #- python: "pypy3.6-v7.3.2"
-    - python: "pypy3.6-7.3.2"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3
 
