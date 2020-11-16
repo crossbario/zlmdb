@@ -1,8 +1,5 @@
-# py3.7/travis:
-# https://github.com/travis-ci/travis-ci/issues/9815#issue-336465122
-# https://github.com/travis-ci/travis-ci/issues/9069#issuecomment-425720905
 language: python
-dist: xenial
+dist: focal
 sudo: true
 
 addons:
@@ -53,31 +50,35 @@ matrix:
     #
     # General
     #
-    - python: "3.7"
+    - python: "3.8"
       env:
       - TOX_ENV=coverage
       # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
       script: travis_wait tox -c tox.ini -e $TOX_ENV
 
-    - python: "3.7"
+    - python: "3.8"
       env:
       - TOX_ENV=sphinx
 
-    - python: "3.7"
+    - python: "3.8"
       env:
       - TOX_ENV=flake8
 
-    - python: "3.7"
+    - python: "3.8"
       env:
       - TOX_ENV=mypy
 
-    - python: "3.7"
+    - python: "3.8"
       env:
       - TOX_ENV=yapf
 
     #
-    # 3.5-3.8
+    # 3.6-3.9
     #
+    - python: "3.9"
+      env:
+      - TOX_ENV=py39
+
     - python: "3.8"
       env:
       - TOX_ENV=py38
@@ -90,14 +91,10 @@ matrix:
       env:
       - TOX_ENV=py36
 
-    - python: "3.5"
-      env:
-      - TOX_ENV=py35
-
     #
     # PyPy 3
     #
-    - python: "pypy3.5"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3
 
