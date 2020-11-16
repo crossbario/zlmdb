@@ -47,49 +47,49 @@ matrix:
   fast_finish: true
 
   include:
-    # #
-    # # General
-    # #
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=coverage
-    #   # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
-    #   script: travis_wait tox -c tox.ini -e $TOX_ENV
+    #
+    # General
+    #
+    - python: "3.8"
+      env:
+      - TOX_ENV=coverage
+      # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
+      script: travis_wait tox -c tox.ini -e $TOX_ENV
 
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=sphinx
+    - python: "3.8"
+      env:
+      - TOX_ENV=sphinx
 
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=flake8
+    - python: "3.8"
+      env:
+      - TOX_ENV=flake8
 
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=mypy
+    - python: "3.8"
+      env:
+      - TOX_ENV=mypy
 
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=yapf
+    - python: "3.8"
+      env:
+      - TOX_ENV=yapf
 
-    # #
-    # # 3.6-3.9
-    # #
-    # - python: "3.9"
-    #   env:
-    #   - TOX_ENV=py39
+    #
+    # 3.6-3.9
+    #
+    - python: "3.9"
+      env:
+      - TOX_ENV=py39
 
-    # - python: "3.8"
-    #   env:
-    #   - TOX_ENV=py38
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38
 
-    # - python: "3.7"
-    #   env:
-    #   - TOX_ENV=py37
+    - python: "3.7"
+      env:
+      - TOX_ENV=py37
 
-    # - python: "3.6"
-    #   env:
-    #   - TOX_ENV=py36
+    - python: "3.6"
+      env:
+      - TOX_ENV=py36
 
     #
     # PyPy 3
@@ -98,17 +98,17 @@ matrix:
       env:
       - TOX_ENV=pypy3
 
-    # # https://docs.travis-ci.com/user/build-stages/matrix-expansion/
-    # - stage: deploy
-    #   python: 3.7
-    #   if: repo = crossbario/zlmdb AND branch = master AND type != pull_request
-    #   #on:
-    #   #  repo: crossbario/zlmdb
-    #   #  branch: master
-    #   #  # tags: true
-    #   skip_cleanup: true
-    #   provider: script
-    #   script: pwd && ls -la && sh .travis-deploy.sh
+    # https://docs.travis-ci.com/user/build-stages/matrix-expansion/
+    - stage: deploy
+      python: 3.7
+      if: repo = crossbario/zlmdb AND branch = master AND type != pull_request
+      #on:
+      #  repo: crossbario/zlmdb
+      #  branch: master
+      #  # tags: true
+      skip_cleanup: true
+      provider: script
+      script: pwd && ls -la && sh .travis-deploy.sh
 
 
 # CI notifications
