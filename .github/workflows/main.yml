@@ -21,19 +21,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
-    - name: Set environment - 1/2
-      run: |
-        echo "${HOME}/.local/bin" >> $GITHUB_PATH
-        echo BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
-        echo ZLMDB_BUILD_ID=$(date --utc +%Y%m%d)-$(git rev-parse --short ${GITHUB_SHA}) >> $GITHUB_ENV
-        echo ZLMDB_VERSION=$(grep -E '^(__version__)' ./zlmdb/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g') >> $GITHUB_ENV
-
-    - name: Set environment - 2/2
-      run: |
-        echo ZLMDB_VCS_REF=`git --git-dir="./.git" rev-list -n 1 v${ZLMDB_VERSION} --abbrev-commit` >> $GITHUB_ENV
-
     - name: Install OS package dependencies
       run: |
         sudo apt update
@@ -140,12 +127,24 @@ jobs:
       run: tox -c tox.ini -e sphinx
 
   deploy:
-    env:
-      CB_FULLTESTS: 1
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
+    - name: Set environment - 1/2
+      run: |
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        echo BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
+        echo ZLMDB_BUILD_ID=$(date --utc +%Y%m%d)-$(git rev-parse --short ${GITHUB_SHA}) >> $GITHUB_ENV
+        echo ZLMDB_VERSION=$(grep -E '^(__version__)' ./zlmdb/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g') >> $GITHUB_ENV
+
+    - name: Set environment - 2/2
+      run: |
+        echo ZLMDB_VCS_REF=`git --git-dir="./.git" rev-list -n 1 v${ZLMDB_VERSION} --abbrev-commit` >> $GITHUB_ENV
 
     - name: Install OS package dependencies
       run: |
