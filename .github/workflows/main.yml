@@ -47,8 +47,12 @@ jobs:
     - name: Run MyPy
       run: tox -c tox.ini -e mypy
 
+    # since we use --parallel-mode to coverage inside Tox we use
+    # "coverage combine" so the filename is always ".coverage"
     - name: Run Coverage
-      run: tox -c tox.ini -e coverage
+      run: |
+        tox -c tox.ini -e coverage
+        coverage combine && codecov
 
   test:
     env:
