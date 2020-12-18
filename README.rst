@@ -9,9 +9,9 @@ ZLMDB
     :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation
 
-.. image:: https://img.shields.io/travis/crossbario/zlmdb.svg
-    :target: https://travis-ci.com/crossbario/zlmdb
-    :alt: TravisCI
+.. image:: https://github.com/crossbario/zlmdb/workflows/main/badge.svg
+   :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Amain
+   :alt: Build Status
 
 .. image:: https://codecov.io/gh/crossbario/zlmdb/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/crossbario/zlmdb

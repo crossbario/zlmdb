@@ -21,6 +21,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
+    - name: Set environment
+      run: |
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        echo "ZLMDB_BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})" >> $GITHUB_ENV
+        echo "ZLMDB_VERSION=$(grep -E '^(__version__)' ./zlmdb/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g')" >> $GITHUB_ENV
+        echo "ZLMDB_VCS_REF=`git --git-dir="./.git" rev-list -n 1 v${ZLMDB_VERSION} --abbrev-commit`" >> $GITHUB_ENV
+        echo "BUILD_DATE=`date -u +"%Y-%m-%d"`" >> $GITHUB_ENV
+
     - name: Install OS package dependencies
       run: |
         sudo apt update
