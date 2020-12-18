@@ -129,6 +129,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: deploy_aws
 
     runs-on: ubuntu-latest
     steps:
@@ -167,6 +168,5 @@ jobs:
         pip install -r requirements-dev.txt
 
     - name: Deploy (build, package and upload)
-      environment: deploy_aws
       run: |
         ./deploy.sh
