@@ -2,15 +2,17 @@
 
 set +o verbose -o errexit
 
-export AWS_DEFAULT_REGION=eu-central-1
-export AWS_S3_BUCKET_NAME=crossbarbuilder
+# AWS_DEFAULT_REGION        : must be set in CI build context!
+# AWS_S3_BUCKET_NAME        : must be set in CI build context!
 # AWS_ACCESS_KEY_ID         : must be set in CI build context!
 # AWS_SECRET_ACCESS_KEY     : must be set in CI build context!
-# WAMP_PRIVATE_KEY          : must be set i CI build context!
+# WAMP_PRIVATE_KEY          : must be set in CI build context!
 
-# only show number of env vars .. should be 4 on master branch!
-echo 'aws env vars (should be 4 - but only on master branch!):'
-env | grep AWS | wc -l
+echo 'AWS env vars (should be 4):'
+env | grep AWS_ | wc -l
+
+echo 'WAMP_PRIVATE_KEY env var (should be 1):'
+env | grep WAMP_PRIVATE_KEY | wc -l
 
 # set up awscli package
 echo 'installing aws tools ..'
