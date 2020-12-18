@@ -153,10 +153,11 @@ jobs:
           libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
           libsnappy-dev
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.x
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.x'
+        architecture: 'x64'
 
     - name: Install Python package dependencies
       run: |
