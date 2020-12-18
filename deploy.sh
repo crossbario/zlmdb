@@ -26,7 +26,8 @@ elif [ -n "$TRAVIS_TAG" ]; then
 
 # outside travis? => deploy
 else
-    echo '[?] deploy script called outside Travis? continuing to deploy!';
+    echo '[?] WARNING: deploy script called outside Travis? will not deploy!';
+    exit 0;
 
 fi
 
