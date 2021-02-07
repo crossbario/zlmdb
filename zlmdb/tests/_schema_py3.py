@@ -46,8 +46,8 @@ class User(object):
     referred_by: int
     realm_oid: int
     icecream: str
-    mrealm: uuid.UUID
-    mrealm_notnull: uuid.UUID
+    mrealm: uuid.UUID  # type:ignore
+    mrealm_notnull: uuid.UUID  # type:ignore
 
     def __init__(self):
         self.oid = None

@@ -45,7 +45,7 @@ from txaio import time_ns  # noqa
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
-    from backports.tempfile import TemporaryDirectory
+    from backports.tempfile import TemporaryDirectory  # type:ignore
 
 if 'COVERAGE_PROCESS_START' in os.environ:
     COVERAGE = True

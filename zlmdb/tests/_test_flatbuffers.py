@@ -34,7 +34,7 @@ txaio.use_twisted()
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
-    from backports.tempfile import TemporaryDirectory
+    from backports.tempfile import TemporaryDirectory  # type:ignore
 
 import zlmdb  # noqa
 

@@ -37,7 +37,7 @@ import zlmdb  # noqa
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
-    from backports.tempfile import TemporaryDirectory
+    from backports.tempfile import TemporaryDirectory  # type:ignore
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

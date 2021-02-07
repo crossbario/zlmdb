@@ -124,19 +124,12 @@ def test_flatbuffer_serialization_speed():
 
 
 if __name__ == '__main__':
-    sers = []
+    from typing import List
 
-    ser = _types._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse)
-    sers.append(ser)
-
-    ser = _types._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse)
-    sers.append(ser)
-
-    ser = _types._PickleValuesMixin()
-    sers.append(ser)
-
-    ser = _types._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast)
-    sers.append(ser)
-
+    sers: List[object] = []
+    sers.append(_types._JsonValuesMixin(marshal=User.marshal, unmarshal=User.parse))
+    sers.append(_types._CborValuesMixin(marshal=User.marshal, unmarshal=User.parse))
+    sers.append(_types._PickleValuesMixin())
+    sers.append(_types._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast))
     for ser in sers:
-        print(_serialization_speed(ser))
+        print(_serialization_speed(ser, _serializer_run))

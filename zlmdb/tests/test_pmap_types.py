@@ -30,7 +30,7 @@ import sys
 try:
     from tempfile import TemporaryDirectory
 except ImportError:
-    from backports.tempfile import TemporaryDirectory
+    from backports.tempfile import TemporaryDirectory  # type:ignore
 
 import txaio
 txaio.use_twisted()
