@@ -13,7 +13,7 @@ ZLMDB
    :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Amain
    :alt: Build
 
-.. image:: https://github.com/crossbario/zlmdb/workflows/main/deploy.svg
+.. image:: https://github.com/crossbario/zlmdb/workflows/deploy/badge.svg
    :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Adeploy
    :alt: Deploy
 
