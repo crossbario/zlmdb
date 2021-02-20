@@ -103,7 +103,8 @@ jobs:
     # that work locally. maybe some caching issue ..
     - name: Install NumPy
       run: |
-        pip install --no-cache-dir "numpy>=1.20.1"
+        pip install --ignore-installed --force-reinstall --no-cache-dir \
+          --index-url=https://pypi.python.org/simple/ "numpy>=1.20.1"
 
     - name: Install zLMDB
       run: |
