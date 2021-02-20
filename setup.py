@@ -45,14 +45,15 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
+    'cffi>=1.14.5',
     'cbor2>=5.2.0',
     'click>=7.1.2',
     'flatbuffers>=1.12',
-    'lmdb>=1.0.0',
+    'lmdb>=1.1.1',
     'pynacl>=1.4.0',
-    'pyyaml>=5.3.1',
-    'txaio>=20.4.1',
-    'numpy>=1.19.4',
+    'pyyaml>=5.4.1',
+    'txaio>=21.2.1',
+    'numpy>=1.20.1',
 ]
 
 setup_requirements = ['pytest-runner', ]
