@@ -45,14 +45,15 @@ with open('README.rst') as readme_file:
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
+    'cffi>=1.14.5',
     'cbor2>=5.2.0',
     'click>=7.1.2',
     'flatbuffers>=1.12',
-    'lmdb>=1.0.0',
+    'lmdb>=1.1.1',
     'pynacl>=1.4.0',
-    'pyyaml>=5.3.1',
-    'txaio>=20.4.1',
-    'numpy>=1.19.4',
+    'pyyaml>=5.4.1',
+    'txaio>=21.2.1',
+    'numpy>=1.20.1',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -75,7 +76,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -86,8 +86,9 @@ setup(
             'zlmdb=zlmdb.cli:main',
         ],
     },
-    # numpy 1.19.4 requires python 3.6+ (https://github.com/numpy/numpy/blob/360ba0572483457837992d711a0a00580741fc88/setup.py#L29)
-    python_requires='>=3.6',
+    # NumPy 1.19.0+ requires Py 3.6+
+    # NumPy 1.20.0+ requires Py 3.7+
+    python_requires='>=3.7',
     install_requires=requirements,
     license="MIT license",
     long_description=readme,
