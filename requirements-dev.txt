@@ -16,5 +16,6 @@ backports.tempfile>=1.0
 yapf==0.29.0
 pylint>=1.9.2
 pyyaml>=4.2b4
+types-PyYAML>=6.0.1
 mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'
 twisted>=18.7.0
