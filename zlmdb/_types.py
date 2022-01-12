@@ -82,6 +82,7 @@ def dt_to_bytes(dt):
     assert isinstance(dt, np.datetime64)
 
     data = bytearray(dt.tobytes())
+    # FIXME: this must depend on host CPU arch
     data.reverse()
     return bytes(data)
 
@@ -96,6 +97,7 @@ def bytes_to_dt(data):
     assert type(data) == bytes
 
     data = bytearray(data)
+    # FIXME: this must depend on host CPU arch
     data.reverse()
     dt = np.frombuffer(bytes(data), dtype='datetime64[ns]')[0]
     return dt

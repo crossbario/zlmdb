@@ -267,7 +267,8 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
-    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, sync=True, open=True, log=None):
+    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, lock=True, sync=True, create=True,
+                 open=True, log=None):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
@@ -288,7 +289,10 @@ class Database(object):
         assert dbpath is None or type(dbpath) == str
         assert type(maxsize) == int
         assert type(readonly) == bool
+        assert type(lock) == bool
         assert type(sync) == bool
+        assert type(create) == bool
+        assert type(open) == bool
 
         if log:
             self.log = log
@@ -307,7 +311,10 @@ class Database(object):
 
         self._maxsize = maxsize
         self._readonly = readonly
+        self._lock = lock
         self._sync = sync
+        self._create = create
+        self._open = open
 
         self._slots = None
         self._slots_by_index = None
@@ -317,20 +324,24 @@ class Database(object):
         self._env = None
 
         # in a direct run environment, we immediately open LMDB
-        if open:
+        if self._open:
             self.__enter__()
 
     def __enter__(self):
+        # lmdb.open(db_dir, create=False, subdir=True, readonly=True, lock=False)
+        # https://stackoverflow.com/questions/56905502/lmdb-badrsloterror-mdb-txn-begin-mdb-bad-rslot-invalid-reuse-of-reader-lockta
+
         # temporary managed context entered ..
         if not self._env:
             # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
             # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
             self._env = lmdb.open(self._dbpath,
                                   map_size=self._maxsize,
+                                  create=self._create,
                                   readonly=self._readonly,
                                   sync=self._sync,
                                   subdir=True,
-                                  lock=True)
+                                  lock=self._lock)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
