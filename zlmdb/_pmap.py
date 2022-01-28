@@ -846,7 +846,8 @@ class MapUuidTimestampUuidFlatBuffers(_types._UuidTimestampUuidKeysMixin, _types
         _types._FlatBuffersValuesMixin.__init__(self, build=build, cast=cast)
 
 
-class MapUint16UuidTimestampFlatBuffers(_types._Uint16UuidTimestampKeysMixin, _types._FlatBuffersValuesMixin, PersistentMap):
+class MapUint16UuidTimestampFlatBuffers(_types._Uint16UuidTimestampKeysMixin, _types._FlatBuffersValuesMixin,
+                                        PersistentMap):
     """
     Persistent map with (uint16, UUID, Timestamp) keys and FlatBuffers values.
     """
