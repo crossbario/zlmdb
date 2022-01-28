@@ -379,6 +379,35 @@ class _UuidUuidKeysMixin(object):
         return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
 
 
+class _Uint16UuidTimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return random.randint(0, 2**16), uuid.uuid4(), np.datetime64(time_ns(), 'ns')
+
+    def _serialize_key(self, key1_key2_key3):
+        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
+        key1, key2, key3 = key1_key2_key3
+
+        if key1 is None:
+            key1 = 0
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
+        if key3 is None:
+            key3 = np.datetime64(0, 'ns')
+
+        assert type(key1) == int and key1 >= 0 and key1 < 2**16
+        assert isinstance(key2, uuid.UUID)
+        assert isinstance(key3, np.datetime64)
+
+        return struct.pack('H', key1) + key2.bytes + dt_to_bytes(key3)
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes and len(data) == (2 + 16 + 8)
+
+        data1, data2, data3 = data[0:2], data[2:18], data[18:26],
+        return struct.unpack('H', data1), uuid.UUID(bytes=data2), bytes_to_dt(data3)
+
+
 class _UuidBytes20Uint8KeysMixin(object):
     @staticmethod
     def new_key():

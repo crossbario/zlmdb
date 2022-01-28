@@ -56,9 +56,8 @@ requirements = [
     'numpy>=1.20.1',
 ]
 
-setup_requirements = ['pytest-runner', ]
-
-test_requirements = ['pytest', ]
+# setup_requirements = ['pytest-runner']
+test_requirements = ['pytest', 'pytest-runner']
 
 packages = [
     'flatbuffers',
@@ -97,7 +96,7 @@ setup(
     keywords='zlmdb',
     name='zlmdb',
     packages=packages,
-    setup_requires=setup_requirements,
+    # setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/crossbario/zlmdb',
