@@ -845,6 +845,26 @@ class _Bytes32UuidKeysMixin(object):
         return data1, uuid.UUID(bytes=data2)
 
 
+class _UuidBytes32KeysMixin(object):
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        assert isinstance(key1, uuid.UUID)
+
+        assert type(key2) == bytes
+        assert len(key2) == 32
+
+        return key2.bytes + key1
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) == 48
+
+        data1, data2 = data[0:16], data[16:48]
+        return uuid.UUID(bytes=data1), data2
+
+
 class _Bytes32StringKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
