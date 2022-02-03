@@ -1101,7 +1101,7 @@ class _Bytes16TimestampUuidKeysMixin(object):
         else:
             key1 = b'\x00' * 16
             key2 = np.datetime64(0, 'ns')
-            key3 = uuid.UUID(bytes=b'\x00'*16)
+            key3 = uuid.UUID(bytes=b'\x00' * 16)
 
         return key1, key2, key3
 
