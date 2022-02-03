@@ -1071,6 +1071,41 @@ class _Bytes16TimestampKeysMixin(object):
         return key1, key2
 
 
+class _Bytes16TimestampUuidKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return os.urandom(20), np.datetime64(time_ns(), 'ns'), uuid.uuid4()
+
+    def _serialize_key(self, keys):
+        assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
+            self.__class__.__name__, keys)
+        assert len(keys) == 3
+        key1, key2, key3 = keys
+
+        if not key1:
+            key1 = b'\x00' * 16
+
+        assert key1 is None or (type(key1) == bytes and len(key1) == 16)
+        assert isinstance(key2, np.datetime64)
+        assert isinstance(key3, uuid.UUID)
+
+        return key1 + dt_to_bytes(key2) + key3.bytes
+
+    def _deserialize_key(self, data):
+        assert data is None or (type(data) == bytes and len(data) == 40)
+
+        if data:
+            key1 = data[:16]
+            key2 = bytes_to_dt(data[16:24])
+            key3 = uuid.UUID(bytes=data[24:])
+        else:
+            key1 = b'\x00' * 16
+            key2 = np.datetime64(0, 'ns')
+            key3 = uuid.UUID(bytes=b'\x00'*16)
+
+        return key1, key2, key3
+
+
 #
 # Value Types
 #
