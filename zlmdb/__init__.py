@@ -127,6 +127,7 @@ __all__ = (
     'TransactionStats',
     'walltime',
     'MapSlotUuidUuid',
+    'table',
 
     #
     # Errors

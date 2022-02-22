@@ -348,7 +348,8 @@ class Database(object):
                                   readonly=self._readonly,
                                   sync=self._sync,
                                   subdir=True,
-                                  lock=self._lock)
+                                  lock=self._lock,
+                                  writemap=True)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -385,13 +386,13 @@ class Database(object):
             else:
                 os.remove(dbpath)
 
-    def begin(self, write=False, stats=None):
+    def begin(self, write=False, buffers=False, stats=None):
         assert self._env is not None
 
         if write and self._readonly:
             raise Exception('database is read-only')
 
-        txn = Transaction(db=self, write=write, stats=stats)
+        txn = Transaction(db=self, write=write, buffers=buffers, stats=stats)
         return txn
 
     def sync(self, force=False):
