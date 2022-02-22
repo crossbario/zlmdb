@@ -1367,3 +1367,42 @@ class _FlatBuffersValuesMixin(object):
 
     def _deserialize_value(self, data):
         return self._cast(data)
+
+
+class _Pickle5ValuesMixin(object):
+    """
+    Arbitrary Python object values, serialized using Pickle protocol version 5.
+    Protocol version 5 was added in Python 3.8. It adds support for out-of-band
+    data and speedup for in-band data.
+
+    .. seealso::
+
+        * https://docs.python.org/3/library/pickle.html#data-stream-format
+        * https://www.python.org/dev/peps/pep-0574/
+    """
+
+    PROTOCOL = 5
+
+    def _serialize_value(self, value):
+        obj_buffers = []
+        obj_data = pickle.dumps(value, protocol=self.PROTOCOL, buffer_callback=obj_buffers.append)
+        data = []
+        data.append(struct.pack('>I', len(obj_data)))
+        data.append(obj_data)
+        for d in obj_buffers:
+            data.append(struct.pack('>I', len(d.raw())))
+            data.append(d)
+        return b''.join(data)
+
+    def _deserialize_value(self, data):
+        data = memoryview(data)
+        obj_buffers = []
+        obj_len = struct.unpack('>I', data[0:4])[0]
+        obj_data = data[4:obj_len + 4]
+        i = obj_len + 4
+        while i < len(data):
+            buffer_len = struct.unpack('>I', data[i:i + 4])[0]
+            buffer_data = data[i + 4:i + 4 + buffer_len]
+            obj_buffers.append(buffer_data)
+            i += 4 + buffer_len
+        return pickle.loads(obj_data, buffers=obj_buffers)

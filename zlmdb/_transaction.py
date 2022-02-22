@@ -76,7 +76,7 @@ class Transaction(object):
     PUT = 1
     DEL = 2
 
-    def __init__(self, db, write=False, stats=None):
+    def __init__(self, db, write=False, buffers=False, stats=None):
         """
 
         :param db:
@@ -90,6 +90,7 @@ class Transaction(object):
         """
         self._db = db
         self._write = write
+        self._buffers = buffers
         self._stats = stats
         self._txn = None
         self._log = None
@@ -97,7 +98,7 @@ class Transaction(object):
     def __enter__(self):
         assert (self._txn is None)
 
-        self._txn = lmdb.Transaction(self._db._env, write=self._write)
+        self._txn = lmdb.Transaction(self._db._env, write=self._write, buffers=self._buffers)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
