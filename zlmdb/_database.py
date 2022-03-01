@@ -341,6 +341,8 @@ class Database(object):
         # temporary managed context entered ..
         if not self._env:
             # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
+            # https://lmdb.readthedocs.io/en/release/#writemap-mode
+            # map_size: Maximum size database may grow to; used to size the memory mapping.
             # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
             self._env = lmdb.open(self._dbpath,
                                   map_size=self._maxsize,
@@ -405,22 +407,27 @@ class Database(object):
 
         current_size = os.path.getsize(os.path.join(self._dbpath, 'data.mdb'))
 
-        res = {
-            'zlmdb_slots': len(self._slots),
-            'current_size': current_size,
-            'max_size': self._maxsize,
-            'free': 1. - float(current_size) / float(self._maxsize),
-            'read_only': self._readonly,
-            'sync_enabled': self._sync,
-        }
-
         # psize 	        Size of a database page in bytes.
         # depth 	        Height of the B-tree.
         # branch_pages 	    Number of internal (non-leaf) pages.
         # leaf_pages 	    Number of leaf pages.
         # overflow_pages 	Number of overflow pages.
         # entries 	        Number of data items.
-        res.update(self._env.stat())
+        stats = self._env.stat()
+        pages = stats['leaf_pages'] + stats['overflow_pages'] + stats['branch_pages']
+        pages_size = stats['psize'] * pages
+
+        res = {
+            'zlmdb_slots': len(self._slots),
+            'current_size': current_size,
+            'max_size': self._maxsize,
+            'pages': pages,
+            'pages_size': pages_size,
+            'free': 1. - float(pages_size) / float(self._maxsize),
+            'read_only': self._readonly,
+            'sync_enabled': self._sync,
+        }
+        res.update(stats)
 
         # map_addr 	        Address of database map in RAM.
         # map_size 	        Size of database map in RAM.
