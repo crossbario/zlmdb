@@ -761,9 +761,12 @@ class _UuidStringKeysMixin(object):
 
     def _deserialize_key(self, data):
         assert type(data) == bytes
-        assert len(data) > 16
-        data1, data2 = data[:16], data[16:]
-
+        assert len(data) >= 16
+        data1 = data[:16]
+        if len(data) > 16:
+            data2 = data[16:]
+        else:
+            data2 = b''
         return uuid.UUID(bytes=data1), data2.decode('utf8')
 
 
