@@ -379,6 +379,61 @@ class _UuidUuidKeysMixin(object):
         return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2)
 
 
+class _UuidUuidUuidKeysMixin(object):
+    def _serialize_key(self, key1_key2_key3):
+        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
+        key1, key2, key3 = key1_key2_key3
+
+        if key1 is None:
+            key1 = uuid.UUID(bytes=b'\x00' * 16)
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
+        if key3 is None:
+            key3 = uuid.UUID(bytes=b'\x00' * 16)
+
+        assert isinstance(key1, uuid.UUID)
+        assert isinstance(key2, uuid.UUID)
+        assert isinstance(key3, uuid.UUID)
+
+        return key1.bytes + key2.bytes + key3.bytes
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) == 48
+
+        data1, data2, data3 = data[0:16], data[16:32], data[32:48]
+        return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2), uuid.UUID(bytes=data3)
+
+
+class _UuidUuidUuidUuidKeysMixin(object):
+    def _serialize_key(self, key1_key2_key3_key4):
+        assert type(key1_key2_key3_key4) == tuple and len(key1_key2_key3_key4) == 4
+        key1, key2, key3, key4 = key1_key2_key3_key4
+
+        if key1 is None:
+            key1 = uuid.UUID(bytes=b'\x00' * 16)
+        if key2 is None:
+            key2 = uuid.UUID(bytes=b'\x00' * 16)
+        if key3 is None:
+            key3 = uuid.UUID(bytes=b'\x00' * 16)
+        if key4 is None:
+            key4 = uuid.UUID(bytes=b'\x00' * 16)
+
+        assert isinstance(key1, uuid.UUID)
+        assert isinstance(key2, uuid.UUID)
+        assert isinstance(key3, uuid.UUID)
+        assert isinstance(key4, uuid.UUID)
+
+        return key1.bytes + key2.bytes + key3.bytes + key4.bytes
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) == 64
+
+        data1, data2, data3, data4 = data[0:16], data[16:32], data[32:48], data[48:64]
+        return uuid.UUID(bytes=data1), uuid.UUID(bytes=data2), uuid.UUID(bytes=data3), uuid.UUID(bytes=data4)
+
+
 class _Uint16UuidTimestampKeysMixin(object):
     @staticmethod
     def new_key():

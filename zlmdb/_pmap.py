@@ -752,7 +752,23 @@ class MapUuidUuidStringUuid(_types._UuidUuidStringKeysMixin, _types._UuidValuesM
 
 class MapUuidUuidUuidStringUuid(_types._UuidUuidUuidStringKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
-    Persistent map with (UUID, UUID, UUID string) keys and UUID values.
+    Persistent map with (UUID, UUID, UUID, string) keys and UUID values.
+    """
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapUuidUuidUuidUuid(_types._UuidUuidUuidKeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, UUID, UUID) keys and UUID values.
+    """
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
+class MapUuidUuidUuidUuidUuid(_types._UuidUuidUuidUuidKeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with (UUID, UUID, UUID, UUID) keys and UUID values.
     """
     def __init__(self, slot=None, compress=None):
         PersistentMap.__init__(self, slot=slot, compress=compress)
