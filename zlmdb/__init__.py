@@ -61,6 +61,8 @@ from ._pmap import PersistentMap, \
                    MapUuidUuidCbor, \
                    MapUuidUuidSet, \
                    MapUuidUuidUuid, \
+                   MapUuidUuidUuidUuid, \
+                   MapUuidUuidUuidUuidUuid, \
                    MapUuidTimestampBytes32, \
                    MapUuidUuidFlatBuffers, \
                    MapUuidUuidStringFlatBuffers, \
@@ -173,6 +175,8 @@ __all__ = (
     'MapUuidStringFlatBuffers',
     'MapUuidUuidCbor',
     'MapUuidUuidUuid',
+    'MapUuidUuidUuidUuid',
+    'MapUuidUuidUuidUuidUuid',
     'MapUuidTimestampUuid',
     'MapUuidTimestampBytes32',
     'MapUuidTimestampCbor',
