@@ -968,10 +968,10 @@ class _UuidUuidUuidStringKeysMixin(object):
         assert type(key1_key2_key3_key4) == tuple and len(key1_key2_key3_key4) == 4
         key1, key2, key3, key4 = key1_key2_key3_key4
 
-        assert isinstance(key1, uuid.UUID)
-        assert isinstance(key2, uuid.UUID)
-        assert isinstance(key3, uuid.UUID)
-        assert type(key4) == str
+        assert isinstance(key1, uuid.UUID), 'key1 must be a UUID, was {}: {}'.format(type(key1), key1)
+        assert isinstance(key2, uuid.UUID), 'key2 must be a UUID, was {}: {}'.format(type(key2), key2)
+        assert isinstance(key3, uuid.UUID), 'key3 must be a UUID, was {}: {}'.format(type(key3), key3)
+        assert type(key4) == str, 'key4 must be a str, was {}: {}'.format(type(key4), key4)
 
         return key1.bytes + key2.bytes + key3.bytes + key4.encode('utf8')
 

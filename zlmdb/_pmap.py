@@ -28,8 +28,10 @@
 import struct
 import sys
 import zlib
+from typing import Optional, List, Callable, Any, Tuple, Dict
 
 from zlmdb import _types, _errors
+from zlmdb._transaction import Transaction
 
 try:
     import snappy
@@ -44,119 +46,6 @@ if sys.version_info < (3, ):
 else:
     from collections.abc import MutableMapping
     _NATIVE_PICKLE_PROTOCOL = 4
-
-
-class PersistentMapIterator(object):
-    """
-    Iterator that walks over zLMDB database records.
-    """
-    def __init__(self,
-                 txn,
-                 pmap,
-                 from_key=None,
-                 to_key=None,
-                 return_keys=True,
-                 return_values=True,
-                 reverse=False,
-                 limit=None):
-        """
-
-        :param txn:
-        :param pmap:
-        :param from_key:
-        :param to_key:
-        :param return_keys:
-        :param return_values:
-        :param reverse:
-        :param limit:
-        """
-        self._txn = txn
-        self._pmap = pmap
-
-        if from_key:
-            self._from_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(from_key)
-        else:
-            self._from_key = struct.pack('>H', pmap._slot)
-
-        if to_key:
-            self._to_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(to_key)
-        else:
-            self._to_key = struct.pack('>H', pmap._slot + 1)
-
-        self._reverse = reverse
-
-        self._return_keys = return_keys
-        self._return_values = return_values
-
-        self._limit = limit
-        self._read = 0
-
-        self._cursor = None
-        self._found = None
-
-    def __iter__(self):
-        self._cursor = self._txn._txn.cursor()
-
-        # https://lmdb.readthedocs.io/en/release/#lmdb.Cursor.set_range
-        if self._reverse:
-            # seek to the first record starting from to_key (and going reverse)
-            self._found = self._cursor.set_range(self._to_key)
-
-            if self._found:
-                # to_key is _not_ inclusive, so we move on one record
-                self._found = self._cursor.prev()
-            else:
-                self._found = self._cursor.last()
-        else:
-            # seek to the first record starting from from_key
-            self._found = self._cursor.set_range(self._from_key)
-
-        return self
-
-    def __next__(self):
-        # stop criteria: no more records or limit reached
-        if not self._found or (self._limit and self._read >= self._limit):
-            raise StopIteration
-        self._read += 1
-
-        # stop criteria: end of key-range reached
-        _key = self._cursor.key()
-        if self._reverse:
-            if _key < self._from_key:
-                raise StopIteration
-        else:
-            if _key >= self._to_key:
-                raise StopIteration
-
-        # read actual app key-value (before moving cursor)
-        _key = self._pmap._deserialize_key(_key[2:])
-
-        if self._return_values:
-            _data = self._cursor.value()
-            if _data:
-                if self._pmap._decompress:
-                    _data = self._pmap._decompress(_data)
-                _data = self._pmap._deserialize_value(_data)
-        else:
-            _data = None
-
-        # move the cursor
-        if self._reverse:
-            self._found = self._cursor.prev()
-        else:
-            self._found = self._cursor.next()
-
-        # return app key-value
-        if self._return_keys and self._return_values:
-            return _key, _data
-        elif self._return_values:
-            return _data
-        elif self._return_keys:
-            return _key
-        else:
-            return None
-
-    next = __next__  # Python 2
 
 
 class Index(object):
@@ -274,7 +163,7 @@ class PersistentMap(MutableMapping):
     COMPRESS_ZLIB = 1
     COMPRESS_SNAPPY = 2
 
-    def __init__(self, slot, compress=None):
+    def __init__(self, slot: Optional[int], compress: Optional[bool] = None):
         """
 
         :param slot:
@@ -299,23 +188,23 @@ class PersistentMap(MutableMapping):
             else:
                 raise Exception('logic error')
         else:
-            self._compress = lambda data: data
-            self._decompress = lambda data: data
+            self._compress = lambda data: data  # type: ignore
+            self._decompress = lambda data: data  # type: ignore
 
         # if this pmap is an index, the table-pmap the index-pmap is attached to
         self._index_attached_to = None
 
         # if this pmap is NOT an index, any indexes attached to this (table-)pmap
-        self._indexes = {}
+        self._indexes: Dict[str, Index] = {}
 
-    def indexes(self):
+    def indexes(self) -> List[str]:
         """
 
         :return:
         """
         return sorted(self._indexes.keys())
 
-    def is_index(self):
+    def is_index(self) -> bool:
         """
         Flag indicating whether this pmap is used as an index.
 
@@ -323,7 +212,12 @@ class PersistentMap(MutableMapping):
         """
         return self._index_attached_to is not None
 
-    def attach_index(self, name, pmap, fkey, nullable=False, unique=True):
+    def attach_index(self,
+                     name: str,
+                     pmap: 'PersistentMap',
+                     fkey: Callable,
+                     nullable: bool = False,
+                     unique: bool = True):
         """
 
         :param name:
@@ -331,14 +225,7 @@ class PersistentMap(MutableMapping):
         :param fkey:
         :param nullable:
         :param unique:
-        :return:
         """
-        assert type(name) == str
-        assert callable(fkey)
-        assert isinstance(pmap, PersistentMap)
-        assert type(nullable) == bool
-        assert type(unique) == bool
-
         if self._index_attached_to:
             raise Exception('cannot attach an index to an index (this pmap is already an index attached to {})'.format(
                 self._index_attached_to))
@@ -348,16 +235,13 @@ class PersistentMap(MutableMapping):
             raise Exception('index with name "{}" already exists'.format(name))
 
         self._indexes[name] = Index(name, fkey, pmap, nullable, unique)
-        pmap._index_attached_to = self
+        pmap._index_attached_to = self  # type: ignore
 
-    def detach_index(self, name):
+    def detach_index(self, name: str):
         """
 
         :param name:
-        :return:
         """
-        assert type(name) == str
-
         if name in self._indexes:
             del self._indexes[name]
 
@@ -381,6 +265,7 @@ class PersistentMap(MutableMapping):
         """
         assert type(txn_key) == tuple and len(txn_key) == 2
         txn, key = txn_key
+        assert isinstance(txn, Transaction)
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = txn.get(_key)
@@ -395,6 +280,7 @@ class PersistentMap(MutableMapping):
         """
         assert type(txn_key) == tuple and len(txn_key) == 2
         txn, key = txn_key
+        assert isinstance(txn, Transaction)
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = txn.get(_key)
@@ -414,8 +300,8 @@ class PersistentMap(MutableMapping):
         :return:
         """
         assert type(txn_key) == tuple and len(txn_key) == 2
-
         txn, key = txn_key
+        assert isinstance(txn, Transaction)
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
         _data = self._serialize_value(value)
@@ -467,8 +353,8 @@ class PersistentMap(MutableMapping):
         :return:
         """
         assert type(txn_key) == tuple and len(txn_key) == 2
-
         txn, key = txn_key
+        assert isinstance(txn, Transaction)
 
         _key = struct.pack('>H', self._slot) + self._serialize_key(key)
 
@@ -489,27 +375,30 @@ class PersistentMap(MutableMapping):
     def __iter__(self):
         raise NotImplementedError()
 
-    def select(self, txn, from_key=None, to_key=None, return_keys=True, return_values=True, reverse=False, limit=None):
+    def select(self,
+               txn: Transaction,
+               from_key: Any = None,
+               to_key: Any = None,
+               return_keys: bool = True,
+               return_values: bool = True,
+               reverse: bool = False,
+               limit: Optional[int] = None) -> 'PersistentMapIterator':
         """
         Select all records (key-value pairs) in table, optionally within a given key range.
 
         :param txn: The transaction in which to run.
-        :type txn: :class:`zlmdb.Transaction`
 
         :param from_key: Return records starting from (and including) this key.
-        :type from_key: object
 
         :param to_key: Return records up to (but not including) this key.
-        :type to_key: object
 
         :param return_keys: If ``True`` (default), return keys of records.
-        :type return_keys: bool
 
         :param return_values: If ``True`` (default), return values of records.
-        :type return_values: bool
+
+        :param reverse: If ``True``, return records in reverse order.
 
         :param limit: Limit number of records returned.
-        :type limit: int
 
         :return:
         """
@@ -527,7 +416,7 @@ class PersistentMap(MutableMapping):
                                      reverse=reverse,
                                      limit=limit)
 
-    def count(self, txn, prefix=None):
+    def count(self, txn: Transaction, prefix: Any = None) -> int:
         """
         Count number of records in the persistent map. When no prefix
         is given, the total number of records is returned. When a prefix
@@ -535,14 +424,13 @@ class PersistentMap(MutableMapping):
         prefix are counted.
 
         :param txn: The transaction in which to run.
-        :type txn: :class:`zlmdb.Transaction`
 
         :param prefix: The key prefix of records to count.
-        :type prefix: object
 
         :returns: The number of records.
-        :rtype: int
         """
+        assert txn._txn
+
         key_from = struct.pack('>H', self._slot)
         if prefix:
             key_from += self._serialize_key(prefix)
@@ -561,23 +449,21 @@ class PersistentMap(MutableMapping):
 
         return cnt
 
-    def count_range(self, txn, from_key, to_key):
+    def count_range(self, txn: Transaction, from_key: Any, to_key: Any) -> int:
         """
         Counter number of records in the perstistent map with keys
         within the given range.
 
         :param txn: The transaction in which to run.
-        :type txn: :class:`zlmdb.Transaction`
 
         :param from_key: Count records starting and including from this key.
-        :type from_key: object
 
         :param to_key: End counting records before this key.
-        :type to_key: object
 
         :returns: The number of records.
-        :rtype: int
         """
+        assert txn._txn
+
         key_from = struct.pack('>H', self._slot) + self._serialize_key(from_key)
         to_key = struct.pack('>H', self._slot) + self._serialize_key(to_key)
 
@@ -592,13 +478,16 @@ class PersistentMap(MutableMapping):
 
         return cnt
 
-    def truncate(self, txn, rebuild_indexes=True):
+    def truncate(self, txn: Transaction, rebuild_indexes: bool = True) -> int:
         """
 
         :param txn:
         :param rebuild_indexes:
         :return:
         """
+        assert txn._txn
+        assert self._slot
+
         key_from = struct.pack('>H', self._slot)
         key_to = struct.pack('>H', self._slot + 1)
         cursor = txn._txn.cursor()
@@ -616,12 +505,14 @@ class PersistentMap(MutableMapping):
             cnt += deleted
         return cnt
 
-    def rebuild_indexes(self, txn):
+    def rebuild_indexes(self, txn: Transaction) -> Tuple[int, int]:
         """
 
         :param txn:
         :return:
         """
+        assert txn._txn
+
         total_deleted = 0
         total_inserted = 0
         for name in sorted(self._indexes.keys()):
@@ -630,13 +521,16 @@ class PersistentMap(MutableMapping):
             total_inserted += inserted
         return total_deleted, total_inserted
 
-    def rebuild_index(self, txn, name):
+    def rebuild_index(self, txn: Transaction, name: str) -> Tuple[int, int]:
         """
 
         :param txn:
         :param name:
         :return:
         """
+        assert txn._txn
+        assert self._slot
+
         if name in self._indexes:
             index = self._indexes[name]
 
@@ -662,6 +556,127 @@ class PersistentMap(MutableMapping):
             return deleted, inserted
         else:
             raise Exception('no index "{}" attached'.format(name))
+
+
+class PersistentMapIterator(object):
+    """
+    Iterator that walks over zLMDB database records.
+    """
+    def __init__(self,
+                 txn: Transaction,
+                 pmap: PersistentMap,
+                 from_key: Any = None,
+                 to_key: Any = None,
+                 return_keys: bool = True,
+                 return_values: bool = True,
+                 reverse: bool = False,
+                 limit: Optional[int] = None):
+        """
+
+        :param txn:
+        :param pmap:
+        :param from_key:
+        :param to_key:
+        :param return_keys:
+        :param return_values:
+        :param reverse:
+        :param limit:
+        """
+        self._txn = txn
+        self._pmap = pmap
+        assert pmap._slot
+
+        if from_key:
+            self._from_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(from_key)
+        else:
+            self._from_key = struct.pack('>H', pmap._slot)
+
+        if to_key:
+            self._to_key = struct.pack('>H', pmap._slot) + pmap._serialize_key(to_key)
+        else:
+            self._to_key = struct.pack('>H', pmap._slot + 1)
+
+        self._reverse = reverse
+
+        self._return_keys = return_keys
+        self._return_values = return_values
+
+        self._limit = limit
+        self._read = 0
+
+        self._cursor = None
+        self._found = None
+
+    def __iter__(self) -> 'PersistentMapIterator':
+        assert self._txn._txn
+        self._cursor = self._txn._txn.cursor()
+        assert self._cursor
+
+        # https://lmdb.readthedocs.io/en/release/#lmdb.Cursor.set_range
+        if self._reverse:
+            # seek to the first record starting from to_key (and going reverse)
+            self._found = self._cursor.set_range(self._to_key)
+
+            if self._found:
+                # to_key is _not_ inclusive, so we move on one record
+                self._found = self._cursor.prev()
+            else:
+                self._found = self._cursor.last()
+        else:
+            # seek to the first record starting from from_key
+            self._found = self._cursor.set_range(self._from_key)
+
+        return self
+
+    def __next__(self):
+        """
+
+        :return: Return either ``(key, value)``, ``key`` or ``value``, depending on ``return_keys``
+            and ``return_values``.
+        """
+        # stop criteria: no more records or limit reached
+        if not self._found or (self._limit and self._read >= self._limit):
+            raise StopIteration
+        self._read += 1
+
+        # stop criteria: end of key-range reached
+        _key = self._cursor.key()
+        if self._reverse:
+            if _key < self._from_key:
+                raise StopIteration
+        else:
+            if _key >= self._to_key:
+                raise StopIteration
+
+        # read actual app key-value (before moving cursor)
+        _key = self._pmap._deserialize_key(_key[2:])
+
+        if self._return_values:
+            _data = self._cursor.value()
+            if _data:
+                if self._pmap._decompress:
+                    _data = self._pmap._decompress(_data)
+                _data = self._pmap._deserialize_value(_data)
+        else:
+            _data = None
+
+        # move the cursor
+        if self._reverse:
+            self._found = self._cursor.prev()
+        else:
+            self._found = self._cursor.next()
+
+        # return app key-value
+        if self._return_keys and self._return_values:
+            return _key, _data
+        elif self._return_values:
+            return _data
+        elif self._return_keys:
+            return _key
+        else:
+            return None
+
+    next = __next__  # Python 2
 
 
 #
