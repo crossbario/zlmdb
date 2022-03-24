@@ -27,6 +27,8 @@
 
 import struct
 import lmdb
+from typing import Optional
+
 from txaio import time_ns as walltime
 
 
@@ -92,7 +94,7 @@ class Transaction(object):
         self._write = write
         self._buffers = buffers
         self._stats = stats
-        self._txn = None
+        self._txn: Optional[lmdb.Transaction] = None
         self._log = None
 
     def __enter__(self):
