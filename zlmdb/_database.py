@@ -402,7 +402,20 @@ class Database(object):
 
         self._env.sync(force=force)
 
-    def stats(self):
+    def config(self):
+        res = {
+            'is_temp': self._is_temp,
+            'dbpath': self._dbpath,
+            'maxsize': self._maxsize,
+            'readonly': self._readonly,
+            'lock': self._lock,
+            'sync': self._sync,
+            'create': self._create,
+            'open': self._open,
+        }
+        return res
+
+    def stats(self, include_slots: bool = False):
         assert self._env is not None
 
         current_size = os.path.getsize(os.path.join(self._dbpath, 'data.mdb'))
@@ -417,8 +430,9 @@ class Database(object):
         pages = stats['leaf_pages'] + stats['overflow_pages'] + stats['branch_pages']
         pages_size = stats['psize'] * pages
 
+        self._cache_slots()
         res = {
-            'zlmdb_slots': len(self._slots),
+            'cnt_slots': len(self._slots),
             'current_size': current_size,
             'max_size': self._maxsize,
             'pages': pages,
@@ -437,6 +451,20 @@ class Database(object):
         #                   maxreaders= specified by the first process opening the Environment.
         # num_readers 	    Maximum number of reader slots in simultaneous use since the lock file was initialized.
         res.update(self._env.info())
+
+        if include_slots:
+            slots = self._get_slots()
+            res['slots'] = []
+            with self.begin() as txn:
+                for slot_id in slots:
+                    slot = slots[slot_id]
+                    pmap = _pmap.PersistentMap(slot.slot)
+                    res['slots'].append({
+                        'oid': str(slot_id),
+                        'slot': slot.slot,
+                        'name': slot.name,
+                        'count': pmap.count(txn),
+                    })
 
         return res
 
