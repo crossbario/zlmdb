@@ -428,16 +428,17 @@ class Database(object):
         # entries 	        Number of data items.
         stats = self._env.stat()
         pages = stats['leaf_pages'] + stats['overflow_pages'] + stats['branch_pages']
-        pages_size = stats['psize'] * pages
+        used = stats['psize'] * pages
 
         self._cache_slots()
         res = {
-            'cnt_slots': len(self._slots),
+            'num_slots': len(self._slots),
             'current_size': current_size,
             'max_size': self._maxsize,
+            'page_size': stats['psize'],
             'pages': pages,
-            'pages_size': pages_size,
-            'free': 1. - float(pages_size) / float(self._maxsize),
+            'used': used,
+            'free': 1. - float(used) / float(self._maxsize),
             'read_only': self._readonly,
             'sync_enabled': self._sync,
         }
@@ -463,7 +464,8 @@ class Database(object):
                         'oid': str(slot_id),
                         'slot': slot.slot,
                         'name': slot.name,
-                        'count': pmap.count(txn),
+                        'description': slot.description,
+                        'records': pmap.count(txn),
                     })
 
         return res
