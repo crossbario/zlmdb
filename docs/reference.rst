@@ -35,8 +35,23 @@ Transaction
     :members:
 
 
-Table
------
+PersistentMap
+-------------
+
+* :class:`zlmdb._pmap.PersistentMap`
+* :class:`zlmdb._pmap.PersistentMapIterator`
+
+-------
+
+.. autoclass:: zlmdb._pmap.PersistentMap
+    :members:
+
+.. autoclass:: zlmdb._pmap.PersistentMapIterator
+    :members:
+
+
+Typed PersistentMap
+-------------------
 
 * :class:`zlmdb.MapBytes16FlatBuffers`
 * :class:`zlmdb.MapBytes16TimestampUuid`
@@ -450,3 +465,249 @@ Table
 .. autoclass:: zlmdb.MapUuidUuidUuidUuidUuid
     :members:
     :show-inheritance:
+
+
+Key Types
+---------
+
+* :class:`zlmdb._types._Bytes16KeysMixin`
+* :class:`zlmdb._types._Bytes16TimestampKeysMixin`
+* :class:`zlmdb._types._Bytes16TimestampUuidKeysMixin`
+* :class:`zlmdb._types._Bytes20Bytes20KeysMixin`
+* :class:`zlmdb._types._Bytes20KeysMixin`
+* :class:`zlmdb._types._Bytes20StringKeysMixin`
+* :class:`zlmdb._types._Bytes20TimestampKeysMixin`
+* :class:`zlmdb._types._Bytes32Bytes32KeysMixin`
+* :class:`zlmdb._types._Bytes32KeysMixin`
+* :class:`zlmdb._types._Bytes32StringKeysMixin`
+* :class:`zlmdb._types._Bytes32UuidKeysMixin`
+* :class:`zlmdb._types._Oid3KeysMixin`
+* :class:`zlmdb._types._OidKeysMixin`
+* :class:`zlmdb._types._OidOidKeysMixin`
+* :class:`zlmdb._types._OidStringKeysMixin`
+* :class:`zlmdb._types._OidTimestampKeysMixin`
+* :class:`zlmdb._types._OidTimestampStringKeysMixin`
+* :class:`zlmdb._types._SlotUuidKeysMixin`
+* :class:`zlmdb._types._StringKeysMixin`
+* :class:`zlmdb._types._StringOidKeysMixin`
+* :class:`zlmdb._types._StringStringKeysMixin`
+* :class:`zlmdb._types._StringStringStringKeysMixin`
+* :class:`zlmdb._types._StringTimestampKeysMixin`
+* :class:`zlmdb._types._TimestampBytes32KeysMixin`
+* :class:`zlmdb._types._TimestampKeysMixin`
+* :class:`zlmdb._types._TimestampStringKeysMixin`
+* :class:`zlmdb._types._TimestampUuidKeysMixin`
+* :class:`zlmdb._types._TimestampUuidStringKeysMixin`
+* :class:`zlmdb._types._Uint16UuidTimestampKeysMixin`
+* :class:`zlmdb._types._UuidBytes20Bytes20Uint8UuidKeysMixin`
+* :class:`zlmdb._types._UuidBytes20Uint8KeysMixin`
+* :class:`zlmdb._types._UuidBytes20Uint8UuidKeysMixin`
+* :class:`zlmdb._types._UuidBytes32KeysMixin`
+* :class:`zlmdb._types._UuidKeysMixin`
+* :class:`zlmdb._types._UuidStringKeysMixin`
+* :class:`zlmdb._types._UuidTimestampKeysMixin`
+* :class:`zlmdb._types._UuidTimestampUuidKeysMixin`
+* :class:`zlmdb._types._UuidUuidKeysMixin`
+* :class:`zlmdb._types._UuidUuidStringKeysMixin`
+* :class:`zlmdb._types._UuidUuidUuidKeysMixin`
+* :class:`zlmdb._types._UuidUuidUuidStringKeysMixin`
+* :class:`zlmdb._types._UuidUuidUuidUuidKeysMixin`
+
+------
+
+.. autoclass:: zlmdb._types._Bytes16KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes16TimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes16TimestampUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20Bytes20KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20StringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20TimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes32Bytes32KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes32KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes32StringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes32UuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Oid3KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidOidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidTimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidTimestampStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._SlotUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringOidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringStringStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringTimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampBytes32KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampUuidStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Uint16UuidTimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidBytes20Bytes20Uint8UuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidBytes20Uint8KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidBytes20Uint8UuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidBytes32KeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidTimestampKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidTimestampUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidUuidStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidUuidUuidKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidUuidUuidStringKeysMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidUuidUuidUuidKeysMixin
+        :members:
+
+
+Value Types
+-----------
+
+* :class:`zlmdb._types._Bytes16ValuesMixin`
+* :class:`zlmdb._types._Bytes20TimestampValuesMixin`
+* :class:`zlmdb._types._Bytes20ValuesMixin`
+* :class:`zlmdb._types._Bytes32ValuesMixin`
+* :class:`zlmdb._types._CborValuesMixin`
+* :class:`zlmdb._types._FlatBuffersValuesMixin`
+* :class:`zlmdb._types._JsonValuesMixin`
+* :class:`zlmdb._types._OidSetValuesMixin`
+* :class:`zlmdb._types._OidValuesMixin`
+* :class:`zlmdb._types._Pickle5ValuesMixin`
+* :class:`zlmdb._types._PickleValuesMixin`
+* :class:`zlmdb._types._StringSetValuesMixin`
+* :class:`zlmdb._types._StringValuesMixin`
+* :class:`zlmdb._types._TimestampValuesMixin`
+* :class:`zlmdb._types._UuidSetValuesMixin`
+* :class:`zlmdb._types._UuidValuesMixin`
+
+------
+
+.. autoclass:: zlmdb._types._Bytes16ValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20TimestampValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes20ValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Bytes32ValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._CborValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._FlatBuffersValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._JsonValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidSetValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._OidValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._Pickle5ValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._PickleValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringSetValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._StringValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._TimestampValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidSetValuesMixin
+        :members:
+
+.. autoclass:: zlmdb._types._UuidValuesMixin
+        :members:
