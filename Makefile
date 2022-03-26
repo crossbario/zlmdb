@@ -133,66 +133,14 @@ autoformat:
 	yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
 
 
-FLATC=${HOME}/scm/3rdparty/flatbuffers/flatc
-#FLATC=/usr/local/bin/flatc
+FLATC=/usr/local/bin/flatc
 
+# git submodule update --init --recursive
+# git submodule update --remote --merge
+# git submodule foreach git pull
 update_flatbuffers:
-	git submodule foreach git pull
 	rm -rf ./flatbuffers
 	cp -R deps/flatbuffers/python/flatbuffers .
 
 generate_flatbuffers_reflection:
 	$(FLATC) --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
-
-generate_flatbuffers_demos:
-	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo1.fbs
-	$(FLATC) --python -o zlmdb/flatbuffers/ zlmdb/flatbuffers/demo2.fbs
-
-# input .fbs files for schema
-FBS_FILES=deps/flatbuffers/reflection/reflection.fbs
-FBS_OUTPUT=./crossbarfx/master/database/
-
-# flatc compiler to use (build directly from master: https://github.com/google/flatbuffers)
-# oberstet@thinkpad-t430s:~$ which flatc
-# /usr/local/bin/flatc
-# oberstet@thinkpad-t430s:~$ flatc --version
-# flatc version 1.9.0 (Jun 21 2018 14:06:19)
-# oberstet@thinkpad-t430s:~$ flatc --help | grep builtin
-#   --bfbs-builtins    Add builtin attributes to the binary schema files.
-# oberstet@thinkpad-t430s:~$
-
-flatc_version:
-	$(FLATC) --version
-
-build_fbs: build_fbs_bfbs build_fbs_python
-
-# generate schema type library (.bfbs binary) from schema files
-build_fbs_bfbs:
-	$(FLATC) -o $(FBS_OUTPUT) --binary --schema --bfbs-comments --bfbs-builtins $(FBS_FILES)
-
-# generate python bindings from schema files
-build_fbs_python:
-	$(FLATC) -o $(FBS_OUTPUT) --python $(FBS_FILES)
-
-
-# deps/flatbuffers/flatc
-# deps/flatbuffers/libflatbuffers.a
-# deps/flatbuffers/include/
-flatbuffers_library:
-	cd deps/flatbuffers && cmake -DCMAKE_BUILD_TYPE=Release . && make && make test && cd ../..
-
-
-# load_fbs(repo_oid, source_name, source_code) -> BFBS -> return UUID
-
-# parser()
-# parser.parse_from_fbs(source_name: str, source_code: str, include_dirs=[]: List[str])
-# parser.serialize_to_bfbs -> bytes
-# parser.conforms_to(other_parser)
-
-# // Checks that the schema represented by this parser is a safe evolution
-# // of the schema provided. Returns non-empty error on any problems.
-
-# JSON parsing 	Yes 	No 	No 	No 	No 	No 	No 	Yes 	No 	No 	No
-# Simple mutation 	Yes 	Yes 	Yes 	Yes 	No 	No 	No 	No 	No 	No 	No
-# Reflection 	Yes 	No 	No 	No 	No 	No 	No 	Basic 	No 	No 	No
-# Buffer verifier

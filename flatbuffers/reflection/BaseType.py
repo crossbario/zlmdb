@@ -22,4 +22,3 @@ class BaseType(object):
     Union = 16
     Array = 17
     MaxBaseType = 18
-
