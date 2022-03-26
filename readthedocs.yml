@@ -2,7 +2,13 @@ version: 2
 
 python:
    version: 3.8
+   #install:
+   #   - requirements: requirements-rtd.txt
    install:
-      - requirements: requirements-rtd.txt
+      - method: pip
+        path: .
+        extra_requirements:
+          - dev
+
 build:
     image: latest

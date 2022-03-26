@@ -56,6 +56,14 @@ requirements = [
     'numpy>=1.20.1',
 ]
 
+extras_require = {
+    'dev': []
+}
+
+with open('requirements-dev.txt') as f:
+    for line in f.read().splitlines():
+        extras_require['dev'].append(line.strip())
+
 # setup_requirements = ['pytest-runner']
 test_requirements = ['pytest', 'pytest-runner']
 
@@ -90,6 +98,7 @@ setup(
     # NumPy 1.20.0+ requires Py 3.7+
     python_requires='>=3.7',
     install_requires=requirements,
+    extras_require=extras_require,
     license="MIT license",
     long_description=readme,
     include_package_data=True,
@@ -101,5 +110,5 @@ setup(
     tests_require=test_requirements,
     url='https://github.com/crossbario/zlmdb',
     version=__version__,
-    zip_safe=False,
+    zip_safe=True,
 )
