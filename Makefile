@@ -31,23 +31,23 @@ help:
 
 clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage, Python artifacts and docs
 
-clean-docs:
+clean_docs:
 	rm -fr docs/_build
 
-clean-build: ## remove build artifacts
+clean_build: ## remove build artifacts
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
-clean-pyc: ## remove Python file artifacts
+clean_pyc: ## remove Python file artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
+clean_test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -f .coverage.*
@@ -59,43 +59,43 @@ clean-test: ## remove test and coverage artifacts
 lint: ## check style with flake8
 	flake8 zlmdb tests
 
-test-single:
+test_single:
 	clear && pytest -v -s zlmdb/tests/test_basic.py
 
-test-pmaps:
+test_pmaps:
 	clear && pytest -v -s zlmdb/tests/test_pmaps.py
 
-test-indexes:
+test_indexes:
 	clear && pytest -v -s zlmdb/tests/test_pmap_indexes.py
 
-test-select:
+test_select:
 	clear && pytest -v -s zlmdb/tests/test_select.py
 
 #
 # test ZLMDB high level API
 #
-test-zdb: test-zdb-etcd test-zdb-df test-zdb-dyn
+test_zdb: test-zdb-etcd test-zdb-df test-zdb-dyn
 
-test-zdb-etcd:
+test_zdb_etcd:
 	python tests/zdb/test_zdb_etcd.py
 
-test-zdb-df:
+test_zdb_df:
 	python tests/zdb/test_zdb_df.py
 
-test-zdb-dyn:
+test_zdb_dyn:
 	python tests/zdb/test_zdb_dyn.py
 
-test-zdb-fbs:
+test_zdb_fbs:
 	python tests/zdb/test_zdb_fbs.py
 
 
-test-quick:
+test_quick:
 	pytest
 
 test:
 	tox -e py36,flake8,coverage,mypy,yapf,sphinx
 
-test-all:
+test_all:
 	tox
 
 coverage: ## check code coverage quickly with the default Python
