@@ -9,3 +9,6 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 recursive-include zlmdb/flatbuffers *.fbs *.bfbs
+
+include requirements.txt
+include requirements-dev.txt
