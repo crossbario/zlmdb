@@ -1,5 +1,5 @@
-ZLMDB
-=====
+Introduction to zLMDB
+=====================
 
 .. image:: https://img.shields.io/pypi/v/zlmdb.svg
     :target: https://pypi.python.org/pypi/zlmdb

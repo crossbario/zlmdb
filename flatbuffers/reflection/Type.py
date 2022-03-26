@@ -72,35 +72,27 @@ class Type(object):
             return self._tab.Get(flatbuffers.number_types.Uint32Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(6)
-def TypeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddBaseType(builder, baseType): builder.PrependInt8Slot(0, baseType, 0)
-def TypeAddBaseType(builder, baseType):
-    """This method is deprecated. Please switch to AddBaseType."""
-    return AddBaseType(builder, baseType)
-def AddElement(builder, element): builder.PrependInt8Slot(1, element, 0)
-def TypeAddElement(builder, element):
-    """This method is deprecated. Please switch to AddElement."""
-    return AddElement(builder, element)
-def AddIndex(builder, index): builder.PrependInt32Slot(2, index, -1)
-def TypeAddIndex(builder, index):
-    """This method is deprecated. Please switch to AddIndex."""
-    return AddIndex(builder, index)
-def AddFixedLength(builder, fixedLength): builder.PrependUint16Slot(3, fixedLength, 0)
-def TypeAddFixedLength(builder, fixedLength):
-    """This method is deprecated. Please switch to AddFixedLength."""
-    return AddFixedLength(builder, fixedLength)
-def AddBaseSize(builder, baseSize): builder.PrependUint32Slot(4, baseSize, 4)
-def TypeAddBaseSize(builder, baseSize):
-    """This method is deprecated. Please switch to AddBaseSize."""
-    return AddBaseSize(builder, baseSize)
-def AddElementSize(builder, elementSize): builder.PrependUint32Slot(5, elementSize, 0)
-def TypeAddElementSize(builder, elementSize):
-    """This method is deprecated. Please switch to AddElementSize."""
-    return AddElementSize(builder, elementSize)
-def End(builder): return builder.EndObject()
-def TypeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def TypeStart(builder): builder.StartObject(6)
+def Start(builder):
+    return TypeStart(builder)
+def TypeAddBaseType(builder, baseType): builder.PrependInt8Slot(0, baseType, 0)
+def AddBaseType(builder, baseType):
+    return TypeAddBaseType(builder, baseType)
+def TypeAddElement(builder, element): builder.PrependInt8Slot(1, element, 0)
+def AddElement(builder, element):
+    return TypeAddElement(builder, element)
+def TypeAddIndex(builder, index): builder.PrependInt32Slot(2, index, -1)
+def AddIndex(builder, index):
+    return TypeAddIndex(builder, index)
+def TypeAddFixedLength(builder, fixedLength): builder.PrependUint16Slot(3, fixedLength, 0)
+def AddFixedLength(builder, fixedLength):
+    return TypeAddFixedLength(builder, fixedLength)
+def TypeAddBaseSize(builder, baseSize): builder.PrependUint32Slot(4, baseSize, 4)
+def AddBaseSize(builder, baseSize):
+    return TypeAddBaseSize(builder, baseSize)
+def TypeAddElementSize(builder, elementSize): builder.PrependUint32Slot(5, elementSize, 0)
+def AddElementSize(builder, elementSize):
+    return TypeAddElementSize(builder, elementSize)
+def TypeEnd(builder): return builder.EndObject()
+def End(builder):
+    return TypeEnd(builder)
