@@ -76,6 +76,10 @@ version = release = __version__  # noqa
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'
 
+autoapi_keep_files = True
+autoapi_type = 'python'
+autoapi_dirs = [base_dir, os.path.join(base_dir, 'zlmdb')]
+
 # 'members',
 # 'undoc-members',
 # 'private-members',
