@@ -2,4 +2,5 @@
 txaio
 twisted
 sphinxcontrib-images
+sphinxcontrib-spelling
 sphinx-autoapi
