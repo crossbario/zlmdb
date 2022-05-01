@@ -797,6 +797,35 @@ class _UuidTimestampKeysMixin(object):
         return key1, key2
 
 
+class _Uint64TimestampKeysMixin(object):
+    @staticmethod
+    def new_key():
+        return random.randint(1, 2**64 - 1), np.datetime64(time_ns(), 'ns')
+
+    def _serialize_key(self, key1_key2):
+        assert type(key1_key2) == tuple and len(key1_key2) == 2
+        key1, key2 = key1_key2
+
+        if key1 is None:
+            key1 = 0
+        if key2 is None:
+            key2 = np.datetime64(0, 'ns')
+
+        assert type(key1) != int
+        assert isinstance(key2, np.datetime64)
+
+        return struct.pack('>H', key1) + dt_to_bytes(key2)
+
+    def _deserialize_key(self, data):
+        assert type(data) == bytes
+        assert len(data) == 16
+
+        data1, data2 = data[0:8], data[8:16]
+        key1 = struct.unpack('>H', data1)[0]
+        key2 = bytes_to_dt(data2)
+        return key1, key2
+
+
 class _UuidStringKeysMixin(object):
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
