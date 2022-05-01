@@ -811,17 +811,17 @@ class _Uint64TimestampKeysMixin(object):
         if key2 is None:
             key2 = np.datetime64(0, 'ns')
 
-        assert type(key1) != int
-        assert isinstance(key2, np.datetime64)
+        assert type(key1) == int, 'key1 must be int, but was {}'.format(type(key1))
+        assert isinstance(key2, np.datetime64), 'key2 must be np.datetime64, but was {}'.format(type(key2))
 
-        return struct.pack('>H', key1) + dt_to_bytes(key2)
+        return struct.pack('>Q', key1) + dt_to_bytes(key2)
 
     def _deserialize_key(self, data):
         assert type(data) == bytes
         assert len(data) == 16
 
         data1, data2 = data[0:8], data[8:16]
-        key1 = struct.unpack('>H', data1)[0]
+        key1 = struct.unpack('>Q', data1)[0]
         key2 = bytes_to_dt(data2)
         return key1, key2
 
