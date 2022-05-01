@@ -733,6 +733,14 @@ class MapUuidTimestampBytes32(_types._UuidTimestampKeysMixin, _types._Bytes32Val
         PersistentMap.__init__(self, slot=slot, compress=compress)
 
 
+class MapUint64TimestampUuid(_types._Uint64TimestampKeysMixin, _types._UuidValuesMixin, PersistentMap):
+    """
+    Persistent map with (Uint64, Timestamp) keys and UUID values.
+    """
+    def __init__(self, slot=None, compress=None):
+        PersistentMap.__init__(self, slot=slot, compress=compress)
+
+
 class MapUuidUuidUuid(_types._UuidUuidKeysMixin, _types._UuidValuesMixin, PersistentMap):
     """
     Persistent map with (UUID, UUID) keys and UUID values.
