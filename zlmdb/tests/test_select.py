@@ -27,17 +27,19 @@
 import os
 import uuid
 import random
+import pytest
 import struct
+import txaio
 
 import flatbuffers
-import numpy as np
-import pytest
+from flatbuffers.compat import import_numpy
 
 import zlmdb  # noqa
 
 from _schema_mnode_log import Schema, MNodeLog
 
-import txaio
+np = import_numpy()
+
 txaio.use_twisted()
 
 from txaio import time_ns  # noqa

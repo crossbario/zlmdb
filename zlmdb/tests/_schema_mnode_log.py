@@ -27,14 +27,15 @@
 import pprint
 import uuid
 
-import numpy as np
-
 import flatbuffers
 
 from zlmdb import table, MapTimestampUuidFlatBuffers
 from txaio import time_ns
 
 import MNodeLog as MNodeLogGen
+
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 
 class _MNodeLogGen(MNodeLogGen.MNodeLog):

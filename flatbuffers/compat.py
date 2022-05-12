@@ -15,6 +15,7 @@
 """ A tiny version of `six` to help with backwards compability. Also includes
  compatibility helpers for numpy. """
 
+import struct
 import sys
 
 PY2 = sys.version_info[0] == 2
@@ -48,6 +49,57 @@ else:
 
 # Helper functions to facilitate making numpy optional instead of required
 
+class NumpyCompat:
+
+    class datetime64:
+        def __init__(self, time, unit='ns'):
+            assert isinstance(time, int)
+            assert unit == 'ns'
+            self._value = time
+
+        def __int__(self):
+            return self._value
+
+        def __add__(self, other):
+            self._value += int(other)
+            return self
+
+        def __eq__(self, other):
+            return self._value == int(other)
+
+        def __lt__(self, other):
+            return self._value < int(other)
+
+        def __gt__(self, other):
+            return self._value > int(other)
+
+        def __hash__(self):
+            return hash(self._value)
+
+        def tobytes(self):
+            return struct.pack('<q', self._value)
+
+    @classmethod
+    def frombuffer(cls, buffer, dtype='datetime64[ns]'):
+        assert dtype == 'datetime64[ns]'
+        ret = []
+        for dateint in struct.unpack('<q', buffer):
+            ret.append(cls.datetime64(dateint))
+        return ret
+
+    class timedelta64:
+        def __init__(self, time, unit):
+            assert isinstance(time, int)
+            assert unit == 's'
+            self._value = time * 1000000000
+
+        def __int__(self):
+            return self._value
+
+        def __add__(self, other):
+            return other + self._value
+
+
 def import_numpy():
     """
     Returns the numpy module if it exists on the system,
@@ -70,7 +122,7 @@ def import_numpy():
         # ImportError.
         import numpy as np
     else:
-        np = None
+        np = NumpyCompat
 
     return np
 

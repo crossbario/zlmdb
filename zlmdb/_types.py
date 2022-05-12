@@ -36,12 +36,8 @@ import cbor2
 import flatbuffers
 from txaio import time_ns
 
-try:
-    import numpy as np
-except ImportError:
-    HAS_NUMPY = False
-else:
-    HAS_NUMPY = True
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """

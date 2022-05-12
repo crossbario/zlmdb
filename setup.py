@@ -53,11 +53,15 @@ requirements = [
     'pynacl>=1.4.0',
     'pyyaml>=5.4.1',
     'txaio>=21.2.1',
+]
+
+numpy_requirements = [
     'numpy>=1.20.1',
 ]
 
 extras_require = {
-    'dev': []
+    'dev': [],
+    'numpy': numpy_requirements,
 }
 
 with open('requirements-dev.txt') as f:
