@@ -30,7 +30,6 @@ import random
 import struct
 
 import flatbuffers
-import numpy as np
 import pytest
 
 import zlmdb  # noqa
@@ -38,6 +37,9 @@ import zlmdb  # noqa
 from _schema_mnode_log import Schema, MNodeLog
 
 import txaio
+
+from zlmdb import datetime64
+
 txaio.use_twisted()
 
 from txaio import time_ns  # noqa
@@ -65,11 +67,11 @@ def rfloat():
 
 def fill_mnodelog(obj):
 
-    obj.timestamp = np.datetime64(time_ns(), 'ns') + np.timedelta64(random.randint(1, 120), 's')
+    obj.timestamp = datetime64(time_ns() + (random.randint(1, 120) * 1000000000))
     obj.node_id = uuid.uuid4()
     obj.run_id = uuid.uuid4()
     obj.state = random.randint(1, 2)
-    obj.ended = obj.timestamp + np.timedelta64(random.randint(1, 120), 's')
+    obj.ended = datetime64(int(obj.timestamp) + (random.randint(1, 120) * 1000000000))
     obj.session = random.randint(1, 9007199254740992)
     obj.sent = obj.timestamp
     obj.seq = random.randint(1, 10000)
@@ -347,8 +349,8 @@ def test_mnodelog_queries(N=1000):
                     mnodelog = schema.mnode_logs[txn, key]
                     assert mnodelog
 
-                first_key = (np.datetime64(0, 'ns'), uuid.UUID(bytes=b'\0' * 16))
-                last_key = (np.datetime64(2**63 - 1, 'ns'), uuid.UUID(bytes=b'\xff' * 16))
+                first_key = (datetime64(0), uuid.UUID(bytes=b'\0' * 16))
+                last_key = (datetime64(2**63 - 1), uuid.UUID(bytes=b'\xff' * 16))
                 cnt = schema.mnode_logs.count_range(txn, from_key=first_key, to_key=last_key)
                 assert cnt == N
 

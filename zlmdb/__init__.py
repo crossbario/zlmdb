@@ -121,6 +121,7 @@ from ._pmap import PersistentMap, \
 from ._transaction import Transaction, TransactionStats, walltime
 from ._database import Database
 from ._schema import Schema
+from ._types import datetime64
 
 __all__ = (
     '__version__',
@@ -131,6 +132,7 @@ __all__ = (
     'walltime',
     'MapSlotUuidUuid',
     'table',
+    'datetime64',
 
     #
     # Errors

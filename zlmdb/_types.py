@@ -31,17 +31,11 @@ import pickle
 import os
 import uuid
 import json
+from ctypes import c_uint64, BigEndianStructure
 
 import cbor2
 import flatbuffers
 from txaio import time_ns
-
-try:
-    import numpy as np
-except ImportError:
-    HAS_NUMPY = False
-else:
-    HAS_NUMPY = True
 
 CHARSET = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """
@@ -72,6 +66,29 @@ def _random_string():
         return token_value
 
 
+class datetime64(BigEndianStructure):
+    _pack_ = 1
+    _fields_ = [("t", c_uint64)]
+
+    def __int__(self):
+        return self.t
+
+    def __add__(self, other):
+        self.t = int(self) + int(other)
+
+    def __eq__(self, other):
+        return int(self) == int(other)
+
+    def __lt__(self, other):
+        return int(self) < int(other)
+
+    def __gt__(self, other):
+        return int(self) > int(other)
+
+    def __hash__(self):
+        return hash(self.t)
+
+
 def dt_to_bytes(dt):
     """
     Serialize a timestamp in big-endian byte order.
@@ -79,12 +96,9 @@ def dt_to_bytes(dt):
     :param dt: Timestamp to serialize.
     :return: Serialized bytes.
     """
-    assert isinstance(dt, np.datetime64)
+    assert isinstance(dt, datetime64)
 
-    data = bytearray(dt.tobytes())
-    # FIXME: this must depend on host CPU arch
-    data.reverse()
-    return bytes(data)
+    return memoryview(dt).tobytes()
 
 
 def bytes_to_dt(data):
@@ -96,11 +110,7 @@ def bytes_to_dt(data):
     """
     assert type(data) == bytes
 
-    data = bytearray(data)
-    # FIXME: this must depend on host CPU arch
-    data.reverse()
-    dt = np.frombuffer(bytes(data), dtype='datetime64[ns]')[0]
-    return dt
+    return datetime64.from_buffer_copy(data)
 
 
 #
@@ -194,13 +204,13 @@ class _OidTimestampKeysMixin(object):
         key1, key2 = keys
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
-        assert isinstance(key2, np.datetime64)
-        return struct.pack('>Q', key1) + key2.tobytes()
+        assert isinstance(key2, datetime64)
+        return struct.pack('>Q', key1) + struct.pack('>Q', key2)
 
     def _deserialize_key(self, data):
         assert len(data) == 16
         key1, key2 = struct.unpack('>Q>Q', data)
-        key2 = np.datetime64(key2, 'ns')
+        key2 = datetime64(key2)
         return key1, key2
 
 
@@ -215,16 +225,16 @@ class _OidTimestampStringKeysMixin(object):
         key1, key2, key3 = keys
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
         assert type(key3) == str
-        return struct.pack('>Q', key1) + key2.tobytes() + key3.encode('utf8')
+        return struct.pack('>Q', key1) + dt_to_bytes(key2) + key3.encode('utf8')
 
     def _deserialize_key(self, data):
         assert type(data) == bytes
         assert len(data) > 16
 
         oid, ts = struct.unpack('>Q>Q', data[:16])
-        ts = np.datetime64(ts, 'ns')
+        ts = datetime64(ts)
         s = data[16:]
         return oid, ts, s
 
@@ -437,7 +447,7 @@ class _UuidUuidUuidUuidKeysMixin(object):
 class _Uint16UuidTimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return random.randint(0, 2**16), uuid.uuid4(), np.datetime64(time_ns(), 'ns')
+        return random.randint(0, 2**16), uuid.uuid4(), datetime64(time_ns())
 
     def _serialize_key(self, key1_key2_key3):
         assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
@@ -448,11 +458,11 @@ class _Uint16UuidTimestampKeysMixin(object):
         if key2 is None:
             key2 = uuid.UUID(bytes=b'\x00' * 16)
         if key3 is None:
-            key3 = np.datetime64(0, 'ns')
+            key3 = datetime64(0)
 
         assert type(key1) == int and key1 >= 0 and key1 < 2**16
         assert isinstance(key2, uuid.UUID)
-        assert isinstance(key3, np.datetime64)
+        assert isinstance(key3, datetime64)
 
         return struct.pack('H', key1) + key2.bytes + dt_to_bytes(key3)
 
@@ -566,10 +576,10 @@ class _UuidBytes20Bytes20Uint8UuidKeysMixin(object):
 class _TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time_ns(), 'ns')
+        return datetime64(time_ns())
 
     def _serialize_key(self, key1):
-        assert isinstance(key1, np.datetime64)
+        assert isinstance(key1, datetime64)
 
         return dt_to_bytes(key1)
 
@@ -583,18 +593,18 @@ class _TimestampKeysMixin(object):
 class _TimestampUuidKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time_ns(), 'ns'), uuid.uuid4()
+        return datetime64(time_ns()), uuid.uuid4()
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = np.datetime64(0, 'ns')
+            key1 = datetime64(0)
         if key2 is None:
             key2 = uuid.UUID(bytes=b'\x00' * 16)
 
-        assert isinstance(key1, np.datetime64)
+        assert isinstance(key1, datetime64)
         assert isinstance(key2, uuid.UUID)
 
         return dt_to_bytes(key1) + key2.bytes
@@ -613,7 +623,7 @@ class _TimestampUuidKeysMixin(object):
 class _UuidTimestampUuidKeysMixin(object):
     @staticmethod
     def new_key():
-        return uuid.uuid4(), np.datetime64(time_ns(), 'ns'), uuid.uuid4()
+        return uuid.uuid4(), datetime64(time_ns()), uuid.uuid4()
 
     def _serialize_key(self, key1_key2_key3):
         assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
@@ -622,12 +632,12 @@ class _UuidTimestampUuidKeysMixin(object):
         if key1 is None:
             key1 = uuid.UUID(bytes=b'\x00' * 16)
         if key2 is None:
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
         if key3 is None:
             key3 = uuid.UUID(bytes=b'\x00' * 16)
 
         assert isinstance(key1, uuid.UUID)
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
         assert isinstance(key3, uuid.UUID)
 
         return key1.bytes + dt_to_bytes(key2) + key3.bytes
@@ -647,20 +657,20 @@ class _UuidTimestampUuidKeysMixin(object):
 class _TimestampUuidStringKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time_ns(), 'ns'), uuid.uuid4(), ''
+        return datetime64(time_ns()), uuid.uuid4(), ''
 
     def _serialize_key(self, key1_key2_key3):
         assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
         key1, key2, key3 = key1_key2_key3
 
         if key1 is None:
-            key1 = np.datetime64(0, 'ns')
+            key1 = datetime64(0)
         if key2 is None:
             key2 = uuid.UUID(bytes=b'\x00' * 16)
         if key3 is None:
             key3 = u''
 
-        assert isinstance(key1, np.datetime64)
+        assert isinstance(key1, datetime64)
         assert isinstance(key2, uuid.UUID)
         assert type(key3) == str
 
@@ -681,18 +691,18 @@ class _TimestampUuidStringKeysMixin(object):
 class _TimestampBytes32KeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time_ns(), 'ns'), os.urandom(32)
+        return datetime64(time_ns()), os.urandom(32)
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = np.datetime64(0, 'ns')
+            key1 = datetime64(0)
         if key2 is None:
             key2 = b'\x00' * 32
 
-        assert isinstance(key1, np.datetime64)
+        assert isinstance(key1, datetime64)
         assert isinstance(key2, bytes)
         assert isinstance(key2, bytes) and len(key2) == 32
 
@@ -712,18 +722,18 @@ class _TimestampBytes32KeysMixin(object):
 class _TimestampStringKeysMixin(object):
     @staticmethod
     def new_key():
-        return np.datetime64(time_ns(), 'ns'), _StringKeysMixin.new_key()
+        return datetime64(time_ns()), _StringKeysMixin.new_key()
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
         key1, key2 = key1_key2
 
         if key1 is None:
-            key1 = np.datetime64(0, 'ns')
+            key1 = datetime64(0)
         if key2 is None:
             key2 = u''
 
-        assert isinstance(key1, np.datetime64)
+        assert isinstance(key1, datetime64)
         assert type(key2) == str
 
         return dt_to_bytes(key1) + key2.encode('utf8')
@@ -741,7 +751,7 @@ class _TimestampStringKeysMixin(object):
 class _StringTimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return _StringKeysMixin.new_key(), np.datetime64(time_ns(), 'ns')
+        return _StringKeysMixin.new_key(), datetime64(time_ns())
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -750,10 +760,10 @@ class _StringTimestampKeysMixin(object):
         if key1 is None:
             key1 = u''
         if key2 is None:
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
 
         assert type(key1) == str
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
 
         return key1.encode('utf8') + dt_to_bytes(key2)
 
@@ -771,7 +781,7 @@ class _StringTimestampKeysMixin(object):
 class _UuidTimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return uuid.uuid4(), np.datetime64(time_ns(), 'ns')
+        return uuid.uuid4(), datetime64(time_ns())
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -780,10 +790,10 @@ class _UuidTimestampKeysMixin(object):
         if key1 is None:
             key1 = uuid.UUID(bytes=b'\x00' * 16)
         if key2 is None:
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
 
         assert isinstance(key1, uuid.UUID)
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
 
         return key1.bytes + dt_to_bytes(key2)
 
@@ -800,7 +810,7 @@ class _UuidTimestampKeysMixin(object):
 class _Uint64TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return random.randint(1, 2**64 - 1), np.datetime64(time_ns(), 'ns')
+        return random.randint(1, 2**64 - 1), datetime64(time_ns())
 
     def _serialize_key(self, key1_key2):
         assert type(key1_key2) == tuple and len(key1_key2) == 2
@@ -809,10 +819,10 @@ class _Uint64TimestampKeysMixin(object):
         if key1 is None:
             key1 = 0
         if key2 is None:
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
 
         assert type(key1) == int, 'key1 must be int, but was {}'.format(type(key1))
-        assert isinstance(key2, np.datetime64), 'key2 must be np.datetime64, but was {}'.format(type(key2))
+        assert isinstance(key2, datetime64), 'key2 must be datetime64, but was {}'.format(type(key2))
 
         return struct.pack('>Q', key1) + dt_to_bytes(key2)
 
@@ -1097,7 +1107,7 @@ class _Bytes20StringKeysMixin(object):
 class _Bytes20TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return os.urandom(20), np.datetime64(time_ns(), 'ns')
+        return os.urandom(20), datetime64(time_ns())
 
     def _serialize_key(self, keys):
         assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
@@ -1109,7 +1119,7 @@ class _Bytes20TimestampKeysMixin(object):
             key1 = b'\x00' * 20
 
         assert key1 is None or (type(key1) == bytes and len(key1) == 20)
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
 
         return key1 + dt_to_bytes(key2)
 
@@ -1121,7 +1131,7 @@ class _Bytes20TimestampKeysMixin(object):
             key2 = bytes_to_dt(data[20:])
         else:
             key1 = b'\x00' * 20
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
 
         return key1, key2
 
@@ -1129,7 +1139,7 @@ class _Bytes20TimestampKeysMixin(object):
 class _Bytes16TimestampKeysMixin(object):
     @staticmethod
     def new_key():
-        return os.urandom(20), np.datetime64(time_ns(), 'ns')
+        return os.urandom(20), datetime64(time_ns())
 
     def _serialize_key(self, keys):
         assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
@@ -1141,7 +1151,7 @@ class _Bytes16TimestampKeysMixin(object):
             key1 = b'\x00' * 16
 
         assert key1 is None or (type(key1) == bytes and len(key1) == 16)
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
 
         return key1 + dt_to_bytes(key2)
 
@@ -1153,7 +1163,7 @@ class _Bytes16TimestampKeysMixin(object):
             key2 = bytes_to_dt(data[16:])
         else:
             key1 = b'\x00' * 16
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
 
         return key1, key2
 
@@ -1161,7 +1171,7 @@ class _Bytes16TimestampKeysMixin(object):
 class _Bytes16TimestampUuidKeysMixin(object):
     @staticmethod
     def new_key():
-        return os.urandom(20), np.datetime64(time_ns(), 'ns'), uuid.uuid4()
+        return os.urandom(20), datetime64(time_ns()), uuid.uuid4()
 
     def _serialize_key(self, keys):
         assert type(keys) == tuple, 'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
@@ -1173,7 +1183,7 @@ class _Bytes16TimestampUuidKeysMixin(object):
             key1 = b'\x00' * 16
 
         assert key1 is None or (type(key1) == bytes and len(key1) == 16)
-        assert isinstance(key2, np.datetime64)
+        assert isinstance(key2, datetime64)
         assert isinstance(key3, uuid.UUID)
 
         return key1 + dt_to_bytes(key2) + key3.bytes
@@ -1187,7 +1197,7 @@ class _Bytes16TimestampUuidKeysMixin(object):
             key3 = uuid.UUID(bytes=data[24:])
         else:
             key1 = b'\x00' * 16
-            key2 = np.datetime64(0, 'ns')
+            key2 = datetime64(0)
             key3 = uuid.UUID(bytes=b'\x00' * 16)
 
         return key1, key2, key3
@@ -1274,7 +1284,7 @@ class _UuidValuesMixin(object):
 
 class _TimestampValuesMixin(object):
     def _serialize_value(self, value):
-        assert value is None or isinstance(value, np.datetime64)
+        assert value is None or isinstance(value, datetime64)
 
         if value:
             return dt_to_bytes(value)
@@ -1332,7 +1342,7 @@ class _Bytes20TimestampValuesMixin(object):
             value1 = b'\x00' * 20
 
         assert value1 is None or (type(value1) == bytes and len(value1) == 20)
-        assert isinstance(value2, np.datetime64)
+        assert isinstance(value2, datetime64)
 
         return value1 + dt_to_bytes(value2)
 
@@ -1344,7 +1354,7 @@ class _Bytes20TimestampValuesMixin(object):
             value2 = bytes_to_dt(data[20:])
         else:
             value1 = b'\x00' * 20
-            value2 = np.datetime64(0, 'ns')
+            value2 = datetime64(0)
 
         return value1, value2
 
@@ -1492,4 +1502,4 @@ class _Pickle5ValuesMixin(object):
             buffer_data = data[i + 4:i + 4 + buffer_len]
             obj_buffers.append(buffer_data)
             i += 4 + buffer_len
-        return pickle.loads(obj_data, buffers=obj_buffers)
+        return pickle.loads(bytes(obj_data), buffers=obj_buffers)
