@@ -47,7 +47,7 @@ class EnumVal(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from reflection.Type import Type
+            from zlmdb.flatbuffers.reflection.Type import Type
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
