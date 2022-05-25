@@ -338,6 +338,9 @@ class Database(object):
         # lmdb.open(db_dir, create=False, subdir=True, readonly=True, lock=False)
         # https://stackoverflow.com/questions/56905502/lmdb-badrsloterror-mdb-txn-begin-mdb-bad-rslot-invalid-reuse-of-reader-lockta
 
+        # FIXME: handle lmdb.LockError: mdb_txn_begin: Resource temporarily unavailable
+        #   "The environment was locked by another process." https://lmdb.readthedocs.io/en/release/#lmdb.LockError
+
         # temporary managed context entered ..
         if not self._env:
             # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
