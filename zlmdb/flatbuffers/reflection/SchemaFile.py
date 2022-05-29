@@ -60,23 +60,18 @@ class SchemaFile(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         return o == 0
 
-def Start(builder): builder.StartObject(2)
-def SchemaFileStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddFilename(builder, filename): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(filename), 0)
-def SchemaFileAddFilename(builder, filename):
-    """This method is deprecated. Please switch to AddFilename."""
-    return AddFilename(builder, filename)
-def AddIncludedFilenames(builder, includedFilenames): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(includedFilenames), 0)
-def SchemaFileAddIncludedFilenames(builder, includedFilenames):
-    """This method is deprecated. Please switch to AddIncludedFilenames."""
-    return AddIncludedFilenames(builder, includedFilenames)
-def StartIncludedFilenamesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def SchemaFileStartIncludedFilenamesVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartIncludedFilenamesVector(builder, numElems)
-def End(builder): return builder.EndObject()
-def SchemaFileEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def SchemaFileStart(builder): builder.StartObject(2)
+def Start(builder):
+    return SchemaFileStart(builder)
+def SchemaFileAddFilename(builder, filename): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(filename), 0)
+def AddFilename(builder, filename):
+    return SchemaFileAddFilename(builder, filename)
+def SchemaFileAddIncludedFilenames(builder, includedFilenames): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(includedFilenames), 0)
+def AddIncludedFilenames(builder, includedFilenames):
+    return SchemaFileAddIncludedFilenames(builder, includedFilenames)
+def SchemaFileStartIncludedFilenamesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartIncludedFilenamesVector(builder, numElems):
+    return SchemaFileStartIncludedFilenamesVector(builder, numElems)
+def SchemaFileEnd(builder): return builder.EndObject()
+def End(builder):
+    return SchemaFileEnd(builder)

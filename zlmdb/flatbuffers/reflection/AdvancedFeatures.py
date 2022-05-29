@@ -8,4 +8,3 @@ class AdvancedFeatures(object):
     AdvancedUnionFeatures = 2
     OptionalScalars = 4
     DefaultVectorsAndStrings = 8
-

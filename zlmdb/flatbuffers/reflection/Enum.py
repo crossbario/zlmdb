@@ -42,7 +42,7 @@ class Enum(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.EnumVal import EnumVal
+            from reflection.EnumVal import EnumVal
             obj = EnumVal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -72,7 +72,7 @@ class Enum(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from zlmdb.flatbuffers.reflection.Type import Type
+            from reflection.Type import Type
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -85,7 +85,7 @@ class Enum(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -131,51 +131,39 @@ class Enum(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(7)
-def EnumStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def EnumAddName(builder, name):
-    """This method is deprecated. Please switch to AddName."""
-    return AddName(builder, name)
-def AddValues(builder, values): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(values), 0)
-def EnumAddValues(builder, values):
-    """This method is deprecated. Please switch to AddValues."""
-    return AddValues(builder, values)
-def StartValuesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def EnumStartValuesVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartValuesVector(builder, numElems)
-def AddIsUnion(builder, isUnion): builder.PrependBoolSlot(2, isUnion, 0)
-def EnumAddIsUnion(builder, isUnion):
-    """This method is deprecated. Please switch to AddIsUnion."""
-    return AddIsUnion(builder, isUnion)
-def AddUnderlyingType(builder, underlyingType): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(underlyingType), 0)
-def EnumAddUnderlyingType(builder, underlyingType):
-    """This method is deprecated. Please switch to AddUnderlyingType."""
-    return AddUnderlyingType(builder, underlyingType)
-def AddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
-def EnumAddAttributes(builder, attributes):
-    """This method is deprecated. Please switch to AddAttributes."""
-    return AddAttributes(builder, attributes)
-def StartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def EnumStartAttributesVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartAttributesVector(builder, numElems)
-def AddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
-def EnumAddDocumentation(builder, documentation):
-    """This method is deprecated. Please switch to AddDocumentation."""
-    return AddDocumentation(builder, documentation)
-def StartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def EnumStartDocumentationVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartDocumentationVector(builder, numElems)
-def AddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
-def EnumAddDeclarationFile(builder, declarationFile):
-    """This method is deprecated. Please switch to AddDeclarationFile."""
-    return AddDeclarationFile(builder, declarationFile)
-def End(builder): return builder.EndObject()
-def EnumEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def EnumStart(builder): builder.StartObject(7)
+def Start(builder):
+    return EnumStart(builder)
+def EnumAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def AddName(builder, name):
+    return EnumAddName(builder, name)
+def EnumAddValues(builder, values): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(values), 0)
+def AddValues(builder, values):
+    return EnumAddValues(builder, values)
+def EnumStartValuesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartValuesVector(builder, numElems):
+    return EnumStartValuesVector(builder, numElems)
+def EnumAddIsUnion(builder, isUnion): builder.PrependBoolSlot(2, isUnion, 0)
+def AddIsUnion(builder, isUnion):
+    return EnumAddIsUnion(builder, isUnion)
+def EnumAddUnderlyingType(builder, underlyingType): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(underlyingType), 0)
+def AddUnderlyingType(builder, underlyingType):
+    return EnumAddUnderlyingType(builder, underlyingType)
+def EnumAddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
+def AddAttributes(builder, attributes):
+    return EnumAddAttributes(builder, attributes)
+def EnumStartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartAttributesVector(builder, numElems):
+    return EnumStartAttributesVector(builder, numElems)
+def EnumAddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
+def AddDocumentation(builder, documentation):
+    return EnumAddDocumentation(builder, documentation)
+def EnumStartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartDocumentationVector(builder, numElems):
+    return EnumStartDocumentationVector(builder, numElems)
+def EnumAddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
+def AddDeclarationFile(builder, declarationFile):
+    return EnumAddDeclarationFile(builder, declarationFile)
+def EnumEnd(builder): return builder.EndObject()
+def End(builder):
+    return EnumEnd(builder)

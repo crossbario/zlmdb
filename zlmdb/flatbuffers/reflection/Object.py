@@ -42,7 +42,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.Field import Field
+            from reflection.Field import Field
             obj = Field()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -88,7 +88,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -134,55 +134,42 @@ class Object(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(8)
-def ObjectStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def ObjectAddName(builder, name):
-    """This method is deprecated. Please switch to AddName."""
-    return AddName(builder, name)
-def AddFields(builder, fields): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(fields), 0)
-def ObjectAddFields(builder, fields):
-    """This method is deprecated. Please switch to AddFields."""
-    return AddFields(builder, fields)
-def StartFieldsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ObjectStartFieldsVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartFieldsVector(builder, numElems)
-def AddIsStruct(builder, isStruct): builder.PrependBoolSlot(2, isStruct, 0)
-def ObjectAddIsStruct(builder, isStruct):
-    """This method is deprecated. Please switch to AddIsStruct."""
-    return AddIsStruct(builder, isStruct)
-def AddMinalign(builder, minalign): builder.PrependInt32Slot(3, minalign, 0)
-def ObjectAddMinalign(builder, minalign):
-    """This method is deprecated. Please switch to AddMinalign."""
-    return AddMinalign(builder, minalign)
-def AddBytesize(builder, bytesize): builder.PrependInt32Slot(4, bytesize, 0)
-def ObjectAddBytesize(builder, bytesize):
-    """This method is deprecated. Please switch to AddBytesize."""
-    return AddBytesize(builder, bytesize)
-def AddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
-def ObjectAddAttributes(builder, attributes):
-    """This method is deprecated. Please switch to AddAttributes."""
-    return AddAttributes(builder, attributes)
-def StartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ObjectStartAttributesVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartAttributesVector(builder, numElems)
-def AddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
-def ObjectAddDocumentation(builder, documentation):
-    """This method is deprecated. Please switch to AddDocumentation."""
-    return AddDocumentation(builder, documentation)
-def StartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ObjectStartDocumentationVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartDocumentationVector(builder, numElems)
-def AddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
-def ObjectAddDeclarationFile(builder, declarationFile):
-    """This method is deprecated. Please switch to AddDeclarationFile."""
-    return AddDeclarationFile(builder, declarationFile)
-def End(builder): return builder.EndObject()
-def ObjectEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def ObjectStart(builder): builder.StartObject(8)
+def Start(builder):
+    return ObjectStart(builder)
+def ObjectAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def AddName(builder, name):
+    return ObjectAddName(builder, name)
+def ObjectAddFields(builder, fields): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(fields), 0)
+def AddFields(builder, fields):
+    return ObjectAddFields(builder, fields)
+def ObjectStartFieldsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartFieldsVector(builder, numElems):
+    return ObjectStartFieldsVector(builder, numElems)
+def ObjectAddIsStruct(builder, isStruct): builder.PrependBoolSlot(2, isStruct, 0)
+def AddIsStruct(builder, isStruct):
+    return ObjectAddIsStruct(builder, isStruct)
+def ObjectAddMinalign(builder, minalign): builder.PrependInt32Slot(3, minalign, 0)
+def AddMinalign(builder, minalign):
+    return ObjectAddMinalign(builder, minalign)
+def ObjectAddBytesize(builder, bytesize): builder.PrependInt32Slot(4, bytesize, 0)
+def AddBytesize(builder, bytesize):
+    return ObjectAddBytesize(builder, bytesize)
+def ObjectAddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
+def AddAttributes(builder, attributes):
+    return ObjectAddAttributes(builder, attributes)
+def ObjectStartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartAttributesVector(builder, numElems):
+    return ObjectStartAttributesVector(builder, numElems)
+def ObjectAddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
+def AddDocumentation(builder, documentation):
+    return ObjectAddDocumentation(builder, documentation)
+def ObjectStartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartDocumentationVector(builder, numElems):
+    return ObjectStartDocumentationVector(builder, numElems)
+def ObjectAddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
+def AddDeclarationFile(builder, declarationFile):
+    return ObjectAddDeclarationFile(builder, declarationFile)
+def ObjectEnd(builder): return builder.EndObject()
+def End(builder):
+    return ObjectEnd(builder)
