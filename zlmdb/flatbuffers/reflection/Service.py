@@ -113,43 +113,33 @@ class Service(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(5)
-def ServiceStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
-def ServiceAddName(builder, name):
-    """This method is deprecated. Please switch to AddName."""
-    return AddName(builder, name)
-def AddCalls(builder, calls): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(calls), 0)
-def ServiceAddCalls(builder, calls):
-    """This method is deprecated. Please switch to AddCalls."""
-    return AddCalls(builder, calls)
-def StartCallsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ServiceStartCallsVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartCallsVector(builder, numElems)
-def AddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
-def ServiceAddAttributes(builder, attributes):
-    """This method is deprecated. Please switch to AddAttributes."""
-    return AddAttributes(builder, attributes)
-def StartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ServiceStartAttributesVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartAttributesVector(builder, numElems)
-def AddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
-def ServiceAddDocumentation(builder, documentation):
-    """This method is deprecated. Please switch to AddDocumentation."""
-    return AddDocumentation(builder, documentation)
-def StartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def ServiceStartDocumentationVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartDocumentationVector(builder, numElems)
-def AddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
-def ServiceAddDeclarationFile(builder, declarationFile):
-    """This method is deprecated. Please switch to AddDeclarationFile."""
-    return AddDeclarationFile(builder, declarationFile)
-def End(builder): return builder.EndObject()
-def ServiceEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def ServiceStart(builder): builder.StartObject(5)
+def Start(builder):
+    return ServiceStart(builder)
+def ServiceAddName(builder, name): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+def AddName(builder, name):
+    return ServiceAddName(builder, name)
+def ServiceAddCalls(builder, calls): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(calls), 0)
+def AddCalls(builder, calls):
+    return ServiceAddCalls(builder, calls)
+def ServiceStartCallsVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartCallsVector(builder, numElems):
+    return ServiceStartCallsVector(builder, numElems)
+def ServiceAddAttributes(builder, attributes): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
+def AddAttributes(builder, attributes):
+    return ServiceAddAttributes(builder, attributes)
+def ServiceStartAttributesVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartAttributesVector(builder, numElems):
+    return ServiceStartAttributesVector(builder, numElems)
+def ServiceAddDocumentation(builder, documentation): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
+def AddDocumentation(builder, documentation):
+    return ServiceAddDocumentation(builder, documentation)
+def ServiceStartDocumentationVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def StartDocumentationVector(builder, numElems):
+    return ServiceStartDocumentationVector(builder, numElems)
+def ServiceAddDeclarationFile(builder, declarationFile): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
+def AddDeclarationFile(builder, declarationFile):
+    return ServiceAddDeclarationFile(builder, declarationFile)
+def ServiceEnd(builder): return builder.EndObject()
+def End(builder):
+    return ServiceEnd(builder)
