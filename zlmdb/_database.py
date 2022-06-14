@@ -31,6 +31,7 @@ import uuid
 import pprint
 import struct
 import inspect
+import time
 
 import lmdb
 import yaml
@@ -56,6 +57,8 @@ KV_TYPE_TO_CLASS = {
     'uuid-json': (MapUuidJson, lambda x: x, lambda x: x),
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
+
+_LMDB_MYPID_ENVS = {}
 
 
 class ConfigurationElement(object):
@@ -343,18 +346,53 @@ class Database(object):
 
         # temporary managed context entered ..
         if not self._env:
-            # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
-            # https://lmdb.readthedocs.io/en/release/#writemap-mode
-            # map_size: Maximum size database may grow to; used to size the memory mapping.
-            # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
-            self._env = lmdb.open(self._dbpath,
-                                  map_size=self._maxsize,
-                                  create=self._create,
-                                  readonly=self._readonly,
-                                  sync=self._sync,
-                                  subdir=True,
-                                  lock=self._lock,
-                                  writemap=True)
+            # It is a serious error to have open (multiple times) the same LMDB file in
+            # the same process at the same time. Failure to heed this may lead to data
+            # corruption and interpreter crash.
+            # https://lmdb.readthedocs.io/en/release/#environment-class
+            if not self._is_temp:
+                if self._dbpath in _LMDB_MYPID_ENVS:
+                    raise RuntimeError('tried to open same dbpath "{}" twice within '
+                                       'same process (PID {}) from {}'.format(self._dbpath, os.getpid(), self))
+                _LMDB_MYPID_ENVS[self._dbpath] = self
+
+            # count number of retries
+            retries = 0
+            # delay (in seconds) before retrying
+            retry_delay = 0
+            while True:
+                try:
+                    # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
+                    # https://lmdb.readthedocs.io/en/release/#writemap-mode
+                    # map_size: Maximum size database may grow to; used to size the memory mapping.
+                    # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
+                    self._env = lmdb.open(self._dbpath,
+                                          map_size=self._maxsize,
+                                          create=self._create,
+                                          readonly=self._readonly,
+                                          sync=self._sync,
+                                          subdir=True,
+                                          lock=self._lock,
+                                          writemap=False)
+
+                    # ok, good: we've got a LMDB env
+                    break
+
+                # see https://github.com/crossbario/zlmdb/issues/53
+                except lmdb.LockError as e:
+                    retries += 1
+                    if retries >= 3:
+                        # give up and signal to user code
+                        raise RuntimeError('cannot open LMDB environment (giving up '
+                                           'after {} retries): {}'.format(retries, e))
+
+                    # use synchronous (!) sleep (1st time is sleep(0), which releases execution of this process to OS)
+                    time.sleep(retry_delay)
+
+                    # increase sleep time by 10ms _next_ time. that is, for our 3 attempts
+                    # the delays are: 0ms, 10ms, 20ms
+                    retry_delay += 0.01
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -362,6 +400,9 @@ class Database(object):
 
         self._env.close()
         self._env = None
+
+        if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
+            del _LMDB_MYPID_ENVS[self._dbpath]
 
     @property
     def dbpath(self):
