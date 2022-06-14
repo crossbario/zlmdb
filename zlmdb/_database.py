@@ -31,6 +31,7 @@ import uuid
 import pprint
 import struct
 import inspect
+import time
 
 import lmdb
 import yaml
@@ -347,14 +348,37 @@ class Database(object):
             # https://lmdb.readthedocs.io/en/release/#writemap-mode
             # map_size: Maximum size database may grow to; used to size the memory mapping.
             # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
-            self._env = lmdb.open(self._dbpath,
-                                  map_size=self._maxsize,
-                                  create=self._create,
-                                  readonly=self._readonly,
-                                  sync=self._sync,
-                                  subdir=True,
-                                  lock=self._lock,
-                                  writemap=True)
+
+            # count number of retries
+            retries = 0
+            # delay (in seconds) before retrying
+            retry_delay = 0
+            while True:
+                try:
+                    self._env = lmdb.open(self._dbpath,
+                                          map_size=self._maxsize,
+                                          create=self._create,
+                                          readonly=self._readonly,
+                                          sync=self._sync,
+                                          subdir=True,
+                                          lock=self._lock,
+                                          writemap=False)
+
+                    # ok, good: we've got a LMDB env
+                    break
+
+                # see https://github.com/crossbario/zlmdb/issues/53
+                except lmdb.LockError:
+                    retries += 1
+                    if retries >= 3:
+                        break
+
+                    # use synchronous (!) sleep (1st time is sleep(0), which releases execution of this process to OS)
+                    time.sleep(retry_delay)
+
+                    # increase sleep time by 10ms next time
+                    retry_delay += 0.01
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
