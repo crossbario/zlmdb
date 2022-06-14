@@ -379,15 +379,18 @@ class Database(object):
                     break
 
                 # see https://github.com/crossbario/zlmdb/issues/53
-                except lmdb.LockError:
+                except lmdb.LockError as e:
                     retries += 1
                     if retries >= 3:
-                        break
+                        # give up and signal to user code
+                        raise RuntimeError('cannot open LMDB environment (giving up '
+                                           'after {} retries): {}'.format(retries, e))
 
                     # use synchronous (!) sleep (1st time is sleep(0), which releases execution of this process to OS)
                     time.sleep(retry_delay)
 
-                    # increase sleep time by 10ms next time
+                    # increase sleep time by 10ms _next_ time. that is, for our 3 attempts
+                    # the delays are: 0ms, 10ms, 20ms
                     retry_delay += 0.01
 
         return self
