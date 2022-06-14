@@ -58,7 +58,6 @@ KV_TYPE_TO_CLASS = {
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-
 _LMDB_MYPID_ENVS = {}
 
 
@@ -271,8 +270,15 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
-    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, lock=True,
-                 sync=True, create=True, open=True, log=None):
+    def __init__(self,
+                 dbpath=None,
+                 maxsize=10485760,
+                 readonly=False,
+                 lock=True,
+                 sync=True,
+                 create=True,
+                 open=True,
+                 log=None):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
