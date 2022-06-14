@@ -59,6 +59,9 @@ KV_TYPE_TO_CLASS = {
 }
 
 
+_LMDB_MYPID_ENVS = {}
+
+
 class ConfigurationElement(object):
 
     # oid: uuid.UUID
@@ -268,15 +271,8 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
-    def __init__(self,
-                 dbpath=None,
-                 maxsize=10485760,
-                 readonly=False,
-                 lock=True,
-                 sync=True,
-                 create=True,
-                 open=True,
-                 log=None):
+    def __init__(self, dbpath=None, maxsize=10485760, readonly=False, lock=True,
+                 sync=True, create=True, open=True, log=None):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
@@ -344,10 +340,15 @@ class Database(object):
 
         # temporary managed context entered ..
         if not self._env:
-            # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
-            # https://lmdb.readthedocs.io/en/release/#writemap-mode
-            # map_size: Maximum size database may grow to; used to size the memory mapping.
-            # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
+            # It is a serious error to have open (multiple times) the same LMDB file in
+            # the same process at the same time. Failure to heed this may lead to data
+            # corruption and interpreter crash.
+            # https://lmdb.readthedocs.io/en/release/#environment-class
+            if not self._is_temp:
+                if self._dbpath in _LMDB_MYPID_ENVS:
+                    raise RuntimeError('tried to open same dbpath "{}" twice within '
+                                       'same process (PID {}) from {}'.format(self._dbpath, os.getpid(), self))
+                _LMDB_MYPID_ENVS[self._dbpath] = self
 
             # count number of retries
             retries = 0
@@ -355,6 +356,10 @@ class Database(object):
             retry_delay = 0
             while True:
                 try:
+                    # https://lmdb.readthedocs.io/en/release/#lmdb.Environment
+                    # https://lmdb.readthedocs.io/en/release/#writemap-mode
+                    # map_size: Maximum size database may grow to; used to size the memory mapping.
+                    # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
                     self._env = lmdb.open(self._dbpath,
                                           map_size=self._maxsize,
                                           create=self._create,
@@ -386,6 +391,9 @@ class Database(object):
 
         self._env.close()
         self._env = None
+
+        if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
+            del _LMDB_MYPID_ENVS[self._dbpath]
 
     @property
     def dbpath(self):
