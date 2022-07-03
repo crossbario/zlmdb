@@ -32,6 +32,7 @@ import pprint
 import struct
 import inspect
 import time
+from typing import Dict, Any
 
 import lmdb
 import yaml
@@ -58,7 +59,7 @@ KV_TYPE_TO_CLASS = {
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-_LMDB_MYPID_ENVS = {}
+_LMDB_MYPID_ENVS: Dict[str, Any] = {}
 
 
 class ConfigurationElement(object):
@@ -352,8 +353,10 @@ class Database(object):
             # https://lmdb.readthedocs.io/en/release/#environment-class
             if not self._is_temp:
                 if self._dbpath in _LMDB_MYPID_ENVS:
+                    other = _LMDB_MYPID_ENVS[self._dbpath]
                     raise RuntimeError('tried to open same dbpath "{}" twice within '
-                                       'same process (PID {}) from {}'.format(self._dbpath, os.getpid(), self))
+                                       'same process (PID {}): cannot open for {}, already opened in {}'.format(
+                                           self._dbpath, os.getpid(), self, other))
                 _LMDB_MYPID_ENVS[self._dbpath] = self
 
             # count number of retries
