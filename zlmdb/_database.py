@@ -32,7 +32,7 @@ import pprint
 import struct
 import inspect
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 
 import lmdb
 import yaml
@@ -59,7 +59,7 @@ KV_TYPE_TO_CLASS = {
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-_LMDB_MYPID_ENVS: Dict[str, Any] = {}
+_LMDB_MYPID_ENVS: Dict[str, Tuple[Any, int]] = {}
 
 
 class ConfigurationElement(object):
@@ -271,39 +271,48 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
+    __slots__ = (
+        'log',
+        '_is_temp',
+        '_tempdir',
+        '_dbpath',
+        '_maxsize',
+        '_readonly',
+        '_lock',
+        '_sync',
+        '_create',
+        '_open_now',
+        '_context',
+        '_slots',
+        '_slots_by_index',
+        '_env',
+    )
+
     def __init__(self,
-                 dbpath=None,
-                 maxsize=10485760,
-                 readonly=False,
-                 lock=True,
-                 sync=True,
-                 create=True,
-                 open=True,
-                 log=None):
+                 dbpath: Optional[str] = None,
+                 maxsize: int = 10485760,
+                 readonly: bool = False,
+                 lock: bool = True,
+                 sync: bool = True,
+                 create: bool = True,
+                 open_now: bool = True,
+                 context: Any = None,
+                 log: Optional[txaio.interfaces.ILogger] = None):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
             If no database exists at the given path, create a new one.
-        :type dbpath: str
-
         :param maxsize: Database size limit in bytes, with a default of 1MB.
-        :type maxsize: int
-
-        :param read_only: Open database read-only. When ``True``, deny any modifying database operations.
+        :param readonly: Open database read-only. When ``True``, deny any modifying database operations.
             Note that the LMDB lock file (``lock.mdb``) still needs to be written (by readers also),
             and hence at the filesystem level, a LMDB database directory must be writable.
-        :type read_only: bool
-
         :param sync: Open database with sync on commit.
-        :type sync: bool
+        :param create: Automatically create database if it does not yet exist.
+        :param open_now: Open the database immediately (within this constructor).
+        :param context: Optional context within which this database instance is created.
+        :param log: Log object to use for logging from this class.
         """
-        assert dbpath is None or type(dbpath) == str
-        assert type(maxsize) == int
-        assert type(readonly) == bool
-        assert type(lock) == bool
-        assert type(sync) == bool
-        assert type(create) == bool
-        assert type(open) == bool
+        self._context = context
 
         if log:
             self.log = log
@@ -314,6 +323,7 @@ class Database(object):
 
         if dbpath:
             self._is_temp = False
+            self._tempdir = None
             self._dbpath = dbpath
         else:
             self._is_temp = True
@@ -325,7 +335,8 @@ class Database(object):
         self._lock = lock
         self._sync = sync
         self._create = create
-        self._open = open
+        self._open_now = open_now
+        self._context = context
 
         self._slots = None
         self._slots_by_index = None
@@ -335,7 +346,7 @@ class Database(object):
         self._env = None
 
         # in a direct run environment, we immediately open LMDB
-        if self._open:
+        if self._open_now:
             self.__enter__()
 
     def __enter__(self):
@@ -353,11 +364,12 @@ class Database(object):
             # https://lmdb.readthedocs.io/en/release/#environment-class
             if not self._is_temp:
                 if self._dbpath in _LMDB_MYPID_ENVS:
-                    other = _LMDB_MYPID_ENVS[self._dbpath]
-                    raise RuntimeError('tried to open same dbpath "{}" twice within '
-                                       'same process (PID {}): cannot open for {}, already opened in {}'.format(
-                                           self._dbpath, os.getpid(), self, other))
-                _LMDB_MYPID_ENVS[self._dbpath] = self
+                    other_obj, other_pid = _LMDB_MYPID_ENVS[self._dbpath]
+                    raise RuntimeError(
+                        'tried to open same dbpath "{}" twice within same process: cannot open database '
+                        'for {} (PID {}, Context {}), already opened in {} (PID {}, Context {})'.format(
+                            self._dbpath, self, os.getpid(), self.context, other_obj, other_pid, other_obj.context))
+                _LMDB_MYPID_ENVS[self._dbpath] = self, os.getpid()
 
             # count number of retries
             retries = 0
@@ -406,6 +418,10 @@ class Database(object):
 
         if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
             del _LMDB_MYPID_ENVS[self._dbpath]
+
+    @property
+    def context(self):
+        return self._context
 
     @property
     def dbpath(self):
@@ -458,7 +474,8 @@ class Database(object):
             'lock': self._lock,
             'sync': self._sync,
             'create': self._create,
-            'open': self._open,
+            'open_now': self._open_now,
+            'context': str(self._context) if self._context else None,
         }
         return res
 
