@@ -309,6 +309,7 @@ class Database(object):
         '_sync',
         '_create',
         '_open_now',
+        '_writemap',
         '_context',
         '_slots',
         '_slots_by_index',
@@ -323,6 +324,7 @@ class Database(object):
                  sync: bool = True,
                  create: bool = True,
                  open_now: bool = True,
+                 writemap: bool = False,
                  context: Any = None,
                  log: Optional[txaio.interfaces.ILogger] = None):
         """
@@ -336,6 +338,8 @@ class Database(object):
         :param sync: Open database with sync on commit.
         :param create: Automatically create database if it does not yet exist.
         :param open_now: Open the database immediately (within this constructor).
+        :param writemap: Use direct write to mmap'ed database rather than regular file IO writes. Be careful when
+            using any storage other than locally attached filesystem/drive.
         :param context: Optional context within which this database instance is created.
         :param log: Log object to use for logging from this class.
         """
@@ -363,6 +367,7 @@ class Database(object):
         self._sync = sync
         self._create = create
         self._open_now = open_now
+        self._writemap = writemap
         self._context = context
 
         self._slots: Optional[Dict[uuid.UUID, Slot]] = None
@@ -434,7 +439,7 @@ class Database(object):
                                           sync=self._sync,
                                           subdir=True,
                                           lock=self._lock,
-                                          writemap=False)
+                                          writemap=self._writemap)
 
                     # ok, good: we've got a LMDB env
                     break
@@ -519,6 +524,14 @@ class Database(object):
         return self._readonly
 
     @property
+    def is_writemap(self) -> bool:
+        """
+
+        :return:
+        """
+        return self._writemap
+
+    @property
     def is_open(self) -> bool:
         """
 
@@ -582,6 +595,7 @@ class Database(object):
             'sync': self._sync,
             'create': self._create,
             'open_now': self._open_now,
+            'writemap': self._writemap,
             'context': str(self._context) if self._context else None,
         }
         return res
