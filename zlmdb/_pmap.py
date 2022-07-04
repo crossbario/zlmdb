@@ -27,6 +27,7 @@
 
 import struct
 import sys
+import uuid
 import zlib
 from typing import Optional, List, Callable, Any, Tuple, Dict
 
@@ -160,10 +161,19 @@ class PersistentMap(MutableMapping):
     """
     Abstract base class for persistent maps stored in LMDB.
     """
+
     COMPRESS_ZLIB = 1
     COMPRESS_SNAPPY = 2
 
-    def __init__(self, slot: Optional[int], compress: Optional[bool] = None):
+    # these are filled by table decorate @zlmdb.table
+    _zlmdb_oid: Optional[uuid.UUID] = None
+    _zlmdb_marshal: Optional[Callable] = None
+    _zlmdb_parse: Optional[Callable] = None
+    _zlmdb_build: Optional[Callable] = None
+    _zlmdb_cast: Optional[Callable] = None
+    _zlmdb_compress: Optional[int] = None
+
+    def __init__(self, slot: Optional[int], compress: Optional[int] = None):
         """
 
         :param slot:

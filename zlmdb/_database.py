@@ -32,13 +32,13 @@ import pprint
 import struct
 import inspect
 import time
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, List, Optional, Callable, Type
 
 import lmdb
 import yaml
 import cbor2
 
-from zlmdb._transaction import Transaction
+from zlmdb._transaction import Transaction, TransactionStats
 from zlmdb import _pmap
 from zlmdb._pmap import MapStringJson, MapStringCbor, MapUuidJson, MapUuidCbor
 
@@ -63,19 +63,28 @@ _LMDB_MYPID_ENVS: Dict[str, Tuple[Any, int]] = {}
 
 
 class ConfigurationElement(object):
+    """
+    Internal zLMDB configuration element base type.
+    """
 
-    # oid: uuid.UUID
-    # name: str
-    # description: Optional[str]
-    # tags: Optional[List[str]]
+    __slots__ = (
+        '_oid',
+        '_name',
+        '_description',
+        '_tags',
+    )
 
-    def __init__(self, oid=None, name=None, description=None, tags=None):
+    def __init__(self,
+                 oid: Optional[uuid.UUID] = None,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 tags: Optional[List[str]] = None):
         self._oid = oid
         self._name = name
         self._description = description
         self._tags = tags
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
             return False
         if other.oid != self.oid:
@@ -91,38 +100,41 @@ class ConfigurationElement(object):
                 return False
         return True
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
     @property
-    def oid(self):
+    def oid(self) -> Optional[uuid.UUID]:
         return self._oid
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         return self._name
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def tags(self):
+    def tags(self) -> Optional[List[str]]:
         return self._tags
 
-    def marshal(self):
-        value = {
-            u'oid': str(self._oid),
-            u'name': self._name,
+    def __str__(self) -> str:
+        return pprint.pformat(self.marshal())
+
+    def marshal(self) -> Dict[str, Any]:
+        value: Dict[str, Any] = {
+            'oid': str(self._oid),
+            'name': self._name,
         }
         if self.description:
-            value[u'description'] = self._description
+            value['description'] = self._description
         if self.tags:
-            value[u'tags'] = self._tags
+            value['tags'] = self._tags
         return value
 
     @staticmethod
-    def parse(value):
+    def parse(value: Dict[str, Any]) -> 'ConfigurationElement':
         assert type(value) == dict
         oid = value.get('oid', None)
         if oid:
@@ -135,23 +147,38 @@ class ConfigurationElement(object):
 
 
 class Slot(ConfigurationElement):
-    def __init__(self, oid=None, name=None, description=None, tags=None, slot=None, creator=None):
+    """
+    Internal zLMDB database slot configuration element.
+    """
+
+    __slots__ = (
+        '_slot',
+        '_creator',
+    )
+
+    def __init__(self,
+                 oid: Optional[uuid.UUID] = None,
+                 name: Optional[str] = None,
+                 description: Optional[str] = None,
+                 tags: Optional[List[str]] = None,
+                 slot: Optional[int] = None,
+                 creator: Optional[str] = None):
         ConfigurationElement.__init__(self, oid=oid, name=name, description=description, tags=tags)
         self._slot = slot
         self._creator = creator
 
-    def __str__(self):
-        return pprint.pformat(self.marshal())
-
     @property
-    def creator(self):
+    def creator(self) -> Optional[str]:
         return self._creator
 
     @property
-    def slot(self):
+    def slot(self) -> Optional[int]:
         return self._slot
 
-    def marshal(self):
+    def __str__(self) -> str:
+        return pprint.pformat(self.marshal())
+
+    def marshal(self) -> Dict[str, Any]:
         obj = ConfigurationElement.marshal(self)
         obj.update({
             'creator': self._creator,
@@ -160,7 +187,7 @@ class Slot(ConfigurationElement):
         return obj
 
     @staticmethod
-    def parse(data):
+    def parse(data: Dict[str, Any]) -> 'Slot':
         assert type(data) == dict
 
         obj = ConfigurationElement.parse(data)
@@ -338,30 +365,45 @@ class Database(object):
         self._open_now = open_now
         self._context = context
 
-        self._slots = None
-        self._slots_by_index = None
+        self._slots: Optional[Dict[uuid.UUID, Slot]] = None
+        self._slots_by_index: Optional[Dict[uuid.UUID, int]] = None
 
         # in a context manager environment we initialize with LMDB handle
         # when we enter the actual temporary, managed context ..
-        self._env = None
+        self._env: Optional[lmdb.Environment] = None
 
         # in a direct run environment, we immediately open LMDB
         if self._open_now:
             self.__enter__()
 
     def __enter__(self):
-        # lmdb.open(db_dir, create=False, subdir=True, readonly=True, lock=False)
-        # https://stackoverflow.com/questions/56905502/lmdb-badrsloterror-mdb-txn-begin-mdb-bad-rslot-invalid-reuse-of-reader-lockta
+        """
+        Enter database runtime context and open the underlying LMDB database environment.
 
-        # FIXME: handle lmdb.LockError: mdb_txn_begin: Resource temporarily unavailable
-        #   "The environment was locked by another process." https://lmdb.readthedocs.io/en/release/#lmdb.LockError
+        .. note::
 
-        # temporary managed context entered ..
+            Enter the runtime context related to this object. The with statement will bind this method’s
+            return value to the target(s) specified in the as clause of the statement, if any.
+            [Source](https://docs.python.org/3/reference/datamodel.html#object.__enter__)
+
+        .. note::
+
+            A context manager is an object that defines the runtime context to be established when
+            executing a with statement. The context manager handles the entry into, and the exit from,
+            the desired runtime context for the execution of the block of code. Context managers are
+            normally invoked using the with statement (described in section The with statement), but
+            can also be used by directly invoking their methods."
+            [Source](https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers)
+
+        :return: This database instance (in open state).
+        """
         if not self._env:
-            # It is a serious error to have open (multiple times) the same LMDB file in
-            # the same process at the same time. Failure to heed this may lead to data
-            # corruption and interpreter crash.
-            # https://lmdb.readthedocs.io/en/release/#environment-class
+            # protect against opening the same database file multiple times within the same process:
+            #    "It is a serious error to have open (multiple times) the same LMDB file in
+            #     the same process at the same time. Failure to heed this may lead to data
+            #     corruption and interpreter crash."
+            #    https://lmdb.readthedocs.io/en/release/#environment-class
+
             if not self._is_temp:
                 if self._dbpath in _LMDB_MYPID_ENVS:
                     other_obj, other_pid = _LMDB_MYPID_ENVS[self._dbpath]
@@ -370,6 +412,10 @@ class Database(object):
                         'for {} (PID {}, Context {}), already opened in {} (PID {}, Context {})'.format(
                             self._dbpath, self, os.getpid(), self.context, other_obj, other_pid, other_obj.context))
                 _LMDB_MYPID_ENVS[self._dbpath] = self, os.getpid()
+
+            # handle lmdb.LockError: mdb_txn_begin: Resource temporarily unavailable
+            #   "The environment was locked by another process."
+            #   https://lmdb.readthedocs.io/en/release/#lmdb.LockError
 
             # count number of retries
             retries = 0
@@ -411,47 +457,99 @@ class Database(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert (self._env is not None)
+        """
+        Exit runtime context and close the underlying LMDB database environment.
 
-        self._env.close()
-        self._env = None
+        .. note::
 
-        if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
-            del _LMDB_MYPID_ENVS[self._dbpath]
+            Exit the runtime context related to this object. The parameters describe the exception that
+            caused the context to be exited. If the context was exited without an exception, all three
+            arguments will be None.
+            [Source](https://docs.python.org/3/reference/datamodel.html#object.__exit__).
+
+        :param exc_type:
+        :param exc_value:
+        :param traceback:
+        :return:
+        """
+        if self._env:
+            self._env.close()
+            self._env = None
+            if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
+                del _LMDB_MYPID_ENVS[self._dbpath]
 
     @property
     def context(self):
+        """
+
+        :return:
+        """
         return self._context
 
     @property
-    def dbpath(self):
+    def dbpath(self) -> Optional[str]:
+        """
+
+        :return:
+        """
         return self._dbpath
 
     @property
-    def maxsize(self):
+    def maxsize(self) -> int:
+        """
+
+        :return:
+        """
         return self._maxsize
 
     @property
-    def is_sync(self):
+    def is_sync(self) -> bool:
+        """
+
+        :return:
+        """
         return self._sync
 
     @property
-    def is_readonly(self):
+    def is_readonly(self) -> bool:
+        """
+
+        :return:
+        """
         return self._readonly
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
+        """
+
+        :return:
+        """
         return self._env is not None
 
     @staticmethod
-    def scratch(dbpath):
+    def scratch(dbpath: str):
+        """
+
+        :param dbpath:
+        :return:
+        """
         if os.path.exists(dbpath):
             if os.path.isdir(dbpath):
                 shutil.rmtree(dbpath)
             else:
                 os.remove(dbpath)
 
-    def begin(self, write=False, buffers=False, stats=None):
+    def begin(self,
+              write: bool = False,
+              buffers: bool = False,
+              stats: Optional[TransactionStats] = None) -> Transaction:
+        """
+
+        :param write:
+        :param buffers:
+        :param stats:
+        :return:
+        """
         assert self._env is not None
 
         if write and self._readonly:
@@ -460,12 +558,21 @@ class Database(object):
         txn = Transaction(db=self, write=write, buffers=buffers, stats=stats)
         return txn
 
-    def sync(self, force=False):
+    def sync(self, force: bool = False):
+        """
+
+        :param force:
+        :return:
+        """
         assert self._env is not None
 
         self._env.sync(force=force)
 
-    def config(self):
+    def config(self) -> Dict[str, Any]:
+        """
+
+        :return:
+        """
         res = {
             'is_temp': self._is_temp,
             'dbpath': self._dbpath,
@@ -479,7 +586,12 @@ class Database(object):
         }
         return res
 
-    def stats(self, include_slots: bool = False):
+    def stats(self, include_slots: bool = False) -> Dict[str, Any]:
+        """
+
+        :param include_slots:
+        :return:
+        """
         assert self._env is not None
 
         current_size = os.path.getsize(os.path.join(self._dbpath, 'data.mdb'))
@@ -495,8 +607,8 @@ class Database(object):
         used = stats['psize'] * pages
 
         self._cache_slots()
-        res = {
-            'num_slots': len(self._slots),
+        res: Dict[str, Any] = {
+            'num_slots': len(self._slots) if self._slots else 0,
             'current_size': current_size,
             'max_size': self._maxsize,
             'page_size': stats['psize'],
@@ -535,6 +647,10 @@ class Database(object):
         return res
 
     def _cache_slots(self):
+        """
+
+        :return:
+        """
         slots = {}
         slots_by_index = {}
 
@@ -562,7 +678,7 @@ class Database(object):
         self._slots = slots
         self._slots_by_index = slots_by_index
 
-    def _get_slots(self, cached=True):
+    def _get_slots(self, cached=True) -> Dict[uuid.UUID, Slot]:
         """
 
         :param cached:
@@ -570,35 +686,44 @@ class Database(object):
         """
         if self._slots is None or not cached:
             self._cache_slots()
+        assert self._slots
         return self._slots
 
-    def _get_free_slot(self):
+    def _get_free_slot(self) -> int:
         """
 
-        :param cached:
         :return:
         """
+        if self._slots_by_index is None:
+            self._cache_slots()
+        assert self._slots_by_index is not None
         slot_indexes = sorted(self._slots_by_index.values())
         if len(slot_indexes) > 0:
             return slot_indexes[-1] + 1
         else:
             return 1
 
-    def _set_slot(self, slot_index, slot):
+    def _set_slot(self, slot_index: int, slot: Optional[Slot]):
         """
 
         :param slot_index:
-        :param meta:
+        :param slot:
         :return:
         """
         assert type(slot_index) == int
-        assert slot_index > 0 and slot_index < 65536
+        assert 0 < slot_index < 65536
         assert slot is None or isinstance(slot, Slot)
-        if slot:
-            assert slot_index == slot.slot
+
+        if self._slots is None:
+            self._cache_slots()
+        assert self._slots is not None
+        assert self._slots_by_index is not None
 
         key = b'\0\0' + struct.pack('>H', slot_index)
         if slot:
+            assert slot_index == slot.slot
+            assert slot.oid
+
             data = cbor2.dumps(slot.marshal())
             with self.begin(write=True) as txn:
                 txn._txn.put(key, data)
@@ -613,16 +738,17 @@ class Database(object):
                 result = txn.get(key)
                 if result:
                     txn._txn.delete(key)
-                if slot.oid in self._slots:
-                    del self._slots[slot.oid]
-                if slot.oid in self._slots_by_index:
-                    del self._slots_by_index[slot.oid]
+                    slot = Slot.parse(cbor2.loads(result))
+                    if slot.oid in self._slots:
+                        del self._slots[slot.oid]
+                    if slot.oid in self._slots_by_index:
+                        del self._slots_by_index[slot.oid]
 
-            self.log.debug('Deleted metadata for table <{oid}> from slot {slot_index:03d}',
-                           oid=slot.oid,
-                           slot_index=slot_index)
+                    self.log.debug('Deleted metadata for table <{oid}> from slot {slot_index:03d}',
+                                   oid=slot.oid,
+                                   slot_index=slot_index)
 
-    def attach_table(self, klass):
+    def attach_table(self, klass: Type[_pmap.PersistentMap]):
         """
 
         :param klass:
@@ -661,22 +787,28 @@ class Database(object):
         return pmap
 
     def _attach_slot(self,
-                     oid,
-                     klass,
-                     marshal=None,
-                     parse=None,
-                     build=None,
-                     cast=None,
-                     compress=None,
-                     create=True,
-                     name=None,
-                     description=None):
+                     oid: uuid.UUID,
+                     klass: Type[_pmap.PersistentMap],
+                     marshal: Optional[Callable] = None,
+                     parse: Optional[Callable] = None,
+                     build: Optional[Callable] = None,
+                     cast: Optional[Callable] = None,
+                     compress: Optional[int] = None,
+                     create: bool = True,
+                     name: Optional[str] = None,
+                     description: Optional[str] = None):
         """
 
-        :param slot:
+        :param oid:
         :param klass:
         :param marshal:
-        :param unmarshal:
+        :param parse:
+        :param build:
+        :param cast:
+        :param compress:
+        :param create:
+        :param name:
+        :param description:
         :return:
         """
         assert isinstance(oid, uuid.UUID)
@@ -693,10 +825,12 @@ class Database(object):
                (not marshal and not parse and build and cast) or \
                (marshal and parse and not build and not cast)
 
+        assert compress is None or compress in [_pmap.PersistentMap.COMPRESS_ZLIB, _pmap.PersistentMap.COMPRESS_SNAPPY]
         assert type(create) == bool
-
         assert name is None or type(name) == str
-        assert (description is None or type(description) == str)
+        assert description is None or type(description) == str
+
+        assert self._slots_by_index is not None
 
         if oid not in self._slots_by_index:
             self.log.debug('No slot found in database for DB table <{oid}>: <{name}>', name=name, oid=oid)
@@ -709,7 +843,7 @@ class Database(object):
                               oid=oid,
                               name=name)
             else:
-                raise Exception('No slot found in database for DB table <{oid}>: {name}', name=name, oid=oid)
+                raise RuntimeError('No slot found in database for DB table <{}>: "{}"'.format(oid, name))
         else:
             slot_index = self._slots_by_index[oid]
             # pmap = _pmap.PersistentMap(slot_index)
@@ -721,9 +855,9 @@ class Database(object):
                            slot_index=slot_index)
 
         if marshal:
-            slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)
+            slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)  # type: ignore
         elif build:
-            slot_pmap = klass(slot_index, build=build, cast=cast, compress=compress)
+            slot_pmap = klass(slot_index, build=build, cast=cast, compress=compress)  # type: ignore
         else:
             slot_pmap = klass(slot_index, compress=compress)
 
