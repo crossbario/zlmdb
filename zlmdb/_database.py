@@ -59,7 +59,7 @@ KV_TYPE_TO_CLASS = {
     'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-_LMDB_MYPID_ENVS: Dict[str, Tuple[Any, int]] = {}
+_LMDB_MYPID_ENVS: Dict[str, Tuple['Database', int]] = {}
 
 
 class ConfigurationElement(object):
@@ -482,6 +482,37 @@ class Database(object):
             self._env = None
             if not self._is_temp and self._dbpath in _LMDB_MYPID_ENVS:
                 del _LMDB_MYPID_ENVS[self._dbpath]
+
+    @staticmethod
+    def open(dbpath: Optional[str] = None,
+             maxsize: int = 10485760,
+             readonly: bool = False,
+             lock: bool = True,
+             sync: bool = True,
+             create: bool = True,
+             open_now: bool = True,
+             writemap: bool = False,
+             context: Any = None,
+             log: Optional[txaio.interfaces.ILogger] = None) -> 'Database':
+        if dbpath is not None and dbpath in _LMDB_MYPID_ENVS:
+            db, _ = _LMDB_MYPID_ENVS[dbpath]
+            print(
+                '{}: reusing database instance for path "{}" in new context {} already opened from (first) context {}'.
+                format(Database.open, dbpath, context, db.context))
+        else:
+            db = Database(dbpath=dbpath,
+                          maxsize=maxsize,
+                          readonly=readonly,
+                          lock=lock,
+                          sync=sync,
+                          create=create,
+                          open_now=open_now,
+                          writemap=writemap,
+                          context=context,
+                          log=log)
+            print('{}: creating new database instance for path "{}" in context {}'.format(
+                Database.open, dbpath, context))
+        return db
 
     @property
     def context(self):
