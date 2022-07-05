@@ -118,7 +118,7 @@ from ._pmap import PersistentMap, \
                    MapBytes20Bytes20FlatBuffers, \
                    MapBytes20StringFlatBuffers
 
-from ._transaction import Transaction, TransactionStats, walltime
+from ._transaction import Transaction, TransactionStats
 from ._database import Database
 from ._schema import Schema
 
@@ -128,7 +128,6 @@ __all__ = (
     'Database',
     'Transaction',
     'TransactionStats',
-    'walltime',
     'MapSlotUuidUuid',
     'table',
 
@@ -262,9 +261,9 @@ __all__ = (
     'MapBytes16TimestampUuidFlatBuffers',
 )
 
-TABLES_BY_UUID = {}  # type: Dict[uuid.UUID, object]
+TABLES_BY_UUID: Dict[uuid.UUID, PersistentMap] = {}
 """
-Map of table UUIDs to persistant maps stored in slots in a KV store.
+Map of table UUIDs to persistent maps stored in slots in a KV store.
 """
 
 

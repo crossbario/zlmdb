@@ -55,6 +55,49 @@ def testset1():
     return users
 
 
+def test_open1():
+    with TemporaryDirectory() as dbpath:
+        with zlmdb.Database(dbpath) as db:
+            assert db.maxsize == 10485760
+            assert db.is_sync
+            assert db.is_open
+            assert not db.is_readonly
+            assert not db.is_writemap
+
+
+def test_open2():
+    with TemporaryDirectory() as dbpath:
+        with zlmdb.Database(dbpath) as db:
+            assert db.is_open
+        with zlmdb.Database(dbpath) as db:
+            assert db.is_open
+
+
+def test_open3():
+    with TemporaryDirectory() as dbpath:
+        db = zlmdb.Database(dbpath)
+        assert db.is_open
+        try:
+            zlmdb.Database(dbpath)
+            assert False, 'opening same dbpath twice in same process did not throw an exception'
+        except RuntimeError as e:
+            # RuntimeError: tried to open same dbpath "/tmp/tmpwc1dw5c8" twice within same process
+            assert 'twice within same process' in str(e), 'exception did not contain text we excepted: {}'.format(e)
+        except Exception as e:
+            assert False, 'unexpected exception {} raised'.format(e)
+
+
+def test_open4():
+    with TemporaryDirectory() as dbpath:
+        db1 = zlmdb.Database.open(dbpath)
+        assert db1.is_open
+
+        db2 = zlmdb.Database.open(dbpath)
+        assert db2.is_open
+
+        assert db1 == db2
+
+
 def test_transaction():
     with TemporaryDirectory() as dbpath:
         print('Using temporary directory {} for database'.format(dbpath))
