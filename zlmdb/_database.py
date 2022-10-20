@@ -236,7 +236,7 @@ class Schema(object):
     @staticmethod
     def parse(filename, klassmap=KV_TYPE_TO_CLASS):
         with open(filename) as f:
-            _meta = yaml.load(f.read())
+            _meta = yaml.safe_load(f.read())
 
             meta = {}
             slots = {}
