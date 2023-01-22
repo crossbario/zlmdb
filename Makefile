@@ -144,3 +144,6 @@ update_flatbuffers:
 
 generate_flatbuffers_reflection:
 	$(FLATC) --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+
+fix_copyright:
+	find . -type f -exec sed -i 's/Copyright (c) Crossbar.io Technologies GmbH/Copyright (c) typedef int GmbH/g' {} \;

@@ -5,7 +5,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -39,21 +39,21 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 # enforce use of CFFI for LMDB
-# os.environ['LMDB_FORCE_CFFI'] = '1'
+os.environ['LMDB_FORCE_CFFI'] = '1'
 
 # enforce use of bundled libsodium with PyNaCl
 os.environ['SODIUM_INSTALL'] = 'bundled'
 
 requirements = [
-    'cffi>=1.14.5',
-    'cbor2>=5.2.0',
-    'click>=7.1.2',
-    'flatbuffers>=2.0',
-    'lmdb>=1.2.1',
-    'pynacl>=1.4.0',
-    'pyyaml>=5.4.1',
-    'txaio>=21.2.1',
-    'numpy>=1.20.1',
+    'cffi>=1.15.1',
+    'cbor2>=5.4.6',
+    'click>=8.1.3',
+    'flatbuffers>=23.1.4',
+    'lmdb>=1.4.0',
+    'pynacl>=1.5.0',
+    'pyyaml>=6.0',
+    'txaio>=23.1.1',
+    'numpy>=1.24.1',
 ]
 
 extras_require = {
@@ -64,7 +64,6 @@ with open('requirements-dev.txt') as f:
     for line in f.read().splitlines():
         extras_require['dev'].append(line.strip())
 
-# setup_requirements = ['pytest-runner']
 test_requirements = ['pytest', 'pytest-runner']
 
 packages = [
@@ -75,8 +74,7 @@ packages = [
 ]
 
 setup(
-    author="Crossbar.io Technologies GmbH",
-    author_email='contact@crossbario.com',
+    author="typedef int GmbH",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -87,6 +85,9 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
     ],
     description="Object-relational zero-copy in-memory database layer for LMDB.",
     entry_points={
@@ -94,8 +95,6 @@ setup(
             'zlmdb=zlmdb.cli:main',
         ],
     },
-    # NumPy 1.19.0+ requires Py 3.6+
-    # NumPy 1.20.0+ requires Py 3.7+
     python_requires='>=3.7',
     install_requires=requirements,
     extras_require=extras_require,
@@ -105,7 +104,6 @@ setup(
     keywords='zlmdb',
     name='zlmdb',
     packages=packages,
-    # setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/crossbario/zlmdb',
