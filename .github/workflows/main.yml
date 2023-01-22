@@ -47,7 +47,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        python-version: ['3.7', '3.11', 'pypy-3.7', 'pypy-3.9']
+        python-version: ['3.9', '3.11', 'pypy-3.9']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepscontinue-on-error
