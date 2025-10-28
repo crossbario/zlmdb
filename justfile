@@ -256,7 +256,7 @@ install-build-tools venv="": (create venv)
 # -- Testing
 # -----------------------------------------------------------------------------
 
-# Run the test suite
+# Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
@@ -266,7 +266,7 @@ test venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v tests/
+    ${VENV_PYTHON} -m pytest -v zlmdb/tests/ tests/
 
 # Run tests in all environments
 test-all:
@@ -338,3 +338,273 @@ docs-view venv="": (docs venv)
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
     rm -rf docs/_build
+
+# -----------------------------------------------------------------------------
+# -- Cleaning (granular targets from Makefile)
+# -----------------------------------------------------------------------------
+
+# Clean Python bytecode files
+clean-pyc:
+    echo "==> Removing Python bytecode files..."
+    find . -name '*.pyc' -delete
+    find . -name '*.pyo' -delete
+    find . -name '*~' -delete
+    find . -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+
+# Clean build artifacts
+clean-build:
+    echo "==> Removing build artifacts..."
+    rm -rf build/ dist/ .eggs/
+    find . -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
+    find . -name '*.egg' -delete 2>/dev/null || true
+
+# Clean test and coverage artifacts
+clean-test:
+    echo "==> Removing test and coverage artifacts..."
+    rm -rf .tox/ .coverage .coverage.* htmlcov/ .pytest_cache/ .mypy_cache/ .ruff_cache/
+    rm -rf .test* 2>/dev/null || true
+
+# Clean all generated files (alias for distclean)
+clean: distclean
+
+# -----------------------------------------------------------------------------
+# -- Testing (expanded from Makefile)
+# -----------------------------------------------------------------------------
+
+# Run quick tests with pytest (no tox)
+test-quick venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running quick tests with pytest in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v
+
+# Run single test file
+test-single venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    clear
+    echo "==> Running test_basic.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_basic.py
+
+# Run pmap tests
+test-pmaps venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    clear
+    echo "==> Running test_pmaps.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmaps.py
+
+# Run index tests
+test-indexes venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    clear
+    echo "==> Running test_pmap_indexes.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmap_indexes.py
+
+# Run select tests
+test-select venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    clear
+    echo "==> Running test_select.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_select.py
+
+# Run zdb etcd tests
+test-zdb-etcd venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test_zdb_etcd.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} tests/zdb/test_zdb_etcd.py
+
+# Run zdb dataframe tests
+test-zdb-df venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test_zdb_df.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} tests/zdb/test_zdb_df.py
+
+# Run zdb dynamic tests
+test-zdb-dyn venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test_zdb_dyn.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} tests/zdb/test_zdb_dyn.py
+
+# Run zdb flatbuffers tests
+test-zdb-fbs venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test_zdb_fbs.py in ${VENV_NAME}..."
+    ${VENV_PYTHON} tests/zdb/test_zdb_fbs.py
+
+# Run all zdb tests
+test-zdb venv="": (test-zdb-etcd venv) (test-zdb-df venv) (test-zdb-dyn venv) (test-zdb-fbs venv)
+
+# Run tests with tox
+test-tox:
+    echo "==> Running tests with tox..."
+    tox -e py39,py310,py311,py312,py313,flake8,coverage,mypy,yapf,sphinx
+
+# Run all tox environments
+test-tox-all:
+    echo "==> Running all tox environments..."
+    tox
+
+# Generate code coverage report
+coverage venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Generating coverage report in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m coverage run --source zlmdb --omit="zlmdb/flatbuffers/reflection/*,zlmdb/tests/*" -m pytest -v -s zlmdb
+    ${VENV_PYTHON} -m coverage report -m
+    ${VENV_PYTHON} -m coverage html
+    echo "==> Opening coverage report..."
+    xdg-open htmlcov/index.html 2>/dev/null || open htmlcov/index.html 2>/dev/null || echo "Please open htmlcov/index.html manually"
+
+# -----------------------------------------------------------------------------
+# -- Code Quality
+# -----------------------------------------------------------------------------
+
+# Run linter (flake8)
+lint venv="": (install-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running flake8 linter in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m flake8 zlmdb tests
+
+# Check code formatting with yapf (dry run)
+yapf venv="": (install-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Checking code formatting with yapf in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m yapf --version
+    ${VENV_PYTHON} -m yapf -rd --style=yapf.ini --exclude="zlmdb/flatbuffers/*" --exclude="zlmdb/tests/MNodeLog.py" zlmdb
+
+# Auto-format code with yapf (WARNING: modifies files in-place!)
+autoformat venv="": (install-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Auto-formatting code with yapf in ${VENV_NAME}..."
+    echo "WARNING: This will modify files in-place!"
+    ${VENV_PYTHON} -m yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
+
+# -----------------------------------------------------------------------------
+# -- Publishing
+# -----------------------------------------------------------------------------
+
+# Build both source distribution and wheel
+dist venv="": clean-build (build venv) (build-sourcedist venv)
+    #!/usr/bin/env bash
+    echo "==> Listing distribution files..."
+    ls -lh dist/
+    echo ""
+    echo "==> Contents of wheel:"
+    unzip -l dist/zlmdb-*-py*.whl || echo "Wheel not found"
+
+# Publish to PyPI using twine
+publish venv="": (dist venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Publishing to PyPI with twine..."
+    ${VENV_PYTHON} -m twine upload dist/*
+
+# -----------------------------------------------------------------------------
+# -- Utilities
+# -----------------------------------------------------------------------------
+
+# Update flatbuffers from deps/flatbuffers submodule
+update-flatbuffers:
+    echo "==> Updating flatbuffers from submodule..."
+    rm -rf ./flatbuffers
+    cp -R deps/flatbuffers/python/flatbuffers .
+    echo "✓ Flatbuffers updated"
+
+# Generate flatbuffers reflection Python code
+generate-flatbuffers-reflection:
+    #!/usr/bin/env bash
+    FLATC=/usr/local/bin/flatc
+    if [ ! -f "${FLATC}" ]; then
+        echo "ERROR: flatc not found at ${FLATC}"
+        echo "Install flatbuffers compiler first"
+        exit 1
+    fi
+    echo "==> Generating flatbuffers reflection code..."
+    ${FLATC} --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+    echo "✓ Flatbuffers reflection code generated"
+
+# Fix copyright headers (typedef int GmbH)
+fix-copyright:
+    echo "==> Fixing copyright headers..."
+    find . -type f -exec sed -i 's/Copyright (c) Crossbar.io Technologies GmbH/Copyright (c) typedef int GmbH/g' {} \;
+    echo "✓ Copyright headers updated"
