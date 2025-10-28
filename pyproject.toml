@@ -40,6 +40,7 @@ classifiers = [
 
 dependencies = [
     "cffi>=1.15.1",
+    "setuptools>=40.8.0",  # Required by CFFI's ffi.verify() on Python 3.12+
     "cbor2>=5.4.6",
     "click>=8.1.3",
     "flatbuffers>=23.1.4",
@@ -57,10 +58,13 @@ dev = [
     "wheel>=0.36.2",
     "pytest>=3.4.2",
     "pytest-runner>=2.11.1",
+    "twisted>=20.3.0",  # Required for running tests that use txaio with Twisted
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "twine>=3.3.0",
     "yapf==0.29.0",
+    "flake8>=3.7.9",
+    "coverage>=5.0.0",
 ]
 
 [project.scripts]
