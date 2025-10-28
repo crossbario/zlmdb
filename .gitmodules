@@ -9,4 +9,4 @@
 	url = https://github.com/wamp-proto/wamp-ai.git
 [submodule "lmdb-upstream"]
 	path = lmdb-upstream
-	url = https://git.openldap.org/openldap/openldap.git
+	url = https://github.com/LMDB/lmdb.git
