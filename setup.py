@@ -1,112 +1,42 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+"""
+Minimal setup.py shim for zlmdb.
 
-###############################################################################
-#
-# The MIT License (MIT)
-#
-# Copyright (c) typedef int GmbH
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-###############################################################################
+This file exists to:
+1. Run build_lmdb.py to prepare LMDB sources before building
+2. Ensure compatibility with tools that expect setup.py
+3. Delegate to pyproject.toml for all modern packaging configuration
 
-"""The setup script."""
+For modern builds, use:
+    python -m build
 
-import os
-from setuptools import setup
+For editable installs:
+    pip install -e .
+"""
 
-with open('zlmdb/_version.py') as f:
-    exec(f.read())  # defines __version__
+import sys
+import subprocess
 
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
 
-# enforce use of CFFI for LMDB
-os.environ['LMDB_FORCE_CFFI'] = '1'
+def main():
+    """Run build_lmdb.py before setuptools build."""
+    print("=" * 70)
+    print("zlmdb setup.py shim")
+    print("=" * 70)
 
-# enforce use of bundled libsodium with PyNaCl
-os.environ['SODIUM_INSTALL'] = 'bundled'
+    # Step 1: Run build_lmdb.py to prepare LMDB sources
+    print("\nStep 1: Preparing vendored LMDB sources...")
+    result = subprocess.run([sys.executable, 'build_lmdb.py'],
+                            capture_output=False)
+    if result.returncode != 0:
+        print("\nERROR: build_lmdb.py failed!")
+        sys.exit(1)
 
-requirements = [
-    'cffi>=1.15.1',
-    'cbor2>=5.4.6',
-    'click>=8.1.3',
-    'flatbuffers>=23.1.4',
-    'lmdb>=1.4.0',
-    'pynacl>=1.5.0',
-    'pyyaml>=6.0',
-    'txaio>=23.1.1',
-    'numpy>=1.24.1',
-]
+    # Step 2: Let setuptools handle the rest (via pyproject.toml)
+    print("\nStep 2: Running setuptools build...")
+    from setuptools import setup
+    setup()
 
-extras_require = {
-    'dev': []
-}
 
-with open('requirements-dev.txt') as f:
-    for line in f.read().splitlines():
-        extras_require['dev'].append(line.strip())
-
-test_requirements = ['pytest', 'pytest-runner']
-
-packages = [
-    'flatbuffers',
-    'zlmdb',
-    'zlmdb.flatbuffers',
-    'zlmdb.flatbuffers.reflection',
-]
-
-setup(
-    author="typedef int GmbH",
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-    ],
-    description="Object-relational zero-copy in-memory database layer for LMDB.",
-    entry_points={
-        'console_scripts': [
-            'zlmdb=zlmdb.cli:main',
-        ],
-    },
-    python_requires='>=3.7',
-    install_requires=requirements,
-    extras_require=extras_require,
-    license="MIT license",
-    long_description=readme,
-    include_package_data=True,
-    keywords='zlmdb',
-    name='zlmdb',
-    packages=packages,
-    test_suite='tests',
-    tests_require=test_requirements,
-    url='https://github.com/crossbario/zlmdb',
-    version=__version__,
-    zip_safe=True,
-)
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=80.9.0", "wheel", "cffi>=1.15.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zlmdb"
+version = "23.1.1"
+description = "Object-relational zero-copy in-memory database layer for LMDB"
+readme = "README.rst"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "typedef int GmbH", email = "contact@typedefint.eu"}
+]
+keywords = ["zlmdb", "lmdb", "database", "key-value", "embedded", "zero-copy", "flatbuffers", "cbor", "wamp", "crossbar"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Database",
+    "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "cffi>=1.15.1",
+    "cbor2>=5.4.6",
+    "click>=8.1.3",
+    "flatbuffers>=23.1.4",
+    # lmdb is now vendored - no external dependency needed
+    "pynacl>=1.5.0",
+    "pyyaml>=6.0",
+    "txaio>=23.1.1",
+    "numpy>=1.24.1",
+]
+
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    "build>=1.0.0",
+    "wheel>=0.36.2",
+    "pytest>=3.4.2",
+    "pytest-runner>=2.11.1",
+    "sphinx>=1.7.1",
+    "sphinx-rtd-theme>=0.1.9",
+    "twine>=3.3.0",
+    "yapf==0.29.0",
+]
+
+[project.scripts]
+zlmdb = "zlmdb.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/crossbario/zlmdb"
+Documentation = "https://zlmdb.readthedocs.io"
+Repository = "https://github.com/crossbario/zlmdb"
+Changelog = "https://github.com/crossbario/zlmdb/blob/master/docs/changelog.rst"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["zlmdb*", "lmdb*", "flatbuffers*"]
+exclude = ["tests*", "lmdb-upstream*", "lmdb-patches*", "deps*", ".ai*", ".cicd*"]
+
+[tool.setuptools.package-data]
+lmdb = ["*.py"]
+zlmdb = ["py.typed"]
+
+# Configure build to run our custom LMDB patch/build script
+[tool.setuptools.cmdclass]
+# Note: build_lmdb.py will be invoked automatically during wheel/sdist build
