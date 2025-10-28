@@ -1,0 +1,33 @@
+# Copyright 2013-2025 The py-lmdb authors, all rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted only as authorized by the OpenLDAP
+# Public License.
+#
+# A copy of this license is available in the file LICENSE in the
+# top-level directory of the distribution or, alternatively, at
+# <http://www.OpenLDAP.org/license.html>.
+#
+# OpenLDAP is a registered trademark of the OpenLDAP Foundation.
+#
+# Individual files and/or contributed packages may be copyright by
+# other parties and/or subject to additional restrictions.
+#
+# This work also contains materials derived from public sources.
+#
+# Additional information about OpenLDAP can be obtained at
+# <http://www.openldap.org/>.
+
+"""
+Python wrapper for OpenLDAP's "Lightning" MDB database.
+
+Please see https://lmdb.readthedocs.io/
+"""
+
+# CFFI-only mode (bundled with zlmdb)
+from lmdb.cffi import *
+from lmdb.cffi import open
+from lmdb.cffi import __all__
+from lmdb.cffi import __doc__
+
+__version__ = '1.7.5'
