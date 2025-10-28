@@ -369,14 +369,25 @@ if not lmdb._reading_docs():
 
     _ffi = cffi.FFI()
     _ffi.cdef(_CFFI_CDEF)
-    _lib = _ffi.verify(_CFFI_VERIFY,
-                       modulename='lmdb_cffi',
-                       ext_package='lmdb',
-                       sources=_config_vars['extra_sources'],
-                       extra_compile_args=_config_vars['extra_compile_args'],
-                       include_dirs=_config_vars['extra_include_dirs'],
-                       libraries=_config_vars['libraries'],
-                       library_dirs=_config_vars['extra_library_dirs'])
+
+    # Try to load pre-compiled extension first (for binary wheels)
+    _lib = None
+    try:
+        from lmdb import _lmdb_cffi
+        _lib = _lmdb_cffi.lib
+    except ImportError:
+        pass
+
+    # Fall back to ffi.verify() for source builds
+    if _lib is None:
+        _lib = _ffi.verify(_CFFI_VERIFY,
+                           modulename='lmdb_cffi',
+                           ext_package='lmdb',
+                           sources=_config_vars['extra_sources'],
+                           extra_compile_args=_config_vars['extra_compile_args'],
+                           include_dirs=_config_vars['extra_include_dirs'],
+                           libraries=_config_vars['libraries'],
+                           library_dirs=_config_vars['extra_library_dirs'])
 
     @_ffi.callback("int(char *, void *)")
     def _msg_func(s, _):

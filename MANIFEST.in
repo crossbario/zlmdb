@@ -1,9 +1,7 @@
-include CONTRIBUTING.rst
-include HISTORY.rst
 include LICENSE
-include README.rst
 include pyproject.toml
 include build_lmdb.py
+include build_cffi_lmdb.py
 
 # Vendored LMDB Python bindings
 recursive-include lmdb *.py
@@ -11,16 +9,9 @@ recursive-include lmdb *.py
 # LMDB patches (applied during build)
 recursive-include lmdb-patches *.patch *.h
 
+# FlatBuffers schemas
+recursive-include zlmdb/flatbuffers *.fbs
+
 # LMDB C sources from submodule (copied during build)
 # Note: lmdb-upstream/ submodule is NOT included in sdist
 # Instead, build_lmdb.py copies sources from it during build
-
-recursive-include tests *
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-
-recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
-recursive-include zlmdb/flatbuffers *.fbs *.bfbs
-
-include requirements.txt
-include requirements-dev.txt
