@@ -87,26 +87,42 @@ def apply_patches():
 
                 print(f"  Parsed {len(patchset.items)} patch items")
 
-                # Apply with strip=3 (remove a/, b/, libraries/, liblmdb/ from paths)
-                # root=abs_build_dir means apply patches relative to build/lmdb-src/
-                # Note: patch-ng returns True if all patches applied successfully
-                success = patchset.apply(strip=3, root=abs_build_dir)
+                # Debug: show what we're trying to patch
+                for item in patchset.items:
+                    target = item.target if isinstance(item.target, str) else item.target.decode('utf-8', errors='replace')
+                    print(f"    Patch item target (raw): {target}")
 
-                if success:
-                    print("  [OK] Applied successfully")
-                else:
-                    # patch-ng returns False if any patch failed
-                    print(f"  [FAIL] Failed to apply patch {patch_file}")
-                    # Try to get more info about what failed
-                    for item in patchset.items:
-                        # Handle both bytes and str from patch-ng
-                        target = item.target
-                        if isinstance(target, bytes):
-                            target = target.decode('utf-8', errors='replace')
-                        target_file = os.path.join(abs_build_dir, target)
-                        print(f"    Target: {target}")
-                        print(f"    Full path: {target_file}")
-                        print(f"    Exists: {os.path.exists(target_file)}")
+                # List files in build directory to verify they exist
+                print(f"  Files in {abs_build_dir}:")
+                for f in os.listdir(abs_build_dir)[:10]:
+                    print(f"    - {f}")
+
+                # Apply patch - try strip=3 first, fallback to auto-detect
+                # The patches have paths like: a/libraries/liblmdb/lmdb.h
+                # We need to strip 3 levels: a/, libraries/, liblmdb/
+                # to get: lmdb.h (which is directly in build/lmdb-src/)
+                print(f"  Attempting to apply with strip=3...")
+                success = False
+
+                # Try strip levels 0-4 until one works
+                for strip_level in [3, 2, 4, 1, 0]:
+                    print(f"  Trying strip={strip_level}...")
+                    try:
+                        # patch-ng.PatchSet.apply(strip=N, root=path)
+                        result = patchset.apply(strip_level, abs_build_dir)
+                        if result:
+                            print(f"  [OK] Successfully applied with strip={strip_level}")
+                            success = True
+                            break
+                        else:
+                            print(f"  [FAIL] strip={strip_level} did not work")
+                    except Exception as e:
+                        print(f"  [ERROR] strip={strip_level} raised: {e}")
+                        continue
+
+                if not success:
+                    # None of the strip levels worked
+                    print(f"  [FAIL] Failed to apply patch {patch_file} with any strip level")
                     print(f"ERROR: Failed to apply patch {patch_file}")
                     sys.exit(1)
             except ImportError:
