@@ -558,7 +558,7 @@ check-typing venv="": (install-tools venv) (install venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
     # Only check core zlmdb package, exclude tests and vendored flatbuffers
-    # Note: lmdb/ is not under zlmdb/ so it won't be checked anyway
+    # Note: lmdb module is skipped via mypy.ini [mypy-lmdb.*] configuration
     "${VENV_PATH}/bin/mypy" \
         --exclude '/tests/' \
         --exclude '/flatbuffers/' \

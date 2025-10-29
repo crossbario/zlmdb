@@ -164,3 +164,33 @@ line-ending = "auto"
 
 # Enable auto-formatting of code examples in docstrings
 docstring-code-format = false
+
+# -----------------------------------------------------------------------------
+# PyTest Configuration
+# -----------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+# Only search for tests in these directories
+testpaths = [
+    "tests",
+    "zlmdb/tests",
+]
+
+# Exclude directories from test discovery
+norecursedirs = [
+    ".*",           # Hidden directories (.git, .ai, .venvs, .uv-cache, etc.)
+    "build",        # Build artifacts
+    "dist",         # Distribution artifacts
+    "lmdb",         # Vendored LMDB bindings
+    "lmdb-upstream", # LMDB upstream submodule
+    "lmdb-patches", # LMDB patches
+    "flatbuffers",  # Vendored flatbuffers
+    "deps",         # Dependencies
+    "docs",         # Documentation
+    "*.egg-info",   # Egg info directories
+]
+
+# Python files to ignore
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
