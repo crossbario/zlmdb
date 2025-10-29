@@ -85,14 +85,14 @@ def apply_patches():
             if result.returncode != 0:
                 # patch returns non-zero if already applied, check output
                 if 'Reversed (or previously applied) patch detected' in result.stdout:
-                    print(f"  (already applied)")
+                    print("  (already applied)")
                 else:
                     print(f"ERROR: Failed to apply patch {patch_file}")
                     print(result.stdout)
                     print(result.stderr)
                     sys.exit(1)
             else:
-                print(f"  ✓ Applied successfully")
+                print("  ✓ Applied successfully")
 
     return build_dir
 
