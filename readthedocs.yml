@@ -1,9 +1,7 @@
 version: 2
 
 python:
-   version: 3.8
-   #install:
-   #   - requirements: requirements-rtd.txt
+   version: "3.12"
    install:
       - method: pip
         path: .
@@ -11,4 +9,6 @@ python:
           - dev
 
 build:
-    image: latest
+    os: ubuntu-22.04
+    tools:
+      python: "3.12"
