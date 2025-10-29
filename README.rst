@@ -65,9 +65,9 @@ Complete Recipe List
 
 **Code Quality:** ✨
 
-* ``just lint [venv]`` - Run flake8
-* ``just yapf [venv]`` - Check formatting (dry run)
-* ``just autoformat [venv]`` - Auto-format code (WARNING: modifies files!)
+* ``just autoformat [venv]`` - Auto-format code with Ruff (modifies files!)
+* ``just check-format [venv]`` - Check formatting with Ruff (dry run)
+* ``just check-typing [venv]`` - Run static type checking with mypy
 
 **Building:** 📦
 

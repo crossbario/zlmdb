@@ -62,8 +62,8 @@ dev = [
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "twine>=3.3.0",
-    "yapf==0.29.0",
-    "flake8>=3.7.9",
+    "ruff>=0.1.0",  # Fast Python linter and formatter (replaces flake8/black/yapf)
+    "mypy>=1.0.0",  # Static type checker
     "coverage>=5.0.0",
 ]
 
@@ -92,3 +92,69 @@ zlmdb = ["py.typed"]
 # Configure build to run our custom LMDB patch/build script
 [tool.setuptools.cmdclass]
 # Note: build_lmdb.py will be invoked automatically during wheel/sdist build
+# -----------------------------------------------------------------------------
+# Ruff Configuration
+# -----------------------------------------------------------------------------
+
+[tool.ruff]
+# Same as Black
+line-length = 88
+indent-width = 4
+
+target-version = "py39"  # Minimum supported Python version
+
+[tool.ruff.lint]
+
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default
+select = ["E4", "E7", "E9", "F"]
+
+# --- Files and Directories to Ignore ---
+exclude = [
+    ".tox",
+    ".git",
+    "__pycache__",
+    "flatbuffers/*",
+    "lmdb/*",  # Vendored LMDB bindings
+    "zlmdb/flatbuffers/*",  # Auto-generated flatbuffers code
+    "zlmdb/tests/MNodeLog.py",  # Auto-generated test file
+]
+
+# --- Violations to Ignore ---
+# Technical debt list - aim to remove codes over time
+ignore = [
+    "E275",  # missing whitespace after keyword
+    "F401",  # imported but unused
+    "E402",  # module level import not at top of file
+    "F403",  # unable to detect undefined names
+    "F405",  # may be undefined, or defined from star imports
+    "E501",  # line too long (handled by formatter)
+    "F706",  # return statement outside of a function/method
+    "E713",  # test for membership should be `not in`
+    "E721",  # do not compare types, use isinstance()
+    "E722",  # do not use bare except
+    "E741",  # ambiguous variable name
+    "F811",  # redefinition of unused
+    "F821",  # undefined name
+    "F841",  # local variable is assigned to but never used
+]
+
+# Allow fix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+
+# Like Black, use double quotes for strings
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs
+indent-style = "space"
+
+# Like Black, respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings
+docstring-code-format = false

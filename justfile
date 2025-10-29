@@ -516,32 +516,7 @@ coverage venv="": (install-tools venv) (install venv)
 # -- Code Quality
 # -----------------------------------------------------------------------------
 
-# Run linter (flake8)
-lint venv="": (install-tools venv)
-    #!/usr/bin/env bash
-    set -e
-    VENV_NAME="{{ venv }}"
-    if [ -z "${VENV_NAME}" ]; then
-        VENV_NAME=$(just --quiet _get-system-venv-name)
-    fi
-    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Running flake8 linter in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m flake8 zlmdb tests
-
-# Check code formatting with yapf (dry run)
-yapf venv="": (install-tools venv)
-    #!/usr/bin/env bash
-    set -e
-    VENV_NAME="{{ venv }}"
-    if [ -z "${VENV_NAME}" ]; then
-        VENV_NAME=$(just --quiet _get-system-venv-name)
-    fi
-    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Checking code formatting with yapf in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m yapf --version
-    ${VENV_PYTHON} -m yapf -rd --style=yapf.ini --exclude="zlmdb/flatbuffers/*" --exclude="zlmdb/tests/MNodeLog.py" zlmdb
-
-# Auto-format code with yapf (WARNING: modifies files in-place!)
+# Auto-format code with Ruff (modifies files in-place!)
 autoformat venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
@@ -549,10 +524,40 @@ autoformat venv="": (install-tools venv)
     if [ -z "${VENV_NAME}" ]; then
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
-    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Auto-formatting code with yapf in ${VENV_NAME}..."
-    echo "WARNING: This will modify files in-place!"
-    ${VENV_PYTHON} -m yapf -ri --style=yapf.ini --exclude="zlmdb/flatbuffers/*" zlmdb
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Auto-formatting code with ${VENV_NAME}..."
+
+    # 1. Run the FORMATTER first. This will handle line lengths, quotes, etc.
+    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./zlmdb
+
+    # 2. Run the LINTER'S FIXER second. This will handle things like
+    #    removing unused imports, sorting __all__, etc.
+    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./zlmdb
+    echo "--> Formatting complete."
+
+# Check code formatting with Ruff (dry run)
+check-format venv="": (install-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Checking code formatting with ${VENV_NAME}..."
+    "${VENV_PATH}/bin/ruff" check .
+
+# Run static type checking with mypy
+check-typing venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Running static type checks with ${VENV_NAME}..."
+    "${VENV_PATH}/bin/mypy" zlmdb/
 
 # -----------------------------------------------------------------------------
 # -- Publishing
