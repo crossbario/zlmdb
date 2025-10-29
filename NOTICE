@@ -1,0 +1,30 @@
+zlmdb - Object-relational zero-copy in-memory database layer based on LMDB
+===========================================================================
+
+Copyright (c) typedef int GmbH and contributors
+Licensed under the MIT License (see LICENSE file)
+
+This software includes and distributes the following third-party components:
+
+1. LMDB (Lightning Memory-Mapped Database)
+   Version: 0.9.33
+   Copyright: 2011-2024 Howard Chu, Symas Corp.
+   License: OpenLDAP Public License 2.8
+   Source: https://git.openldap.org/openldap/openldap
+   Git submodule: lmdb-upstream/
+   
+   LMDB C sources are included via git submodule and compiled into zlmdb.
+   The OpenLDAP Public License is included in the LICENSE file.
+
+2. Flatbuffers
+   Version: 25.9.23
+   Copyright: 2014 Google Inc.
+   License: Apache License 2.0
+   Source: https://github.com/google/flatbuffers
+   Git submodule: deps/flatbuffers/
+   
+   Flatbuffers Python runtime is vendored and distributed with zlmdb.
+   The Apache License 2.0 is included in the LICENSE file.
+
+For complete license texts, see the LICENSE file in the root directory.
+For original license files, see the respective git submodule directories.
