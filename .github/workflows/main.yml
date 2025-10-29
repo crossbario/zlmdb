@@ -97,7 +97,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy39, cpy311, cpy312, pypy39]
+        python-env: [cpy311, cpy314, pypy311]
 
     steps:
       - name: Checkout code
