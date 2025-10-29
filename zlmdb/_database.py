@@ -48,8 +48,8 @@ try:
     from twisted.python.reflect import qual
 except ImportError:
 
-    def qual(klass):
-        return klass.__name__
+    def qual(clazz: type) -> str:  # type: ignore[misc]
+        return clazz.__name__
 
 
 KV_TYPE_TO_CLASS = {
