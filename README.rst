@@ -95,8 +95,8 @@ Complete Recipe List
 **Cleaning:** 🧹
 
 * [ ] ``just clean`` - Clean everything (alias for distclean)
-* [ ] ``just clean-build`` - Remove build/ dist/ *.egg-info
-* [ ] ``just clean-pyc`` - Remove *.pyc __pycache__
+* [ ] ``just clean-build`` - Remove build/ dist/ \*.egg-info
+* [ ] ``just clean-pyc`` - Remove \*.pyc __pycache__
 * [ ] ``just clean-test`` - Remove .tox .coverage .pytest_cache
 * [ ] ``just distclean`` - Nuclear clean (removes venvs too!)
 
