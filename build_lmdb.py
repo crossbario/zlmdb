@@ -68,14 +68,51 @@ def apply_patches():
         if sys.platform.startswith('win'):
             try:
                 import patch_ng as patch
-                patchset = patch.fromfile(patch_path)
-                rv = patchset.apply(3, root=build_dir)
-                if not rv:
+
+                # Use absolute paths for patch-ng
+                abs_patch_path = os.path.abspath(patch_path)
+                abs_build_dir = os.path.abspath(build_dir)
+
+                # Debug info
+                print(f"  Patch file: {abs_patch_path}")
+                print(f"  Build directory: {abs_build_dir}")
+                print(f"  Build directory exists: {os.path.exists(abs_build_dir)}")
+                if os.path.exists(abs_build_dir):
+                    print(f"  Files in build dir: {os.listdir(abs_build_dir)[:5]}")
+
+                patchset = patch.fromfile(abs_patch_path)
+                if not patchset:
+                    print(f"ERROR: Failed to parse patch file {patch_file}")
+                    sys.exit(1)
+
+                print(f"  Parsed {len(patchset.items)} patch items")
+
+                # Apply with strip=3 (remove a/, b/, libraries/, liblmdb/ from paths)
+                # root=abs_build_dir means apply patches relative to build/lmdb-src/
+                # Note: patch-ng returns True if all patches applied successfully
+                success = patchset.apply(strip=3, root=abs_build_dir)
+
+                if success:
+                    print("  ✓ Applied successfully")
+                else:
+                    # patch-ng returns False if any patch failed
+                    print(f"  ✗ Failed to apply patch {patch_file}")
+                    # Try to get more info about what failed
+                    for item in patchset.items:
+                        target_file = os.path.join(build_dir, item.target)
+                        print(f"    Target: {item.target}")
+                        print(f"    Full path: {target_file}")
+                        print(f"    Exists: {os.path.exists(target_file)}")
                     print(f"ERROR: Failed to apply patch {patch_file}")
                     sys.exit(1)
             except ImportError:
                 print("ERROR: patch-ng module required on Windows")
                 print("Install with: pip install patch-ng")
+                sys.exit(1)
+            except Exception as e:
+                print(f"ERROR: Exception while applying patch {patch_file}: {e}")
+                import traceback
+                traceback.print_exc()
                 sys.exit(1)
         else:
             # Unix: use patch command
