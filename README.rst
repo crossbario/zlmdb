@@ -36,70 +36,76 @@ Complete Recipe List
 
 **Virtual Environment Management:**
 
-* ``just create [venv]`` - Create Python venv (auto-detects system Python if no arg)
-* ``just create-all`` - Create all venvs (cpy314, cpy313, cpy312, cpy311, pypy311)
-* ``just version [venv]`` - Show Python version
-* ``just list-all`` - List all available Python runtimes
+* [ ] ``just create [venv]`` - Create Python venv (auto-detects system Python if no arg)
+* [ ] ``just create-all`` - Create all venvs (cpy314, cpy313, cpy312, cpy311, pypy311)
+* [ ] ``just version [venv]`` - Show Python version
+* [ ] ``just list-all`` - List all available Python runtimes
 
 **Installation:**
 
-* ``just install [venv]`` - Install zlmdb (runtime deps only)
-* ``just install-dev [venv]`` - Install in editable mode
-* ``just install-tools [venv]`` - Install dev tools (pytest, sphinx, etc.)
-* ``just install-all`` - Install in all venvs
+* [ ] ``just install [venv]`` - Install zlmdb (runtime deps only)
+* [ ] ``just install-dev [venv]`` - Install in editable mode
+* [ ] ``just install-tools [venv]`` - Install dev tools (pytest, sphinx, etc.)
+* [ ] ``just install-all`` - Install in all venvs
 
 **Testing:** 🧪
 
-* ``just test [venv]`` - Run full test suite (both test directories)
-* ``just test-quick [venv]`` - Quick pytest run (no tox)
-* ``just test-single [venv]`` - Run test_basic.py
-* ``just test-pmaps [venv]`` - Run pmap tests
-* ``just test-indexes [venv]`` - Run index tests
-* ``just test-select [venv]`` - Run select tests
-* ``just test-zdb-etcd/df/dyn/fbs [venv]`` - Individual zdb tests
-* ``just test-zdb [venv]`` - All zdb tests
-* ``just test-all`` - Test in all venvs
-* ``just test-tox`` - Run tox (py39-py313, flake8, coverage, mypy, yapf, sphinx)
-* ``just test-tox-all`` - All tox environments
-* ``just coverage [venv]`` - Generate HTML coverage report
+* [ ] ``just test [venv]`` - Run full test suite (both test directories)
+* [ ] ``just test-quick [venv]`` - Quick pytest run (no tox)
+* [x] ``just test-single [venv]`` - Run test_basic.py
+* [x] ``just test-pmaps [venv]`` - Run pmap tests
+* [x] ``just test-indexes [venv]`` - Run index tests
+* [x] ``just test-select [venv]`` - Run select tests
+* [ ] ``just test-zdb-etcd/df/dyn/fbs [venv]`` - Individual zdb tests
+* [ ] ``just test-zdb [venv]`` - All zdb tests
+* [ ] ``just test-all`` - Test in all venvs
+* [ ] ``just test-tox`` - Run tox (py39-py313, flake8, coverage, mypy, yapf, sphinx)
+* [ ] ``just test-tox-all`` - All tox environments
+* [ ] ``just coverage [venv]`` - Generate HTML coverage report
 
 **Code Quality:** ✨
 
+<<<<<<< Updated upstream
 * ``just autoformat [venv]`` - Auto-format code with Ruff (modifies files!)
 * ``just check-format [venv]`` - Check formatting with Ruff (dry run)
 * ``just check-typing [venv]`` - Run static type checking with mypy
+=======
+* [ ] ``just lint [venv]`` - Run flake8
+* [ ] ``just yapf [venv]`` - Check formatting (dry run)
+* [ ] ``just autoformat [venv]`` - Auto-format code (WARNING: modifies files!)
+>>>>>>> Stashed changes
 
 **Building:** 📦
 
-* ``just build [venv]`` - Build wheel
-* ``just build-sourcedist [venv]`` - Build sdist
-* ``just build-all`` - Build wheels for all venvs
-* ``just dist [venv]`` - Build both sdist and wheel
+* [ ] ``just build [venv]`` - Build wheel
+* [ ] ``just build-sourcedist [venv]`` - Build sdist
+* [ ] ``just build-all`` - Build wheels for all venvs
+* [ ] ``just dist [venv]`` - Build both sdist and wheel
 
 **Publishing:** 🚀
 
-* ``just publish [venv]`` - Upload to PyPI with twine
+* [ ] ``just publish [venv]`` - Upload to PyPI with twine
 
 **Documentation:** 📚
 
-* ``just docs [venv]`` - Build HTML docs with Sphinx
-* ``just docs-view [venv]`` - Build and open in browser
-* ``just docs-clean`` - Clean doc build artifacts
+* [ ] ``just docs [venv]`` - Build HTML docs with Sphinx
+* [ ] ``just docs-view [venv]`` - Build and open in browser
+* [ ] ``just docs-clean`` - Clean doc build artifacts
 
 **Cleaning:** 🧹
 
-* ``just clean`` - Clean everything (alias for distclean)
-* ``just clean-build`` - Remove build/ dist/ *.egg-info
-* ``just clean-pyc`` - Remove *.pyc __pycache__
-* ``just clean-test`` - Remove .tox .coverage .pytest_cache
-* ``just distclean`` - Nuclear clean (removes venvs too!)
+* [ ] ``just clean`` - Clean everything (alias for distclean)
+* [ ] ``just clean-build`` - Remove build/ dist/ *.egg-info
+* [ ] ``just clean-pyc`` - Remove *.pyc __pycache__
+* [ ] ``just clean-test`` - Remove .tox .coverage .pytest_cache
+* [ ] ``just distclean`` - Nuclear clean (removes venvs too!)
 
 **Utilities:** 🔧
 
-* ``just update-flatbuffers`` - Update from deps/ submodule
-* ``just generate-flatbuffers-reflection`` - Generate reflection code
-* ``just fix-copyright`` - Update copyright headers
-* ``just setup-completion`` - Setup bash tab completion
+* [ ] ``just update-flatbuffers`` - Update from deps/ submodule
+* [ ] ``just generate-flatbuffers-reflection`` - Generate reflection code
+* [ ] ``just fix-copyright`` - Update copyright headers
+* [ ] ``just setup-completion`` - Setup bash tab completion
 
 Quick Start
 -----------

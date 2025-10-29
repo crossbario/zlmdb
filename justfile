@@ -72,7 +72,7 @@ _get-venv-python venv="":
 # -- General/global helper recipes
 # -----------------------------------------------------------------------------
 
-# Setup bash tab completion for the current user
+# Setup bash tab completion for the current user (to activate: `source ~/.config/bash_completion`).
 setup-completion:
     #!/usr/bin/env bash
     set -e
