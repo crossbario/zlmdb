@@ -1,0 +1,583 @@
+name: wheels
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: ["**"]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [master]
+
+  # Publish to GitHub Releases when merged to master
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Ensure uv and just are available in PATH
+  UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
+
+jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # =========================================================
+          # zlmdb builds binary wheels with compiled LMDB C sources
+          # using CFFI on all platforms (required for CPython and PyPy)
+          # =========================================================
+
+          # --- Linux ---
+          - os: ubuntu-24.04 # ✅ GitHub-hosted Linux x86_64 (most common, always fast)
+            platform: linux
+            arch: x86_64
+
+          # --- macOS ---
+          - os: macos-15 # ✅ GitHub-hosted macOS Apple Silicon (current Macs, fast)
+            platform: macos
+            arch: arm64
+
+          # --- Windows ---
+          - os: windows-2022 # ✅ GitHub-hosted Windows x86_64 (mostly fast)
+            platform: windows
+            arch: x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive # CRITICAL: zlmdb needs lmdb-upstream submodule
+
+      # Install just task runner
+      - name: Install Just (Linux/macOS)
+        if: runner.os != 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install Just (Windows)
+        if: runner.os == 'Windows'
+        uses: extractions/setup-just@v3
+        with:
+          just-version: "1.42.3"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Install uv package manager
+      - name: Install uv (Linux/macOS)
+        if: runner.os != 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install uv (Windows)
+        if: runner.os == 'Windows'
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.7.19"
+          enable-cache: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify toolchain installation (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          just --version
+          uv --version
+        shell: bash
+
+      - name: Verify toolchain installation (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          just --version
+          uv --version
+        shell: pwsh
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key:
+            uv-cache-${{ matrix.platform }}-${{ matrix.arch
+            }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
+            uv-cache-${{ matrix.platform }}-
+
+      # Build binary wheels with compiled LMDB (all platforms)
+      - name: Build binary wheels with CFFI+LMDB (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          # Build binary wheels with compiled LMDB C sources via CFFI
+          # This is REQUIRED for both CPython and PyPy
+          just build-all
+        shell: bash
+
+      - name: Build binary wheels with CFFI+LMDB (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Build binary wheels with compiled LMDB C sources via CFFI
+          # This is REQUIRED for both CPython and PyPy
+          just build-all
+        shell: pwsh
+
+      - name: Build source distribution (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          # Build source distribution (only once, on Linux x86_64)
+          # Source distributions are platform-independent
+          just build-sourcedist
+        shell: bash
+
+      - name: Force file system sync (post-build, pre-validation) - Linux
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Build)"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
+      - name: Validate wheels integrity (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (Fail Fast)"
+          echo "======================================================================"
+          echo ""
+          echo "Installing twine for validation..."
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+          echo ""
+
+          echo "==> Validation environment:"
+          echo "Python: $(python3 --version)"
+          echo "twine: $(twine --version)"
+          echo ""
+
+          # Initialize validation output file
+          VALIDATION_FILE="dist/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time (wheels workflow)" > "$VALIDATION_FILE"
+          echo "=========================================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Platform: Linux x86_64 (binary with CFFI+LMDB)" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+
+          for wheel in dist/*.whl; do
+            if [ ! -f "$wheel" ]; then
+              echo "⚠️  No wheels found in dist/"
+              continue
+            fi
+
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "" >> "$VALIDATION_FILE"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            # Test 1: ZIP integrity
+            echo "  [1/3] ZIP integrity test..."
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ ZIP test FAIL - wheel is corrupted!"
+              echo "  ZIP test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile module
+            echo "  [2/3] Python zipfile test..."
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Python zipfile test FAIL - wheel is corrupted!"
+              echo "  Python zipfile test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check
+            echo "  [3/3] Twine validation..."
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            TWINE_EXIT=${PIPESTATUS[0]}
+
+            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Twine check FAIL"
+              cat /tmp/twine_output.txt
+              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "======================================================================"
+            echo "❌ WHEEL VALIDATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "DO NOT PROCEED - corrupted wheels must NOT become artifacts!"
+            exit 1
+          else
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "======================================================================"
+            echo "✅ All wheels validated successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Validation results written to: $VALIDATION_FILE"
+          fi
+        shell: bash
+
+      - name: Generate SHA256 checksums (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Generating SHA256 Checksums for Chain of Custody"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+
+          # Force sync before checksumming
+          echo "Forcing sync before checksumming..."
+          sync
+          echo "✅ Buffers flushed"
+          echo ""
+
+          # Change to dist directory to generate relative paths
+          cd dist
+
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+
+          # Generate checksums for all wheels
+          echo "Generating checksums for wheels..."
+          for wheel in *.whl; do
+            if [ -f "$wheel" ]; then
+              sync
+              openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
+            fi
+          done
+
+          echo ""
+          echo "==> Generated checksum file:"
+          cat "$CHECKSUM_FILE"
+          echo ""
+
+          cd ..
+        shell: bash
+
+      - name: Force file system sync (post-checksum, pre-upload) - Linux
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Checksum)"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
+      - name: Force file system sync (post-build, pre-validation) - macOS
+        if: matrix.platform == 'macos'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Build)"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
+      - name: Validate wheels integrity (macOS only)
+        if: matrix.platform == 'macos'
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (macOS)"
+          echo "======================================================================"
+          echo ""
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+          echo ""
+
+          VALIDATION_FILE="dist/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time (wheels workflow)" > "$VALIDATION_FILE"
+          echo "=========================================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Platform: macOS ARM64 (binary with CFFI+LMDB)" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+          for wheel in dist/*.whl; do
+            [ -f "$wheel" ] || continue
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "" >> "$VALIDATION_FILE"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ ZIP test FAIL"
+              echo "  ZIP test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Python zipfile test FAIL"
+              echo "  Python zipfile test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            if [ ${PIPESTATUS[0]} -eq 0 ] && ! grep -Eqi "ERROR|FAILED" /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Twine check FAIL"
+              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "❌ WHEEL VALIDATION FAILED"
+            exit 1
+          else
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "✅ All wheels validated successfully"
+          fi
+        shell: bash
+
+      - name: Generate SHA256 checksums (macOS only)
+        if: matrix.platform == 'macos'
+        run: |
+          echo "==> Generating SHA256 checksums..."
+          sync
+          cd dist
+          for wheel in *.whl; do
+            [ -f "$wheel" ] && openssl sha256 "$wheel" | tee -a CHECKSUMS.sha256
+          done
+          cat CHECKSUMS.sha256
+          cd ..
+        shell: bash
+
+      - name: Force file system sync (post-checksum) - macOS
+        if: matrix.platform == 'macos'
+        run: sync
+        shell: bash
+
+      - name: Validate wheels integrity (Windows only)
+        if: matrix.platform == 'windows'
+        run: |
+          Write-Host "======================================================================"
+          Write-Host "==> Validating Wheel Integrity (Windows)"
+          Write-Host "======================================================================"
+          Write-Host ""
+          python -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+          Write-Host ""
+
+          $validationFile = "dist\VALIDATION.txt"
+          "Wheel Validation Results - Build Time (wheels workflow)" | Out-File -FilePath $validationFile -Encoding UTF8
+          "=========================================================" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Validation Date: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss UTC'))" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Platform: Windows x86_64 (binary with CFFI+LMDB)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Python: $(python --version)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "twine: $(twine --version)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+
+          $hasErrors = $false
+          Get-ChildItem dist\*.whl | ForEach-Object {
+            $wheelName = $_.Name
+            Write-Host "==> Validating: $wheelName"
+            "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            "Wheel: $wheelName" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            "---" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+
+            # Test 1: ZIP integrity
+            try {
+              [System.IO.Compression.ZipFile]::OpenRead($_.FullName).Dispose()
+              Write-Host "  ✅ ZIP test PASS"
+              "  ZIP test: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } catch {
+              Write-Host "  ❌ ZIP test FAIL"
+              "  ZIP test: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+
+            # Test 2: Python zipfile module
+            $zipfileTest = python -m zipfile -t $_.FullName 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "  ✅ Python zipfile test PASS"
+              "  Python zipfile test: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } else {
+              Write-Host "  ❌ Python zipfile test FAIL"
+              "  Python zipfile test: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+
+            # Test 3: twine check
+            $twineOutput = twine check $_.FullName 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0 -and $twineOutput -notmatch "ERROR|FAILED") {
+              Write-Host "  ✅ Twine check PASS"
+              "  Twine check: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } else {
+              Write-Host "  ❌ Twine check FAIL"
+              "  Twine check: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $twineOutput | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+          }
+
+          if ($hasErrors) {
+            "RESULT: VALIDATION FAILED" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            Write-Host "❌ WHEEL VALIDATION FAILED"
+            exit 1
+          } else {
+            "RESULT: ALL VALIDATIONS PASSED" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            Write-Host "✅ All wheels validated successfully"
+          }
+        shell: pwsh
+
+      - name: Generate SHA256 checksums (Windows only)
+        if: matrix.platform == 'windows'
+        run: |
+          Write-Host "==> Generating SHA256 checksums..."
+          Set-Location dist
+          $checksumFile = "CHECKSUMS.sha256"
+          Get-ChildItem *.whl | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 $_.Name).Hash.ToLower()
+            $line = "SHA256($($_.Name))= $hash"
+            Write-Host $line
+            $line | Out-File -FilePath $checksumFile -Append -Encoding UTF8
+          }
+          Get-Content $checksumFile
+          Set-Location ..
+        shell: pwsh
+
+      - name: List built artifacts (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          echo "Built wheels:"
+          ls -la dist/
+        shell: bash
+
+      - name: List built artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Built wheels:"
+          Get-ChildItem dist
+        shell: pwsh
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/
+          retention-days: 30
+
+      - name: Verify source distribution integrity (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          echo "======================================================================"
+          echo "==> Source Distribution Integrity Verification"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found in dist/"
+              continue
+            fi
+
+            BASENAME=$(basename "$tarball")
+            echo "==> Verifying: $BASENAME"
+            echo ""
+
+            # Gzip integrity test
+            if gzip -tv "$tarball" 2>&1 | tee /tmp/gzip_output.txt; then
+              echo "✅ Gzip integrity test PASS"
+            else
+              echo "❌ Gzip integrity test FAIL"
+              cat /tmp/gzip_output.txt
+              exit 1
+            fi
+
+            # Check for trailing garbage
+            if grep -qi "trailing garbage" /tmp/gzip_output.txt; then
+              echo "❌ ERROR: Source distribution has trailing garbage!"
+              exit 1
+            fi
+            rm -f /tmp/gzip_output.txt
+
+            # Tar extraction test
+            if tar -tzf "$tarball" > /dev/null 2>&1; then
+              echo "✅ Tar extraction test PASS"
+            else
+              echo "❌ Tar extraction test FAIL"
+              exit 1
+            fi
+
+            # Generate checksum
+            openssl sha256 "$tarball"
+
+            echo "✅ $BASENAME verified successfully"
+            echo ""
+          done
+
+          echo "======================================================================"
+          echo "✅ All source distributions verified successfully"
+          echo "======================================================================"
+        shell: bash
+
+      - name: Upload source distribution (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+          retention-days: 30

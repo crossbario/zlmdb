@@ -30,11 +30,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
 
-    - name: Run Flake8
-      run: tox -c tox.ini -e flake8
-
-    - name: Run Yapf
-      run: tox -c tox.ini -e yapf
+    - name: Run Ruff format check
+      run: tox -c tox.ini -e ruff
 
     - name: Run MyPy
       run: tox -c tox.ini -e mypy

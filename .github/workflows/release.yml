@@ -1,0 +1,308 @@
+name: release
+
+on:
+  # Auto-trigger after wheels and main workflows complete
+  workflow_run:
+    workflows: ["wheels", "main"]
+    types: [completed]
+
+  # Manual dispatch for debugging
+  workflow_dispatch:
+
+jobs:
+  check-workflows:
+    name: Check if all workflows completed
+    runs-on: ubuntu-latest
+    outputs:
+      all_complete: ${{ steps.check.outputs.all_complete }}
+      wheels_run_id: ${{ steps.check.outputs.wheels_run_id }}
+      main_run_id: ${{ steps.check.outputs.main_run_id }}
+      is_tag: ${{ steps.check.outputs.is_tag }}
+      tag_name: ${{ steps.check.outputs.tag_name }}
+
+    steps:
+      - name: Check all required workflows completed
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredWorkflows = ['wheels', 'main'];
+
+            // Handle both workflow_run and workflow_dispatch triggers
+            const commitSha = context.payload.workflow_run?.head_sha || context.sha;
+            const triggeredBy = context.payload.workflow_run?.name || 'manual (workflow_dispatch)';
+
+            console.log('─────────────────────────────────────────────────');
+            console.log('🔍 Checking workflow completion status');
+            console.log('─────────────────────────────────────────────────');
+            console.log(`Event: ${context.eventName}`);
+            console.log(`Commit SHA: ${commitSha}`);
+            console.log(`Triggered by: ${triggeredBy}`);
+            console.log('');
+
+            // Get all workflow runs for this commit
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: commitSha,
+              per_page: 100
+            });
+
+            // Group by workflow name and find latest run for each
+            const latestRuns = {};
+            for (const run of runs.workflow_runs) {
+              const workflowName = run.name;
+              if (requiredWorkflows.includes(workflowName)) {
+                if (!latestRuns[workflowName] || run.id > latestRuns[workflowName].id) {
+                  latestRuns[workflowName] = run;
+                }
+              }
+            }
+
+            // Check if all required workflows completed successfully
+            console.log('Required workflows status:');
+            const allComplete = requiredWorkflows.every(name => {
+              const run = latestRuns[name];
+              const complete = run && run.status === 'completed' && run.conclusion === 'success';
+              const status = run ? `${run.status}/${run.conclusion}` : 'not found';
+              console.log(`  ${complete ? '✅' : '⏳'} ${name.padEnd(20)} : ${status}`);
+              return complete;
+            });
+
+            console.log('');
+            if (!allComplete) {
+              console.log('⏳ Not all workflows complete yet - exiting early');
+              console.log('   This is normal! Release will proceed once all workflows finish.');
+            } else {
+              console.log('✅ All workflows complete - proceeding with release!');
+            }
+            console.log('─────────────────────────────────────────────────');
+
+            core.setOutput('all_complete', allComplete ? 'true' : 'false');
+
+            // Output run IDs for artifact downloads
+            core.setOutput('wheels_run_id', latestRuns['wheels']?.id || '');
+            core.setOutput('main_run_id', latestRuns['main']?.id || '');
+
+            // Check if this is a tag push
+            const ref = context.payload.workflow_run?.head_branch || context.ref;
+            const isTag = ref && ref.startsWith('refs/tags/v');
+            const tagName = isTag ? ref.replace('refs/tags/', '') : '';
+
+            console.log('');
+            console.log(`Is tag: ${isTag}`);
+            console.log(`Tag name: ${tagName}`);
+
+            core.setOutput('is_tag', isTag ? 'true' : 'false');
+            core.setOutput('tag_name', tagName);
+
+  # Development GitHub releases (for master branch builds)
+  release-development:
+    name: Development GitHub Release
+    needs: check-workflows
+    runs-on: ubuntu-latest
+
+    # Only create releases for development builds (not tags)
+    if: |
+      needs.check-workflows.outputs.all_complete == 'true' &&
+      needs.check-workflows.outputs.is_tag == 'false' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download Linux wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-x86_64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download macOS wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List all downloaded artifacts
+        run: |
+          echo "======================================================================"
+          echo "Downloaded artifacts:"
+          echo "======================================================================"
+          ls -lh dist/
+          echo ""
+          echo "Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
+          echo "Source dist count: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
+          echo "======================================================================"
+
+      - name: Generate consolidated checksums
+        run: |
+          cd dist
+          echo "Generating consolidated SHA256 checksums..."
+          sha256sum *.whl *.tar.gz > CHECKSUMS-ALL.sha256
+          echo ""
+          echo "======================================================================"
+          echo "Consolidated checksums:"
+          echo "======================================================================"
+          cat CHECKSUMS-ALL.sha256
+          cd ..
+
+      - name: Create Development Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-${{ github.sha }}
+          name: Development Build ${{ github.sha }}
+          body: |
+            ## Development Build
+
+            Automated development build from commit ${{ github.sha }}
+
+            **⚠️ This is a development build and should not be used in production!**
+
+            Built wheels for:
+            - Linux x86_64
+            - macOS ARM64
+            - Windows x86_64
+
+            Includes source distribution (.tar.gz)
+
+            See CHECKSUMS-ALL.sha256 for file integrity verification.
+          files: dist/*
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Production releases (for version tags)
+  release-production:
+    name: Production Release (PyPI)
+    needs: check-workflows
+    runs-on: ubuntu-latest
+
+    # Only publish to PyPI for version tags
+    if: |
+      needs.check-workflows.outputs.all_complete == 'true' &&
+      needs.check-workflows.outputs.is_tag == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+
+    environment: pypi
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download Linux wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-x86_64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download macOS wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+          run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List all downloaded artifacts
+        run: |
+          echo "======================================================================"
+          echo "Downloaded artifacts for release ${{ needs.check-workflows.outputs.tag_name }}:"
+          echo "======================================================================"
+          ls -lh dist/
+          echo ""
+          echo "Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
+          echo "Source dist count: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
+          echo "======================================================================"
+
+      - name: Generate consolidated checksums
+        run: |
+          cd dist
+          echo "Generating consolidated SHA256 checksums..."
+          sha256sum *.whl *.tar.gz > CHECKSUMS-ALL.sha256
+          echo ""
+          echo "======================================================================"
+          echo "Consolidated checksums:"
+          echo "======================================================================"
+          cat CHECKSUMS-ALL.sha256
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-workflows.outputs.tag_name }}
+          name: Release ${{ needs.check-workflows.outputs.tag_name }}
+          body: |
+            ## zlmdb ${{ needs.check-workflows.outputs.tag_name }}
+
+            Official release build
+
+            Built wheels for:
+            - Linux x86_64
+            - macOS ARM64
+            - Windows x86_64
+
+            Includes source distribution (.tar.gz)
+
+            See CHECKSUMS-ALL.sha256 for file integrity verification.
+
+            Also published to PyPI: https://pypi.org/project/zlmdb/
+          files: dist/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
+          verify-metadata: true
+          skip-existing: false
+          print-hash: true
