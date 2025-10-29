@@ -160,10 +160,19 @@ class User(object):
 
         if self._birthday is not None:
             _user.UserAddBirthday(
-                builder, _date.CreateDate(builder, self._birthday.year, self._birthday.month, self._birthday.day))
+                builder,
+                _date.CreateDate(
+                    builder,
+                    self._birthday.year,
+                    self._birthday.month,
+                    self._birthday.day,
+                ),
+            )
         else:
             bd = self._from_fbs.Birthday()
-            _user.UserAddBirthday(builder, _date.CreateDate(builder, bd.Year(), bd.Month(), bd.Day()))
+            _user.UserAddBirthday(
+                builder, _date.CreateDate(builder, bd.Year(), bd.Month(), bd.Day())
+            )
 
         # FIXME: tags
         # FIXME: ratings
@@ -192,15 +201,15 @@ class User(object):
             user.oid = oid
         else:
             user.oid = random.randint(0, 9007199254740992)
-        user.name = 'Test {}'.format(user.oid)
-        user.authid = 'test-{}'.format(user.oid)
+        user.name = "Test {}".format(user.oid)
+        user.authid = "test-{}".format(user.oid)
         user.uuid = uuid.uuid4()
-        user.email = '{}@example.com'.format(user.authid)
+        user.email = "{}@example.com".format(user.authid)
         user.birthday = datetime.date(1950, 12, 24)
         user.is_friendly = True
-        user.tags = ['geek', 'sudoko', 'yellow']
+        user.tags = ["geek", "sudoko", "yellow"]
         for j in range(10):
-            user.ratings['test-rating-{}'.format(j)] = random.random()
+            user.ratings["test-rating-{}".format(j)] = random.random()
         user.friends = [random.randint(0, 9007199254740992) for _ in range(10)]
         user.referred_by = random.randint(0, 9007199254740992)
         return user

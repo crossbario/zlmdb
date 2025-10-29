@@ -53,13 +53,13 @@ except ImportError:
 
 
 KV_TYPE_TO_CLASS = {
-    'string-json': (MapStringJson, lambda x: x, lambda x: x),
-    'string-cbor': (MapStringCbor, lambda x: x, lambda x: x),
-    'uuid-json': (MapUuidJson, lambda x: x, lambda x: x),
-    'uuid-cbor': (MapUuidCbor, lambda x: x, lambda x: x),
+    "string-json": (MapStringJson, lambda x: x, lambda x: x),
+    "string-cbor": (MapStringCbor, lambda x: x, lambda x: x),
+    "uuid-json": (MapUuidJson, lambda x: x, lambda x: x),
+    "uuid-cbor": (MapUuidCbor, lambda x: x, lambda x: x),
 }
 
-_LMDB_MYPID_ENVS: Dict[str, Tuple['Database', int]] = {}
+_LMDB_MYPID_ENVS: Dict[str, Tuple["Database", int]] = {}
 
 
 class ConfigurationElement(object):
@@ -68,17 +68,19 @@ class ConfigurationElement(object):
     """
 
     __slots__ = (
-        '_oid',
-        '_name',
-        '_description',
-        '_tags',
+        "_oid",
+        "_name",
+        "_description",
+        "_tags",
     )
 
-    def __init__(self,
-                 oid: Optional[uuid.UUID] = None,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 tags: Optional[List[str]] = None):
+    def __init__(
+        self,
+        oid: Optional[uuid.UUID] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+    ):
         self._oid = oid
         self._name = name
         self._description = description
@@ -124,25 +126,27 @@ class ConfigurationElement(object):
 
     def marshal(self) -> Dict[str, Any]:
         value: Dict[str, Any] = {
-            'oid': str(self._oid),
-            'name': self._name,
+            "oid": str(self._oid),
+            "name": self._name,
         }
         if self.description:
-            value['description'] = self._description
+            value["description"] = self._description
         if self.tags:
-            value['tags'] = self._tags
+            value["tags"] = self._tags
         return value
 
     @staticmethod
-    def parse(value: Dict[str, Any]) -> 'ConfigurationElement':
+    def parse(value: Dict[str, Any]) -> "ConfigurationElement":
         assert type(value) == dict
-        oid = value.get('oid', None)
+        oid = value.get("oid", None)
         if oid:
             oid = uuid.UUID(oid)
-        obj = ConfigurationElement(oid=oid,
-                                   name=value.get('name', None),
-                                   description=value.get('description', None),
-                                   tags=value.get('tags', None))
+        obj = ConfigurationElement(
+            oid=oid,
+            name=value.get("name", None),
+            description=value.get("description", None),
+            tags=value.get("tags", None),
+        )
         return obj
 
 
@@ -152,18 +156,22 @@ class Slot(ConfigurationElement):
     """
 
     __slots__ = (
-        '_slot',
-        '_creator',
+        "_slot",
+        "_creator",
     )
 
-    def __init__(self,
-                 oid: Optional[uuid.UUID] = None,
-                 name: Optional[str] = None,
-                 description: Optional[str] = None,
-                 tags: Optional[List[str]] = None,
-                 slot: Optional[int] = None,
-                 creator: Optional[str] = None):
-        ConfigurationElement.__init__(self, oid=oid, name=name, description=description, tags=tags)
+    def __init__(
+        self,
+        oid: Optional[uuid.UUID] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        slot: Optional[int] = None,
+        creator: Optional[str] = None,
+    ):
+        ConfigurationElement.__init__(
+            self, oid=oid, name=name, description=description, tags=tags
+        )
         self._slot = slot
         self._creator = creator
 
@@ -180,27 +188,31 @@ class Slot(ConfigurationElement):
 
     def marshal(self) -> Dict[str, Any]:
         obj = ConfigurationElement.marshal(self)
-        obj.update({
-            'creator': self._creator,
-            'slot': self._slot,
-        })
+        obj.update(
+            {
+                "creator": self._creator,
+                "slot": self._slot,
+            }
+        )
         return obj
 
     @staticmethod
-    def parse(data: Dict[str, Any]) -> 'Slot':
+    def parse(data: Dict[str, Any]) -> "Slot":
         assert type(data) == dict
 
         obj = ConfigurationElement.parse(data)
 
-        slot = data.get('slot', None)
-        creator = data.get('creator', None)
+        slot = data.get("slot", None)
+        creator = data.get("creator", None)
 
-        drvd_obj = Slot(oid=obj.oid,
-                        name=obj.name,
-                        description=obj.description,
-                        tags=obj.tags,
-                        slot=slot,
-                        creator=creator)
+        drvd_obj = Slot(
+            oid=obj.oid,
+            name=obj.name,
+            description=obj.description,
+            tags=obj.tags,
+            slot=slot,
+            creator=creator,
+        )
         return drvd_obj
 
 
@@ -222,16 +234,16 @@ class Schema(object):
         return self._slots[self._slots_byname[name]]
 
     def __setitem__(self, name, value):
-        raise NotImplementedError('schema is read-only')
+        raise NotImplementedError("schema is read-only")
 
     def __delitem__(self, name):
-        raise NotImplementedError('schema is read-only')
+        raise NotImplementedError("schema is read-only")
 
     def __len__(self):
         return len(self._slots_byname)
 
     def __iter__(self):
-        raise Exception('not implemented')
+        raise Exception("not implemented")
 
     @staticmethod
     def parse(filename, klassmap=KV_TYPE_TO_CLASS):
@@ -242,47 +254,51 @@ class Schema(object):
             slots = {}
             slots_byname = {}
 
-            for slot in _meta.get('slots', []):
-                _index = slot.get('index', None)
+            for slot in _meta.get("slots", []):
+                _index = slot.get("index", None)
                 assert type(_index) == int and _index >= 100 and _index < 65536
                 assert _index not in slots
 
-                _name = slot.get('name', None)
+                _name = slot.get("name", None)
                 assert type(_name) == str
                 assert _name not in slots_byname
 
-                _key = slot.get('key', None)
-                assert _key in ['string', 'uuid']
+                _key = slot.get("key", None)
+                assert _key in ["string", "uuid"]
 
-                _value = slot.get('value', None)
-                assert _value in ['json', 'cbor']
+                _value = slot.get("value", None)
+                assert _value in ["json", "cbor"]
 
-                _schema = slot.get('schema', None)
+                _schema = slot.get("schema", None)
                 assert _schema is None or type(_schema) == str
 
-                _description = slot.get('description', None)
-                assert (_description is None or type(_description) == str)
+                _description = slot.get("description", None)
+                assert _description is None or type(_description) == str
 
                 if _schema:
-                    _kv_type = '{}-{}-{}'.format(_key, _value, _schema)
+                    _kv_type = "{}-{}-{}".format(_key, _value, _schema)
                 else:
-                    _kv_type = '{}-{}'.format(_key, _value)
+                    _kv_type = "{}-{}".format(_key, _value)
 
-                _kv_klass, _marshal, _unmarshal = klassmap.get(_kv_type, (None, None, None))
+                _kv_klass, _marshal, _unmarshal = klassmap.get(
+                    _kv_type, (None, None, None)
+                )
 
                 assert _kv_klass
                 assert _marshal
                 assert _unmarshal
 
                 meta[_index] = {
-                    'index': _index,
-                    'name': _name,
-                    'key': _key,
-                    'value': _value,
-                    'impl': _kv_klass.__name__ if _kv_klass else None,
-                    'description': _description,
+                    "index": _index,
+                    "name": _name,
+                    "key": _key,
+                    "value": _value,
+                    "impl": _kv_klass.__name__ if _kv_klass else None,
+                    "description": _description,
                 }
-                slots[_index] = _kv_klass(_index, marshal=_marshal, unmarshal=_unmarshal)
+                slots[_index] = _kv_klass(
+                    _index, marshal=_marshal, unmarshal=_unmarshal
+                )
                 slots_byname[_name] = _index
 
             return Schema(meta, slots, slots_byname)
@@ -298,35 +314,38 @@ class Database(object):
     To manage these resources in a robust way, this class implements
     the Python context manager interface.
     """
+
     __slots__ = (
-        'log',
-        '_is_temp',
-        '_tempdir',
-        '_dbpath',
-        '_maxsize',
-        '_readonly',
-        '_lock',
-        '_sync',
-        '_create',
-        '_open_now',
-        '_writemap',
-        '_context',
-        '_slots',
-        '_slots_by_index',
-        '_env',
+        "log",
+        "_is_temp",
+        "_tempdir",
+        "_dbpath",
+        "_maxsize",
+        "_readonly",
+        "_lock",
+        "_sync",
+        "_create",
+        "_open_now",
+        "_writemap",
+        "_context",
+        "_slots",
+        "_slots_by_index",
+        "_env",
     )
 
-    def __init__(self,
-                 dbpath: Optional[str] = None,
-                 maxsize: int = 10485760,
-                 readonly: bool = False,
-                 lock: bool = True,
-                 sync: bool = True,
-                 create: bool = True,
-                 open_now: bool = True,
-                 writemap: bool = False,
-                 context: Any = None,
-                 log: Optional[txaio.interfaces.ILogger] = None):
+    def __init__(
+        self,
+        dbpath: Optional[str] = None,
+        maxsize: int = 10485760,
+        readonly: bool = False,
+        lock: bool = True,
+        sync: bool = True,
+        create: bool = True,
+        open_now: bool = True,
+        writemap: bool = False,
+        context: Any = None,
+        log: Optional[txaio.interfaces.ILogger] = None,
+    ):
         """
 
         :param dbpath: LMDB database path: a directory with (at least) 2 files, a ``data.mdb`` and a ``lock.mdb``.
@@ -414,8 +433,16 @@ class Database(object):
                     other_obj, other_pid = _LMDB_MYPID_ENVS[self._dbpath]
                     raise RuntimeError(
                         'tried to open same dbpath "{}" twice within same process: cannot open database '
-                        'for {} (PID {}, Context {}), already opened in {} (PID {}, Context {})'.format(
-                            self._dbpath, self, os.getpid(), self.context, other_obj, other_pid, other_obj.context))
+                        "for {} (PID {}, Context {}), already opened in {} (PID {}, Context {})".format(
+                            self._dbpath,
+                            self,
+                            os.getpid(),
+                            self.context,
+                            other_obj,
+                            other_pid,
+                            other_obj.context,
+                        )
+                    )
                 _LMDB_MYPID_ENVS[self._dbpath] = self, os.getpid()
 
             # handle lmdb.LockError: mdb_txn_begin: Resource temporarily unavailable
@@ -432,14 +459,16 @@ class Database(object):
                     # https://lmdb.readthedocs.io/en/release/#writemap-mode
                     # map_size: Maximum size database may grow to; used to size the memory mapping.
                     # lock=True is needed for concurrent access, even when only by readers (because of space mgmt)
-                    self._env = lmdb.open(self._dbpath,
-                                          map_size=self._maxsize,
-                                          create=self._create,
-                                          readonly=self._readonly,
-                                          sync=self._sync,
-                                          subdir=True,
-                                          lock=self._lock,
-                                          writemap=self._writemap)
+                    self._env = lmdb.open(
+                        self._dbpath,
+                        map_size=self._maxsize,
+                        create=self._create,
+                        readonly=self._readonly,
+                        sync=self._sync,
+                        subdir=True,
+                        lock=self._lock,
+                        writemap=self._writemap,
+                    )
 
                     # ok, good: we've got a LMDB env
                     break
@@ -449,8 +478,10 @@ class Database(object):
                     retries += 1
                     if retries >= 3:
                         # give up and signal to user code
-                        raise RuntimeError('cannot open LMDB environment (giving up '
-                                           'after {} retries): {}'.format(retries, e))
+                        raise RuntimeError(
+                            "cannot open LMDB environment (giving up "
+                            "after {} retries): {}".format(retries, e)
+                        )
 
                     # use synchronous (!) sleep (1st time is sleep(0), which releases execution of this process to OS)
                     time.sleep(retry_delay)
@@ -484,34 +515,43 @@ class Database(object):
                 del _LMDB_MYPID_ENVS[self._dbpath]
 
     @staticmethod
-    def open(dbpath: Optional[str] = None,
-             maxsize: int = 10485760,
-             readonly: bool = False,
-             lock: bool = True,
-             sync: bool = True,
-             create: bool = True,
-             open_now: bool = True,
-             writemap: bool = False,
-             context: Any = None,
-             log: Optional[txaio.interfaces.ILogger] = None) -> 'Database':
+    def open(
+        dbpath: Optional[str] = None,
+        maxsize: int = 10485760,
+        readonly: bool = False,
+        lock: bool = True,
+        sync: bool = True,
+        create: bool = True,
+        open_now: bool = True,
+        writemap: bool = False,
+        context: Any = None,
+        log: Optional[txaio.interfaces.ILogger] = None,
+    ) -> "Database":
         if dbpath is not None and dbpath in _LMDB_MYPID_ENVS:
             db, _ = _LMDB_MYPID_ENVS[dbpath]
             print(
-                '{}: reusing database instance for path "{}" in new context {} already opened from (first) context {}'.
-                format(Database.open, dbpath, context, db.context))
+                '{}: reusing database instance for path "{}" in new context {} already opened from (first) context {}'.format(
+                    Database.open, dbpath, context, db.context
+                )
+            )
         else:
-            db = Database(dbpath=dbpath,
-                          maxsize=maxsize,
-                          readonly=readonly,
-                          lock=lock,
-                          sync=sync,
-                          create=create,
-                          open_now=open_now,
-                          writemap=writemap,
-                          context=context,
-                          log=log)
-            print('{}: creating new database instance for path "{}" in context {}'.format(
-                Database.open, dbpath, context))
+            db = Database(
+                dbpath=dbpath,
+                maxsize=maxsize,
+                readonly=readonly,
+                lock=lock,
+                sync=sync,
+                create=create,
+                open_now=open_now,
+                writemap=writemap,
+                context=context,
+                log=log,
+            )
+            print(
+                '{}: creating new database instance for path "{}" in context {}'.format(
+                    Database.open, dbpath, context
+                )
+            )
         return db
 
     @property
@@ -583,10 +623,12 @@ class Database(object):
             else:
                 os.remove(dbpath)
 
-    def begin(self,
-              write: bool = False,
-              buffers: bool = False,
-              stats: Optional[TransactionStats] = None) -> Transaction:
+    def begin(
+        self,
+        write: bool = False,
+        buffers: bool = False,
+        stats: Optional[TransactionStats] = None,
+    ) -> Transaction:
         """
 
         :param write:
@@ -597,7 +639,7 @@ class Database(object):
         assert self._env is not None
 
         if write and self._readonly:
-            raise Exception('database is read-only')
+            raise Exception("database is read-only")
 
         txn = Transaction(db=self, write=write, buffers=buffers, stats=stats)
         return txn
@@ -618,16 +660,16 @@ class Database(object):
         :return:
         """
         res = {
-            'is_temp': self._is_temp,
-            'dbpath': self._dbpath,
-            'maxsize': self._maxsize,
-            'readonly': self._readonly,
-            'lock': self._lock,
-            'sync': self._sync,
-            'create': self._create,
-            'open_now': self._open_now,
-            'writemap': self._writemap,
-            'context': str(self._context) if self._context else None,
+            "is_temp": self._is_temp,
+            "dbpath": self._dbpath,
+            "maxsize": self._maxsize,
+            "readonly": self._readonly,
+            "lock": self._lock,
+            "sync": self._sync,
+            "create": self._create,
+            "open_now": self._open_now,
+            "writemap": self._writemap,
+            "context": str(self._context) if self._context else None,
         }
         return res
 
@@ -639,7 +681,7 @@ class Database(object):
         """
         assert self._env is not None
 
-        current_size = os.path.getsize(os.path.join(self._dbpath, 'data.mdb'))
+        current_size = os.path.getsize(os.path.join(self._dbpath, "data.mdb"))
 
         # psize 	        Size of a database page in bytes.
         # depth 	        Height of the B-tree.
@@ -648,20 +690,20 @@ class Database(object):
         # overflow_pages 	Number of overflow pages.
         # entries 	        Number of data items.
         stats = self._env.stat()
-        pages = stats['leaf_pages'] + stats['overflow_pages'] + stats['branch_pages']
-        used = stats['psize'] * pages
+        pages = stats["leaf_pages"] + stats["overflow_pages"] + stats["branch_pages"]
+        used = stats["psize"] * pages
 
         self._cache_slots()
         res: Dict[str, Any] = {
-            'num_slots': len(self._slots) if self._slots else 0,
-            'current_size': current_size,
-            'max_size': self._maxsize,
-            'page_size': stats['psize'],
-            'pages': pages,
-            'used': used,
-            'free': 1. - float(used) / float(self._maxsize),
-            'read_only': self._readonly,
-            'sync_enabled': self._sync,
+            "num_slots": len(self._slots) if self._slots else 0,
+            "current_size": current_size,
+            "max_size": self._maxsize,
+            "page_size": stats["psize"],
+            "pages": pages,
+            "used": used,
+            "free": 1.0 - float(used) / float(self._maxsize),
+            "read_only": self._readonly,
+            "sync_enabled": self._sync,
         }
         res.update(stats)
 
@@ -676,18 +718,20 @@ class Database(object):
 
         if include_slots:
             slots = self._get_slots()
-            res['slots'] = []
+            res["slots"] = []
             with self.begin() as txn:
                 for slot_id in slots:
                     slot = slots[slot_id]
                     pmap = _pmap.PersistentMap(slot.slot)
-                    res['slots'].append({
-                        'oid': str(slot_id),
-                        'slot': slot.slot,
-                        'name': slot.name,
-                        'description': slot.description,
-                        'records': pmap.count(txn),
-                    })
+                    res["slots"].append(
+                        {
+                            "oid": str(slot_id),
+                            "slot": slot.slot,
+                            "name": slot.name,
+                            "description": slot.description,
+                            "records": pmap.count(txn),
+                        }
+                    )
 
         return res
 
@@ -700,8 +744,8 @@ class Database(object):
         slots_by_index = {}
 
         with self.begin() as txn:
-            from_key = struct.pack('>H', 0)
-            to_key = struct.pack('>H', 1)
+            from_key = struct.pack(">H", 0)
+            to_key = struct.pack(">H", 1)
 
             cursor = txn._txn.cursor()
             found = cursor.set_range(from_key)
@@ -712,7 +756,7 @@ class Database(object):
 
                 if len(_key) >= 4:
                     # key = struct.unpack('>H', _key[0:2])
-                    slot_index = struct.unpack('>H', _key[2:4])[0]
+                    slot_index = struct.unpack(">H", _key[2:4])[0]
                     slot = Slot.parse(cbor2.loads(cursor.value()))
                     assert slot.slot == slot_index
                     slots[slot.oid] = slot
@@ -764,7 +808,7 @@ class Database(object):
         assert self._slots is not None
         assert self._slots_by_index is not None
 
-        key = b'\0\0' + struct.pack('>H', slot_index)
+        key = b"\0\0" + struct.pack(">H", slot_index)
         if slot:
             assert slot_index == slot.slot
             assert slot.oid
@@ -775,9 +819,11 @@ class Database(object):
                 self._slots[slot.oid] = slot
                 self._slots_by_index[slot.oid] = slot_index
 
-            self.log.debug('Wrote metadata for table <{oid}> to slot {slot_index:03d}',
-                           oid=slot.oid,
-                           slot_index=slot_index)
+            self.log.debug(
+                "Wrote metadata for table <{oid}> to slot {slot_index:03d}",
+                oid=slot.oid,
+                slot_index=slot_index,
+            )
         else:
             with self.begin(write=True) as txn:
                 result = txn.get(key)
@@ -789,9 +835,11 @@ class Database(object):
                     if slot.oid in self._slots_by_index:
                         del self._slots_by_index[slot.oid]
 
-                    self.log.debug('Deleted metadata for table <{oid}> from slot {slot_index:03d}',
-                                   oid=slot.oid,
-                                   slot_index=slot_index)
+                    self.log.debug(
+                        "Deleted metadata for table <{oid}> from slot {slot_index:03d}",
+                        oid=slot.oid,
+                        slot_index=slot_index,
+                    )
 
     def attach_table(self, klass: Type[_pmap.PersistentMap]):
         """
@@ -801,47 +849,55 @@ class Database(object):
         """
         if not inspect.isclass(klass):
             raise TypeError(
-                'cannot attach object {} as database table: a subclass of zlmdb.PersistentMap is required'.format(
-                    klass))
+                "cannot attach object {} as database table: a subclass of zlmdb.PersistentMap is required".format(
+                    klass
+                )
+            )
 
         name = qual(klass)
 
         if not issubclass(klass, _pmap.PersistentMap):
             raise TypeError(
-                'cannot attach object of class {} as a database table: a subclass of zlmdb.PersistentMap is required'.
-                format(name))
+                "cannot attach object of class {} as a database table: a subclass of zlmdb.PersistentMap is required".format(
+                    name
+                )
+            )
 
-        if not hasattr(klass, '_zlmdb_oid') or not klass._zlmdb_oid:
-            raise TypeError('{} is not decorated as table slot'.format(klass))
+        if not hasattr(klass, "_zlmdb_oid") or not klass._zlmdb_oid:
+            raise TypeError("{} is not decorated as table slot".format(klass))
 
         description = klass.__doc__.strip() if klass.__doc__ else None
 
         if self._slots is None:
             self._cache_slots()
 
-        pmap = self._attach_slot(klass._zlmdb_oid,
-                                 klass,
-                                 marshal=klass._zlmdb_marshal,
-                                 parse=klass._zlmdb_parse,
-                                 build=klass._zlmdb_build,
-                                 cast=klass._zlmdb_cast,
-                                 compress=klass._zlmdb_compress,
-                                 create=True,
-                                 name=name,
-                                 description=description)
+        pmap = self._attach_slot(
+            klass._zlmdb_oid,
+            klass,
+            marshal=klass._zlmdb_marshal,
+            parse=klass._zlmdb_parse,
+            build=klass._zlmdb_build,
+            cast=klass._zlmdb_cast,
+            compress=klass._zlmdb_compress,
+            create=True,
+            name=name,
+            description=description,
+        )
         return pmap
 
-    def _attach_slot(self,
-                     oid: uuid.UUID,
-                     klass: Type[_pmap.PersistentMap],
-                     marshal: Optional[Callable] = None,
-                     parse: Optional[Callable] = None,
-                     build: Optional[Callable] = None,
-                     cast: Optional[Callable] = None,
-                     compress: Optional[int] = None,
-                     create: bool = True,
-                     name: Optional[str] = None,
-                     description: Optional[str] = None):
+    def _attach_slot(
+        self,
+        oid: uuid.UUID,
+        klass: Type[_pmap.PersistentMap],
+        marshal: Optional[Callable] = None,
+        parse: Optional[Callable] = None,
+        build: Optional[Callable] = None,
+        cast: Optional[Callable] = None,
+        compress: Optional[int] = None,
+        create: bool = True,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
         """
 
         :param oid:
@@ -866,11 +922,16 @@ class Database(object):
         assert cast is None or callable(cast)
 
         # either marshal+parse (for CBOR/JSON) OR build+cast (for Flatbuffers) OR all unset
-        assert (not marshal and not parse and not build and not cast) or \
-               (not marshal and not parse and build and cast) or \
-               (marshal and parse and not build and not cast)
+        assert (
+            (not marshal and not parse and not build and not cast)
+            or (not marshal and not parse and build and cast)
+            or (marshal and parse and not build and not cast)
+        )
 
-        assert compress is None or compress in [_pmap.PersistentMap.COMPRESS_ZLIB, _pmap.PersistentMap.COMPRESS_SNAPPY]
+        assert compress is None or compress in [
+            _pmap.PersistentMap.COMPRESS_ZLIB,
+            _pmap.PersistentMap.COMPRESS_SNAPPY,
+        ]
         assert type(create) == bool
         assert name is None or type(name) == str
         assert description is None or type(description) == str
@@ -878,29 +939,49 @@ class Database(object):
         assert self._slots_by_index is not None
 
         if oid not in self._slots_by_index:
-            self.log.debug('No slot found in database for DB table <{oid}>: <{name}>', name=name, oid=oid)
+            self.log.debug(
+                "No slot found in database for DB table <{oid}>: <{name}>",
+                name=name,
+                oid=oid,
+            )
             if create:
                 slot_index = self._get_free_slot()
-                slot = Slot(oid=oid, creator='unknown', slot=slot_index, name=name, description=description)
+                slot = Slot(
+                    oid=oid,
+                    creator="unknown",
+                    slot=slot_index,
+                    name=name,
+                    description=description,
+                )
                 self._set_slot(slot_index, slot)
-                self.log.info('Allocated new slot {slot_index:03d} for database table <{oid}>: {name}',
-                              slot_index=slot_index,
-                              oid=oid,
-                              name=name)
+                self.log.info(
+                    "Allocated new slot {slot_index:03d} for database table <{oid}>: {name}",
+                    slot_index=slot_index,
+                    oid=oid,
+                    name=name,
+                )
             else:
-                raise RuntimeError('No slot found in database for DB table <{}>: "{}"'.format(oid, name))
+                raise RuntimeError(
+                    'No slot found in database for DB table <{}>: "{}"'.format(
+                        oid, name
+                    )
+                )
         else:
             slot_index = self._slots_by_index[oid]
             # pmap = _pmap.PersistentMap(slot_index)
             # with self.begin() as txn:
             #     records = pmap.count(txn)
-            self.log.debug('Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]',
-                           name=name,
-                           oid=oid,
-                           slot_index=slot_index)
+            self.log.debug(
+                "Database table <{name}> attached [oid=<{oid}>, slot=<{slot_index:03d}>]",
+                name=name,
+                oid=oid,
+                slot_index=slot_index,
+            )
 
         if marshal:
-            slot_pmap = klass(slot_index, marshal=marshal, unmarshal=parse, compress=compress)  # type: ignore
+            slot_pmap = klass(
+                slot_index, marshal=marshal, unmarshal=parse, compress=compress
+            )  # type: ignore
         elif build:
             slot_pmap = klass(slot_index, build=build, cast=cast, compress=compress)  # type: ignore
         else:

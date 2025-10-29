@@ -43,6 +43,7 @@ class _MNodeLogGen(MNodeLogGen.MNodeLog):
 
     FIXME: come up with a PR for flatc to generated this stuff automatically.
     """
+
     @classmethod
     def GetRootAsMNodeLog(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
@@ -55,7 +56,7 @@ class _MNodeLogGen(MNodeLogGen.MNodeLog):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off + _len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def RunIdAsBytes(self):
@@ -63,7 +64,7 @@ class _MNodeLogGen(MNodeLogGen.MNodeLog):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off + _len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
 
@@ -161,166 +162,174 @@ class MNodeLog(object):
     def parse(node_id, heartbeat):
         assert isinstance(node_id, uuid.UUID)
         assert type(heartbeat) == dict
-        assert 'timestamp' in heartbeat and type(heartbeat['timestamp']) == int
+        assert "timestamp" in heartbeat and type(heartbeat["timestamp"]) == int
 
         obj = MNodeLog()
-        obj._timestamp = np.datetime64(time_ns(), 'ns')
+        obj._timestamp = np.datetime64(time_ns(), "ns")
         obj._node_id = node_id
-        obj._run_id = uuid.UUID(bytes=b'\0' * 16)
-        obj._state = heartbeat.get('state', None)
-        obj._ended = np.datetime64(heartbeat['ended'], 'ns') if heartbeat.get('ended', None) else None
-        obj._session = heartbeat.get('session', None)
-        obj._sent = np.datetime64(heartbeat['timestamp'], 'ns') if heartbeat.get('timestamp', None) else None
-        obj._seq = heartbeat.get('seq', None)
+        obj._run_id = uuid.UUID(bytes=b"\0" * 16)
+        obj._state = heartbeat.get("state", None)
+        obj._ended = (
+            np.datetime64(heartbeat["ended"], "ns")
+            if heartbeat.get("ended", None)
+            else None
+        )
+        obj._session = heartbeat.get("session", None)
+        obj._sent = (
+            np.datetime64(heartbeat["timestamp"], "ns")
+            if heartbeat.get("timestamp", None)
+            else None
+        )
+        obj._seq = heartbeat.get("seq", None)
 
-        workers = heartbeat.get('workers', {})
-        obj._routers = workers.get('router', None)
-        obj._containers = workers.get('container', None)
-        obj._guests = workers.get('guest', None)
-        obj._proxies = workers.get('proxy', None)
-        obj._marketmakers = workers.get('xbrmm', None)
+        workers = heartbeat.get("workers", {})
+        obj._routers = workers.get("router", None)
+        obj._containers = workers.get("container", None)
+        obj._guests = workers.get("guest", None)
+        obj._proxies = workers.get("proxy", None)
+        obj._marketmakers = workers.get("xbrmm", None)
 
-        system = heartbeat.get('system', {})
-        system_cpu = system.get('cpu', {})
-        system_net = system.get('network', {})
-        system_mem = system.get('memory', {})
-        system_dsk = system.get('disk', {})
+        system = heartbeat.get("system", {})
+        system_cpu = system.get("cpu", {})
+        system_net = system.get("network", {})
+        system_mem = system.get("memory", {})
+        system_dsk = system.get("disk", {})
 
-        obj._cpu_ctx_switches = system_cpu.get('ctx_switches', None)
-        obj._cpu_freq = system_cpu.get('freq', None)
-        obj._cpu_guest = system_cpu.get('guest', None)
-        obj._cpu_guest_nice = system_cpu.get('guest_nice', None)
-        obj._cpu_idle = system_cpu.get('idle', None)
-        obj._cpu_interrupts = system_cpu.get('interrupts', None)
-        obj._cpu_iotwait = system_cpu.get('iotwait', None)
-        obj._cpu_irq = system_cpu.get('irq', None)
-        obj._cpu_nice = system_cpu.get('nice', None)
-        obj._cpu_soft_interrupts = system_cpu.get('soft_interrupts', None)
-        obj._cpu_softirq = system_cpu.get('softirq', None)
-        obj._cpu_steal = system_cpu.get('steal', None)
-        obj._cpu_system = system_cpu.get('system', None)
-        obj._cpu_user = system_cpu.get('user', None)
+        obj._cpu_ctx_switches = system_cpu.get("ctx_switches", None)
+        obj._cpu_freq = system_cpu.get("freq", None)
+        obj._cpu_guest = system_cpu.get("guest", None)
+        obj._cpu_guest_nice = system_cpu.get("guest_nice", None)
+        obj._cpu_idle = system_cpu.get("idle", None)
+        obj._cpu_interrupts = system_cpu.get("interrupts", None)
+        obj._cpu_iotwait = system_cpu.get("iotwait", None)
+        obj._cpu_irq = system_cpu.get("irq", None)
+        obj._cpu_nice = system_cpu.get("nice", None)
+        obj._cpu_soft_interrupts = system_cpu.get("soft_interrupts", None)
+        obj._cpu_softirq = system_cpu.get("softirq", None)
+        obj._cpu_steal = system_cpu.get("steal", None)
+        obj._cpu_system = system_cpu.get("system", None)
+        obj._cpu_user = system_cpu.get("user", None)
 
-        obj._network_bytes_recv = system_net.get('bytes_recv', None)
-        obj._network_bytes_sent = system_net.get('bytes_sent', None)
-        obj._network_packets_recv = system_net.get('packets_recv', None)
-        obj._network_packets_sent = system_net.get('packets_sent', None)
-        obj._network_dropin = system_net.get('dropin', None)
-        obj._network_dropout = system_net.get('dropout', None)
-        obj._network_errin = system_net.get('errin', None)
-        obj._network_errout = system_net.get('errout', None)
+        obj._network_bytes_recv = system_net.get("bytes_recv", None)
+        obj._network_bytes_sent = system_net.get("bytes_sent", None)
+        obj._network_packets_recv = system_net.get("packets_recv", None)
+        obj._network_packets_sent = system_net.get("packets_sent", None)
+        obj._network_dropin = system_net.get("dropin", None)
+        obj._network_dropout = system_net.get("dropout", None)
+        obj._network_errin = system_net.get("errin", None)
+        obj._network_errout = system_net.get("errout", None)
 
-        connection = system_net.get('connection', {})
-        obj._network_connection_af_inet = connection.get('AF_INET', None)
-        obj._network_connection_af_inet6 = connection.get('AF_INET6', None)
-        obj._network_connection_af_unix = connection.get('AF_UNIX', None)
+        connection = system_net.get("connection", {})
+        obj._network_connection_af_inet = connection.get("AF_INET", None)
+        obj._network_connection_af_inet6 = connection.get("AF_INET6", None)
+        obj._network_connection_af_unix = connection.get("AF_UNIX", None)
 
-        obj._memory_active = system_mem.get('active', None)
-        obj._memory_available = system_mem.get('available', None)
-        obj._memory_buffers = system_mem.get('buffers', None)
-        obj._memory_cached = system_mem.get('cached', None)
-        obj._memory_free = system_mem.get('free', None)
-        obj._memory_inactive = system_mem.get('inactive', None)
-        obj._memory_percent = system_mem.get('percent', None)
-        obj._memory_shared = system_mem.get('shared', None)
-        obj._memory_slab = system_mem.get('slab', None)
-        obj._memory_total = system_mem.get('total', None)
-        obj._memory_used = system_mem.get('used', None)
+        obj._memory_active = system_mem.get("active", None)
+        obj._memory_available = system_mem.get("available", None)
+        obj._memory_buffers = system_mem.get("buffers", None)
+        obj._memory_cached = system_mem.get("cached", None)
+        obj._memory_free = system_mem.get("free", None)
+        obj._memory_inactive = system_mem.get("inactive", None)
+        obj._memory_percent = system_mem.get("percent", None)
+        obj._memory_shared = system_mem.get("shared", None)
+        obj._memory_slab = system_mem.get("slab", None)
+        obj._memory_total = system_mem.get("total", None)
+        obj._memory_used = system_mem.get("used", None)
 
-        obj._disk_busy_time = system_dsk.get('busy_time', None)
-        obj._disk_read_bytes = system_dsk.get('read_bytes', None)
-        obj._disk_read_count = system_dsk.get('read_count', None)
-        obj._disk_read_merged_count = system_dsk.get('read_merged_count', None)
-        obj._disk_read_time = system_dsk.get('read_time', None)
-        obj._disk_write_bytes = system_dsk.get('write_bytes', None)
-        obj._disk_write_count = system_dsk.get('write_count', None)
-        obj._disk_write_merged_count = system_dsk.get('write_merged_count', None)
-        obj._disk_write_time = system_dsk.get('write_time', None)
+        obj._disk_busy_time = system_dsk.get("busy_time", None)
+        obj._disk_read_bytes = system_dsk.get("read_bytes", None)
+        obj._disk_read_count = system_dsk.get("read_count", None)
+        obj._disk_read_merged_count = system_dsk.get("read_merged_count", None)
+        obj._disk_read_time = system_dsk.get("read_time", None)
+        obj._disk_write_bytes = system_dsk.get("write_bytes", None)
+        obj._disk_write_count = system_dsk.get("write_count", None)
+        obj._disk_write_merged_count = system_dsk.get("write_merged_count", None)
+        obj._disk_write_time = system_dsk.get("write_time", None)
 
         return obj
 
     def marshal(self):
         obj = {
-            'timestamp': self.timestamp,
-            'node_id': str(self.node_id),
-            'run_id': str(self.run_id),
-            'state': self.state,
-            'ended': self.ended,
-            'session': self.session,
-            'sent': self.sent,
-            'seq': self.seq,
-            'workers': {
-                'router': self.routers,
-                'container': self.containers,
-                'guest': self.guests,
-                'proxy': self.proxies,
-                'xbrmm': self.marketmakers,
+            "timestamp": self.timestamp,
+            "node_id": str(self.node_id),
+            "run_id": str(self.run_id),
+            "state": self.state,
+            "ended": self.ended,
+            "session": self.session,
+            "sent": self.sent,
+            "seq": self.seq,
+            "workers": {
+                "router": self.routers,
+                "container": self.containers,
+                "guest": self.guests,
+                "proxy": self.proxies,
+                "xbrmm": self.marketmakers,
             },
-            'cpu': {
-                'ctx_switches': self.cpu_ctx_switches,
-                'freq': self.cpu_freq,
-                'guest': self.cpu_guest,
-                'guest_nice': self.cpu_guest_nice,
-                'idle': self.cpu_idle,
-                'interrupts': self.cpu_interrupts,
-                'iotwait': self.cpu_iotwait,
-                'irq': self.cpu_irq,
-                'nice': self.cpu_nice,
-                'soft_interrupts': self.cpu_soft_interrupts,
-                'softirq': self.cpu_softirq,
-                'steal': self.cpu_steal,
-                'system': self.cpu_system,
-                'user': self.cpu_user,
+            "cpu": {
+                "ctx_switches": self.cpu_ctx_switches,
+                "freq": self.cpu_freq,
+                "guest": self.cpu_guest,
+                "guest_nice": self.cpu_guest_nice,
+                "idle": self.cpu_idle,
+                "interrupts": self.cpu_interrupts,
+                "iotwait": self.cpu_iotwait,
+                "irq": self.cpu_irq,
+                "nice": self.cpu_nice,
+                "soft_interrupts": self.cpu_soft_interrupts,
+                "softirq": self.cpu_softirq,
+                "steal": self.cpu_steal,
+                "system": self.cpu_system,
+                "user": self.cpu_user,
             },
-            'memory': {
-                'active': self.memory_active,
-                'available': self.memory_available,
-                'buffers': self.memory_buffers,
-                'cached': self.memory_cached,
-                'free': self.memory_free,
-                'inactive': self.memory_inactive,
-                'percent': self.memory_percent,
-                'shared': self.memory_shared,
-                'slab': self.memory_slab,
-                'total': self.memory_total,
-                'used': self.memory_used,
+            "memory": {
+                "active": self.memory_active,
+                "available": self.memory_available,
+                "buffers": self.memory_buffers,
+                "cached": self.memory_cached,
+                "free": self.memory_free,
+                "inactive": self.memory_inactive,
+                "percent": self.memory_percent,
+                "shared": self.memory_shared,
+                "slab": self.memory_slab,
+                "total": self.memory_total,
+                "used": self.memory_used,
             },
-            'disk': {
-                'busy_time': self.disk_busy_time,
-                'read_bytes': self.disk_read_bytes,
-                'read_count': self.disk_read_count,
-                'read_merged_count': self.disk_read_merged_count,
-                'read_time': self.disk_read_time,
-                'write_bytes': self.disk_write_bytes,
-                'write_count': self.disk_write_count,
-                'write_merged_count': self.disk_write_merged_count,
-                'write_time': self.disk_write_time,
+            "disk": {
+                "busy_time": self.disk_busy_time,
+                "read_bytes": self.disk_read_bytes,
+                "read_count": self.disk_read_count,
+                "read_merged_count": self.disk_read_merged_count,
+                "read_time": self.disk_read_time,
+                "write_bytes": self.disk_write_bytes,
+                "write_count": self.disk_write_count,
+                "write_merged_count": self.disk_write_merged_count,
+                "write_time": self.disk_write_time,
             },
-            'network': {
-                'bytes_recv': self.network_bytes_recv,
-                'bytes_sent': self.network_bytes_sent,
-                'connection': {
-                    'AF_INET': self.network_connection_af_inet,
-                    'AF_INET6': self.network_connection_af_inet6,
-                    'UNIX': self.network_connection_af_unix,
+            "network": {
+                "bytes_recv": self.network_bytes_recv,
+                "bytes_sent": self.network_bytes_sent,
+                "connection": {
+                    "AF_INET": self.network_connection_af_inet,
+                    "AF_INET6": self.network_connection_af_inet6,
+                    "UNIX": self.network_connection_af_unix,
                 },
-                'dropin': self.network_dropin,
-                'dropout': self.network_dropout,
-                'errin': self.network_errin,
-                'errout': self.network_errout,
-                'packets_recv': self.network_packets_recv,
-                'packets_sent': self.network_packets_sent,
+                "dropin": self.network_dropin,
+                "dropout": self.network_dropout,
+                "errin": self.network_errin,
+                "errout": self.network_errout,
+                "packets_recv": self.network_packets_recv,
+                "packets_sent": self.network_packets_sent,
             },
         }
         return obj
 
     def __str__(self):
-        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+        return "\n{}\n".format(pprint.pformat(self.marshal()))
 
     @property
     def timestamp(self):
         if self._timestamp is None and self._from_fbs:
-            self._timestamp = np.datetime64(self._from_fbs.Timestamp(), 'ns')
+            self._timestamp = np.datetime64(self._from_fbs.Timestamp(), "ns")
         return self._timestamp
 
     @timestamp.setter
@@ -368,7 +377,7 @@ class MNodeLog(object):
     @property
     def ended(self):
         if self._ended is None and self._from_fbs:
-            self._ended = np.datetime64(self._from_fbs.Ended(), 'ns')
+            self._ended = np.datetime64(self._from_fbs.Ended(), "ns")
         return self._ended
 
     @ended.setter
@@ -390,7 +399,7 @@ class MNodeLog(object):
     @property
     def sent(self):
         if self._sent is None and self._from_fbs:
-            self._sent = np.datetime64(self._from_fbs.Sent(), 'ns')
+            self._sent = np.datetime64(self._from_fbs.Sent(), "ns")
         return self._sent
 
     @sent.setter
@@ -654,7 +663,9 @@ class MNodeLog(object):
     @property
     def network_connection_af_inet6(self):
         if self._network_connection_af_inet6 is None and self._from_fbs:
-            self._network_connection_af_inet6 = self._from_fbs.NetworkConnectionAfInet6()
+            self._network_connection_af_inet6 = (
+                self._from_fbs.NetworkConnectionAfInet6()
+            )
         return self._network_connection_af_inet6
 
     @network_connection_af_inet6.setter
@@ -961,11 +972,12 @@ class MNodeLog(object):
 
     @staticmethod
     def cast(buf):
-        assert type(buf) in [bytes, bytearray], 'bytes expected, got {}'.format(type(buf))
+        assert type(buf) in [bytes, bytearray], "bytes expected, got {}".format(
+            type(buf)
+        )
         return MNodeLog(_MNodeLogGen.GetRootAsMNodeLog(buf, 0))
 
     def build(self, builder):
-
         node_id = self.node_id.bytes if self.node_id else None
         if node_id:
             node_id = builder.CreateString(node_id)
@@ -1064,13 +1076,19 @@ class MNodeLog(object):
             MNodeLogGen.MNodeLogAddNetworkBytesSent(builder, self.network_bytes_sent)
 
         if self.network_connection_af_inet:
-            MNodeLogGen.MNodeLogAddNetworkConnectionAfInet(builder, self.network_connection_af_inet)
+            MNodeLogGen.MNodeLogAddNetworkConnectionAfInet(
+                builder, self.network_connection_af_inet
+            )
 
         if self.network_connection_af_inet6:
-            MNodeLogGen.MNodeLogAddNetworkConnectionAfInet6(builder, self.network_connection_af_inet6)
+            MNodeLogGen.MNodeLogAddNetworkConnectionAfInet6(
+                builder, self.network_connection_af_inet6
+            )
 
         if self.network_connection_af_unix:
-            MNodeLogGen.MNodeLogAddNetworkConnectionAfUnix(builder, self.network_connection_af_unix)
+            MNodeLogGen.MNodeLogAddNetworkConnectionAfUnix(
+                builder, self.network_connection_af_unix
+            )
 
         if self.network_dropin:
             MNodeLogGen.MNodeLogAddNetworkDropin(builder, self.network_dropin)
@@ -1085,10 +1103,14 @@ class MNodeLog(object):
             MNodeLogGen.MNodeLogAddNetworkErrout(builder, self.network_errout)
 
         if self.network_packets_recv:
-            MNodeLogGen.MNodeLogAddNetworkPacketsRecv(builder, self.network_packets_recv)
+            MNodeLogGen.MNodeLogAddNetworkPacketsRecv(
+                builder, self.network_packets_recv
+            )
 
         if self.network_packets_sent:
-            MNodeLogGen.MNodeLogAddNetworkPacketsSent(builder, self.network_packets_sent)
+            MNodeLogGen.MNodeLogAddNetworkPacketsSent(
+                builder, self.network_packets_sent
+            )
 
         if self.memory_active:
             MNodeLogGen.MNodeLogAddMemoryActive(builder, self.memory_active)
@@ -1133,7 +1155,9 @@ class MNodeLog(object):
             MNodeLogGen.MNodeLogAddDiskReadCount(builder, self.disk_read_count)
 
         if self.disk_read_merged_count:
-            MNodeLogGen.MNodeLogAddDiskReadMergedCount(builder, self.disk_read_merged_count)
+            MNodeLogGen.MNodeLogAddDiskReadMergedCount(
+                builder, self.disk_read_merged_count
+            )
 
         if self.disk_read_time:
             MNodeLogGen.MNodeLogAddDiskReadTime(builder, self.disk_read_time)
@@ -1145,7 +1169,9 @@ class MNodeLog(object):
             MNodeLogGen.MNodeLogAddDiskWriteCount(builder, self.disk_write_count)
 
         if self.disk_write_merged_count:
-            MNodeLogGen.MNodeLogAddDiskWriteMergedCount(builder, self.disk_write_merged_count)
+            MNodeLogGen.MNodeLogAddDiskWriteMergedCount(
+                builder, self.disk_write_merged_count
+            )
 
         if self.disk_write_time:
             MNodeLogGen.MNodeLogAddDiskWriteTime(builder, self.disk_write_time)
@@ -1155,13 +1181,12 @@ class MNodeLog(object):
         return final
 
 
-@table('256a071f-5aeb-47f3-8786-97cd8281bdb7', build=MNodeLog.build, cast=MNodeLog.cast)
+@table("256a071f-5aeb-47f3-8786-97cd8281bdb7", build=MNodeLog.build, cast=MNodeLog.cast)
 class MNodeLogs(MapTimestampUuidFlatBuffers):
     pass
 
 
 class Schema(object):
-
     mnode_logs = None
 
     def __init__(self, db):

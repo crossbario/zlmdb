@@ -34,6 +34,7 @@ class Slot(object):
 
     The 2 bytes are interpreted as an uint16 in big endian byte order.
     """
+
     def __init__(self, slot, name, pmap):
         """
 
@@ -90,11 +91,20 @@ class Schema(object):
     """
     FIXME.
     """
+
     def __init__(self):
         self._index_to_slot = {}
         self._name_to_slot = {}
 
-    def slot(self, slot_index, marshal=None, unmarshal=None, build=None, cast=None, compress=False):
+    def slot(
+        self,
+        slot_index,
+        marshal=None,
+        unmarshal=None,
+        build=None,
+        cast=None,
+        compress=False,
+    ):
         """
         Decorator for use on classes derived from zlmdb.PersistentMap. The decorator define slots
         in a LMDB database schema based on persistent maps, and slot configuration.
@@ -107,6 +117,7 @@ class Schema(object):
         :param compress:
         :return:
         """
+
         def decorate(o):
             assert isinstance(o, PersistentMap)
             name = o.__class__.__name__

@@ -33,6 +33,7 @@ except ImportError:
     from backports.tempfile import TemporaryDirectory  # type:ignore
 
 import txaio
+
 txaio.use_twisted()
 
 import zlmdb  # noqa
@@ -47,7 +48,7 @@ else:
 
 def test_pmap_value_types():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema1()
 
@@ -69,7 +70,7 @@ def test_pmap_value_types():
                         tab_str[txn, user.authid] = user
                         tab_uuid[txn, user.uuid] = user
 
-                print('transaction committed')
+                print("transaction committed")
                 assert stats.puts == n * 3
                 assert stats.dels == 0
 
@@ -85,4 +86,4 @@ def test_pmap_value_types():
                     cnt = tab_uuid.count(txn)
                     assert cnt == n
 
-        print('database closed')
+        print("database closed")

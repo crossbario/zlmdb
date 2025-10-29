@@ -545,7 +545,7 @@ check-format venv="": (install-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Checking code formatting with ${VENV_NAME}..."
-    "${VENV_PATH}/bin/ruff" check .
+    "${VENV_PATH}/bin/ruff" check --exclude ./deps/flatbuffers .
 
 # Run static type checking with mypy
 check-typing venv="": (install-tools venv) (install venv)

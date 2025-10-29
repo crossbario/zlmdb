@@ -33,6 +33,7 @@ import platform
 import humanize
 
 import txaio
+
 txaio.use_twisted()
 
 from zlmdb import _types  # noqa
@@ -45,21 +46,21 @@ if sys.version_info >= (3, 6):
 else:
     from _schema_py2 import User
 
-_TEST = {'oid': 0, 'uuid': None, 'bytes': 0, 'serializer': None}
+_TEST = {"oid": 0, "uuid": None, "bytes": 0, "serializer": None}
 
 
 def _serializer_run_fbs():
-    serialize = _TEST['serializer']._serialize_value
+    serialize = _TEST["serializer"]._serialize_value
     user = UserFbs.create_test_user()
     data = serialize(user)
-    _TEST['bytes'] += len(data)
+    _TEST["bytes"] += len(data)
 
 
 def _serializer_run():
-    serialize = _TEST['serializer']._serialize_value
+    serialize = _TEST["serializer"]._serialize_value
     user = User.create_test_user()
     data = serialize(user)
-    _TEST['bytes'] += len(data)
+    _TEST["bytes"] += len(data)
 
 
 def _serialization_speed(serializer, testfun):
@@ -68,28 +69,33 @@ def _serialization_speed(serializer, testfun):
 
     samples = []
 
-    print('running on:')
+    print("running on:")
     print(sys.version)
     print(platform.uname())
 
-    _TEST['oid'] = 0
-    _TEST['uuid'] = uuid.uuid4()
-    _TEST['bytes'] = 0
-    _TEST['bytes'] = 0
-    _TEST['serializer'] = serializer
+    _TEST["oid"] = 0
+    _TEST["uuid"] = uuid.uuid4()
+    _TEST["bytes"] = 0
+    _TEST["bytes"] = 0
+    _TEST["serializer"] = serializer
 
     for i in range(N):
         secs = timeit.timeit(testfun, number=M)
         ops = round(float(M) / secs, 1)
         samples.append(ops)
-        print('{} objects/sec {}'.format(ops, humanize.naturalsize(_TEST['bytes'])))
+        print("{} objects/sec {}".format(ops, humanize.naturalsize(_TEST["bytes"])))
 
     ops_max = max(samples)
-    bytes_per_obj = float(_TEST['bytes']) / float(N * M)
-    print('{} objects/sec max, {} bytes total, {} bytes/obj'.format(ops_max, humanize.naturalsize(_TEST['bytes']),
-                                                                    humanize.naturalsize(bytes_per_obj)))
+    bytes_per_obj = float(_TEST["bytes"]) / float(N * M)
+    print(
+        "{} objects/sec max, {} bytes total, {} bytes/obj".format(
+            ops_max,
+            humanize.naturalsize(_TEST["bytes"]),
+            humanize.naturalsize(bytes_per_obj),
+        )
+    )
 
-    return ops_max, _TEST['bytes']
+    return ops_max, _TEST["bytes"]
 
 
 def test_json_serialization_speed():
@@ -123,7 +129,7 @@ def test_flatbuffer_serialization_speed():
     assert total > 1000000
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from typing import List
 
     sers: List[object] = []

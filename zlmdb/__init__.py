@@ -33,232 +33,218 @@ from ._version import __version__
 
 from ._errors import NullValueConstraint
 
-from ._pmap import PersistentMap, \
-                   MapSlotUuidUuid, \
-                   MapUuidString, \
-                   MapUuidOid, \
-                   MapUuidUuid, \
-                   MapUuidJson, \
-                   MapUuidCbor, \
-                   MapUuidPickle, \
-                   MapUuidFlatBuffers, \
-                   MapUuidTimestampFlatBuffers, \
-                   MapUuidBytes20Uint8FlatBuffers, \
-                   MapUuidBytes20Uint8UuidFlatBuffers, \
-                   MapUuidBytes20Bytes20Uint8UuidFlatBuffers, \
-                   MapUuidTimestampCbor, \
-                   MapTimestampFlatBuffers, \
-                   MapTimestampStringFlatBuffers, \
-                   MapTimestampUuidFlatBuffers, \
-                   MapTimestampUuidStringFlatBuffers, \
-                   MapUuidTimestampUuidFlatBuffers, \
-                   MapUint64TimestampUuid, \
-                   MapTimestampUuidCbor, \
-                   MapUuidTimestampUuid, \
-                   MapUuidStringUuid, \
-                   MapUuidUuidStringUuid, \
-                   MapUuidUuidUuidStringUuid, \
-                   MapUuidStringOid, \
-                   MapUuidUuidCbor, \
-                   MapUuidUuidSet, \
-                   MapUuidUuidUuid, \
-                   MapUuidUuidUuidUuid, \
-                   MapUuidUuidUuidUuidUuid, \
-                   MapUuidTimestampBytes32, \
-                   MapUuidUuidFlatBuffers, \
-                   MapUuidUuidStringFlatBuffers, \
-                   MapUuidStringFlatBuffers, \
-                   MapStringString, \
-                   MapStringOid, \
-                   MapStringOidOid, \
-                   MapStringUuid, \
-                   MapStringStringUuid, \
-                   MapStringStringStringUuid, \
-                   MapStringJson, \
-                   MapStringCbor, \
-                   MapStringPickle, \
-                   MapStringFlatBuffers, \
-                   MapStringTimestampCbor, \
-                   MapTimestampStringCbor, \
-                   MapOidString, \
-                   MapOidOid, \
-                   MapOidUuid, \
-                   MapOidJson, \
-                   MapOidCbor, \
-                   MapOidPickle, \
-                   MapOidFlatBuffers, \
-                   MapOidOidFlatBuffers, \
-                   MapOid3FlatBuffers, \
-                   MapOidOidSet, \
-                   MapOidStringOid, \
-                   MapOidOidOid, \
-                   MapOidTimestampOid, \
-                   MapOidTimestampFlatBuffers, \
-                   MapOidTimestampStringOid, \
-                   MapUint16UuidTimestampFlatBuffers, \
-                   MapBytes32Uuid, \
-                   MapBytes32Timestamp, \
-                   MapBytes32Bytes32, \
-                   MapBytes32FlatBuffers, \
-                   MapBytes32UuidFlatBuffers, \
-                   MapUuidBytes32FlatBuffers, \
-                   MapBytes32Bytes32FlatBuffers, \
-                   MapBytes32StringFlatBuffers, \
-                   MapTimestampBytes32FlatBuffers, \
-                   MapBytes20Uuid, \
-                   MapBytes20Bytes16, \
-                   MapBytes20Bytes20, \
-                   MapBytes20Bytes20Timestamp, \
-                   MapBytes20TimestampBytes20, \
-                   MapBytes20TimestampUuid, \
-                   MapBytes16FlatBuffers, \
-                   MapBytes16TimestampUuid, \
-                   MapBytes16TimestampUuidFlatBuffers, \
-                   MapBytes20FlatBuffers, \
-                   MapBytes20Bytes20FlatBuffers, \
-                   MapBytes20StringFlatBuffers
+from ._pmap import (
+    PersistentMap,
+    MapSlotUuidUuid,
+    MapUuidString,
+    MapUuidOid,
+    MapUuidUuid,
+    MapUuidJson,
+    MapUuidCbor,
+    MapUuidPickle,
+    MapUuidFlatBuffers,
+    MapUuidTimestampFlatBuffers,
+    MapUuidBytes20Uint8FlatBuffers,
+    MapUuidBytes20Uint8UuidFlatBuffers,
+    MapUuidBytes20Bytes20Uint8UuidFlatBuffers,
+    MapUuidTimestampCbor,
+    MapTimestampFlatBuffers,
+    MapTimestampStringFlatBuffers,
+    MapTimestampUuidFlatBuffers,
+    MapTimestampUuidStringFlatBuffers,
+    MapUuidTimestampUuidFlatBuffers,
+    MapUint64TimestampUuid,
+    MapTimestampUuidCbor,
+    MapUuidTimestampUuid,
+    MapUuidStringUuid,
+    MapUuidUuidStringUuid,
+    MapUuidUuidUuidStringUuid,
+    MapUuidStringOid,
+    MapUuidUuidCbor,
+    MapUuidUuidSet,
+    MapUuidUuidUuid,
+    MapUuidUuidUuidUuid,
+    MapUuidUuidUuidUuidUuid,
+    MapUuidTimestampBytes32,
+    MapUuidUuidFlatBuffers,
+    MapUuidUuidStringFlatBuffers,
+    MapUuidStringFlatBuffers,
+    MapStringString,
+    MapStringOid,
+    MapStringOidOid,
+    MapStringUuid,
+    MapStringStringUuid,
+    MapStringStringStringUuid,
+    MapStringJson,
+    MapStringCbor,
+    MapStringPickle,
+    MapStringFlatBuffers,
+    MapStringTimestampCbor,
+    MapTimestampStringCbor,
+    MapOidString,
+    MapOidOid,
+    MapOidUuid,
+    MapOidJson,
+    MapOidCbor,
+    MapOidPickle,
+    MapOidFlatBuffers,
+    MapOidOidFlatBuffers,
+    MapOid3FlatBuffers,
+    MapOidOidSet,
+    MapOidStringOid,
+    MapOidOidOid,
+    MapOidTimestampOid,
+    MapOidTimestampFlatBuffers,
+    MapOidTimestampStringOid,
+    MapUint16UuidTimestampFlatBuffers,
+    MapBytes32Uuid,
+    MapBytes32Timestamp,
+    MapBytes32Bytes32,
+    MapBytes32FlatBuffers,
+    MapBytes32UuidFlatBuffers,
+    MapUuidBytes32FlatBuffers,
+    MapBytes32Bytes32FlatBuffers,
+    MapBytes32StringFlatBuffers,
+    MapTimestampBytes32FlatBuffers,
+    MapBytes20Uuid,
+    MapBytes20Bytes16,
+    MapBytes20Bytes20,
+    MapBytes20Bytes20Timestamp,
+    MapBytes20TimestampBytes20,
+    MapBytes20TimestampUuid,
+    MapBytes16FlatBuffers,
+    MapBytes16TimestampUuid,
+    MapBytes16TimestampUuidFlatBuffers,
+    MapBytes20FlatBuffers,
+    MapBytes20Bytes20FlatBuffers,
+    MapBytes20StringFlatBuffers,
+)
 
 from ._transaction import Transaction, TransactionStats
 from ._database import Database
 from ._schema import Schema
 
 __all__ = (
-    '__version__',
-    'Schema',
-    'Database',
-    'Transaction',
-    'TransactionStats',
-    'MapSlotUuidUuid',
-    'table',
-
+    "__version__",
+    "Schema",
+    "Database",
+    "Transaction",
+    "TransactionStats",
+    "MapSlotUuidUuid",
+    "table",
     #
     # Errors
     #
-    'NullValueConstraint',
-
+    "NullValueConstraint",
     #
     # UUID pmaps
     #
-
     # UUID (uint128) based pmap types for object containers
-    'MapUuidString',
-    'MapUuidOid',
-    'MapUuidJson',
-    'MapUuidCbor',
-    'MapUuidPickle',
-    'MapUuidFlatBuffers',
-
+    "MapUuidString",
+    "MapUuidOid",
+    "MapUuidJson",
+    "MapUuidCbor",
+    "MapUuidPickle",
+    "MapUuidFlatBuffers",
     # UUID/Timestamp-combined pmap types for flatbuffers values
-    'MapUuidTimestampFlatBuffers',
-    'MapTimestampUuidFlatBuffers',
-    'MapTimestampFlatBuffers',
-    'MapTimestampStringFlatBuffers',
-    'MapTimestampUuidStringFlatBuffers',
-    'MapUuidTimestampUuidFlatBuffers',
-    'MapUuidBytes20Uint8FlatBuffers',
-    'MapUuidBytes20Uint8UuidFlatBuffers',
-    'MapUuidBytes20Bytes20Uint8UuidFlatBuffers',
-    'MapUint16UuidTimestampFlatBuffers',
-
+    "MapUuidTimestampFlatBuffers",
+    "MapTimestampUuidFlatBuffers",
+    "MapTimestampFlatBuffers",
+    "MapTimestampStringFlatBuffers",
+    "MapTimestampUuidStringFlatBuffers",
+    "MapUuidTimestampUuidFlatBuffers",
+    "MapUuidBytes20Uint8FlatBuffers",
+    "MapUuidBytes20Uint8UuidFlatBuffers",
+    "MapUuidBytes20Bytes20Uint8UuidFlatBuffers",
+    "MapUint16UuidTimestampFlatBuffers",
     # UUID (uint128) based pmap types for indexes
-    'MapUuidUuid',
-    'MapUuidStringUuid',
-    'MapUuidUuidStringUuid',
-    'MapUuidUuidUuidStringUuid',
-    'MapUint64TimestampUuid',
-
+    "MapUuidUuid",
+    "MapUuidStringUuid",
+    "MapUuidUuidStringUuid",
+    "MapUuidUuidUuidStringUuid",
+    "MapUint64TimestampUuid",
     # more UUID (uint128) based pmap types for indexes
-    'MapUuidUuidSet',
-    'MapUuidStringOid',
-
+    "MapUuidUuidSet",
+    "MapUuidStringOid",
     # UUID-UUID based pmap types
-    'MapUuidUuidFlatBuffers',
-    'MapUuidStringFlatBuffers',
-    'MapUuidUuidCbor',
-    'MapUuidUuidUuid',
-    'MapUuidUuidUuidUuid',
-    'MapUuidUuidUuidUuidUuid',
-    'MapUuidTimestampUuid',
-    'MapUuidTimestampBytes32',
-    'MapUuidTimestampCbor',
-    'MapTimestampUuidCbor',
-
+    "MapUuidUuidFlatBuffers",
+    "MapUuidStringFlatBuffers",
+    "MapUuidUuidCbor",
+    "MapUuidUuidUuid",
+    "MapUuidUuidUuidUuid",
+    "MapUuidUuidUuidUuidUuid",
+    "MapUuidTimestampUuid",
+    "MapUuidTimestampBytes32",
+    "MapUuidTimestampCbor",
+    "MapTimestampUuidCbor",
     #
     # String pmaps
     #
-
     # String (utf8) based pmap types for object containers
-    'MapStringUuid',
-    'MapStringStringUuid',
-    'MapStringStringStringUuid',
-    'MapStringOid',
-    'MapStringOidOid',
-    'MapStringJson',
-    'MapStringCbor',
-    'MapStringPickle',
-    'MapStringFlatBuffers',
-    'MapStringTimestampCbor',
-    'MapTimestampStringCbor',
-
+    "MapStringUuid",
+    "MapStringStringUuid",
+    "MapStringStringStringUuid",
+    "MapStringOid",
+    "MapStringOidOid",
+    "MapStringJson",
+    "MapStringCbor",
+    "MapStringPickle",
+    "MapStringFlatBuffers",
+    "MapStringTimestampCbor",
+    "MapTimestampStringCbor",
     # String (utf8) based pmap types for indexes
-    'MapStringString',
-
+    "MapStringString",
     #
     # OID pmaps
     #
-
     # OID (uint64) based pmap types for object containers
-    'MapOidString',
-    'MapOidUuid',
-    'MapOidJson',
-    'MapOidCbor',
-    'MapOidPickle',
-    'MapOidFlatBuffers',
-    'MapOidOidFlatBuffers',
-    'MapOidTimestampFlatBuffers',
-    'MapOid3FlatBuffers',
-
+    "MapOidString",
+    "MapOidUuid",
+    "MapOidJson",
+    "MapOidCbor",
+    "MapOidPickle",
+    "MapOidFlatBuffers",
+    "MapOidOidFlatBuffers",
+    "MapOidTimestampFlatBuffers",
+    "MapOid3FlatBuffers",
     # OID (uint64) based pmap types for indexes
-    'MapOidOid',
-    'MapOidOidSet',
-    'MapOidStringOid',
-    'MapOidOidOid',
-    'MapOidTimestampOid',
-    'MapOidTimestampStringOid',
-
+    "MapOidOid",
+    "MapOidOidSet",
+    "MapOidStringOid",
+    "MapOidOidOid",
+    "MapOidTimestampOid",
+    "MapOidTimestampStringOid",
     #
     # Bytes32 pmaps
     #
-    'MapBytes32Uuid',
-    'MapBytes32Timestamp',
-    'MapBytes32Bytes32',
-    'MapBytes32FlatBuffers',
-    'MapBytes32UuidFlatBuffers',
-    'MapUuidBytes32FlatBuffers',
-    'MapBytes32Bytes32FlatBuffers',
-    'MapBytes32StringFlatBuffers',
-    'MapTimestampBytes32FlatBuffers',
-    'MapUuidUuidStringFlatBuffers',
-
+    "MapBytes32Uuid",
+    "MapBytes32Timestamp",
+    "MapBytes32Bytes32",
+    "MapBytes32FlatBuffers",
+    "MapBytes32UuidFlatBuffers",
+    "MapUuidBytes32FlatBuffers",
+    "MapBytes32Bytes32FlatBuffers",
+    "MapBytes32StringFlatBuffers",
+    "MapTimestampBytes32FlatBuffers",
+    "MapUuidUuidStringFlatBuffers",
     #
     # Bytes20 pmaps
     #
-    'MapBytes20Uuid',
-    'MapBytes20Bytes16',
-    'MapBytes20Bytes20',
-    'MapBytes20Bytes20Timestamp',
-    'MapBytes20TimestampBytes20',
-    'MapBytes20TimestampUuid',
-    'MapBytes20FlatBuffers',
-    'MapBytes20Bytes20FlatBuffers',
-    'MapBytes20StringFlatBuffers',
-
+    "MapBytes20Uuid",
+    "MapBytes20Bytes16",
+    "MapBytes20Bytes20",
+    "MapBytes20Bytes20Timestamp",
+    "MapBytes20TimestampBytes20",
+    "MapBytes20TimestampUuid",
+    "MapBytes20FlatBuffers",
+    "MapBytes20Bytes20FlatBuffers",
+    "MapBytes20StringFlatBuffers",
     #
     # Bytes16 pmaps
     #
-    'MapBytes16FlatBuffers',
-    'MapBytes16TimestampUuid',
-    'MapBytes16TimestampUuidFlatBuffers',
+    "MapBytes16FlatBuffers",
+    "MapBytes16TimestampUuid",
+    "MapBytes16TimestampUuidFlatBuffers",
 )
 
 TABLES_BY_UUID: Dict[uuid.UUID, PersistentMap] = {}
@@ -276,22 +262,35 @@ def table(oid, marshal=None, parse=None, build=None, cast=None, compress=None):
     assert parse is None or callable(parse)
     assert build is None or callable(build)
     assert cast is None or callable(cast)
-    assert compress is None or compress in [PersistentMap.COMPRESS_ZLIB, PersistentMap.COMPRESS_SNAPPY]
+    assert compress is None or compress in [
+        PersistentMap.COMPRESS_ZLIB,
+        PersistentMap.COMPRESS_SNAPPY,
+    ]
 
     def decorate(o):
         if oid in TABLES_BY_UUID:
-            assert TABLES_BY_UUID[oid]._zlmdb_oid == oid, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_oid, oid)
+            assert TABLES_BY_UUID[oid]._zlmdb_oid == oid, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_oid, oid
+            )
             assert TABLES_BY_UUID[oid]._zlmdb_marshal == marshal, "{} != {}".format(
-                TABLES_BY_UUID[oid]._zlmdb_marshal, marshal)
-            assert TABLES_BY_UUID[oid]._zlmdb_parse == parse, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_parse,
-                                                                                parse)
-            assert TABLES_BY_UUID[oid]._zlmdb_build == build, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_build,
-                                                                                build)
-            assert TABLES_BY_UUID[oid]._zlmdb_cast == cast, "{} != {}".format(TABLES_BY_UUID[oid]._zlmdb_cast, cast)
+                TABLES_BY_UUID[oid]._zlmdb_marshal, marshal
+            )
+            assert TABLES_BY_UUID[oid]._zlmdb_parse == parse, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_parse, parse
+            )
+            assert TABLES_BY_UUID[oid]._zlmdb_build == build, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_build, build
+            )
+            assert TABLES_BY_UUID[oid]._zlmdb_cast == cast, "{} != {}".format(
+                TABLES_BY_UUID[oid]._zlmdb_cast, cast
+            )
             assert TABLES_BY_UUID[oid]._zlmdb_compress == compress, "{} != {}".format(
-                TABLES_BY_UUID[oid]._zlmdb_compress, compress)
+                TABLES_BY_UUID[oid]._zlmdb_compress, compress
+            )
             return
-        assert oid not in TABLES_BY_UUID, "oid {} already in map (pointing to {})".format(oid, TABLES_BY_UUID[oid])
+        assert oid not in TABLES_BY_UUID, (
+            "oid {} already in map (pointing to {})".format(oid, TABLES_BY_UUID[oid])
+        )
 
         # slot UUID that is mapped to a slot index later when attaching to db
         o._zlmdb_oid = oid

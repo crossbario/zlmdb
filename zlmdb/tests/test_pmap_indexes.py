@@ -30,6 +30,7 @@ import pytest
 from copy import deepcopy
 
 import txaio
+
 txaio.use_twisted()
 
 import zlmdb  # noqa
@@ -42,14 +43,14 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    print('Using _schema_py3 !')
+    print("Using _schema_py3 !")
     from _schema_py3 import User, Schema4
 else:
-    print('Using _schema_py2 !')
+    print("Using _schema_py2 !")
     from _schema_py2 import User, Schema4
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def testset1(N=10, M=100):
     users = []
     for j in range(N):
@@ -65,11 +66,9 @@ def test_fill_indexes(testset1):
     with NON-NULL values.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             # fill table, which also triggers inserts into the index pmaps
@@ -97,13 +96,19 @@ def test_fill_indexes(testset1):
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user.oid == user_oid
 
-                    user_oid = schema.idx_users_by_icecream[txn, (user.icecream, user.oid)]
+                    user_oid = schema.idx_users_by_icecream[
+                        txn, (user.icecream, user.oid)
+                    ]
                     assert user.oid == user_oid
 
-                    user_oid = schema.idx_users_by_mrealm_authid[txn, (user.mrealm, user.authid)]
+                    user_oid = schema.idx_users_by_mrealm_authid[
+                        txn, (user.mrealm, user.authid)
+                    ]
                     assert user.oid == user_oid
 
-                    user_oid = schema.idx_users_by_mrealm_notnull_authid[txn, (user.mrealm_notnull, user.authid)]
+                    user_oid = schema.idx_users_by_mrealm_notnull_authid[
+                        txn, (user.mrealm_notnull, user.authid)
+                    ]
                     assert user.oid == user_oid
 
             # check non-unique index
@@ -116,10 +121,12 @@ def test_fill_indexes(testset1):
             MAX_OID = 9007199254740992
             with db.begin() as txn:
                 for icecream in users_by_icecream:
-                    for _, user_oid in schema.idx_users_by_icecream.select(txn,
-                                                                           from_key=(icecream, 0),
-                                                                           to_key=(icecream, MAX_OID + 1),
-                                                                           return_values=False):
+                    for _, user_oid in schema.idx_users_by_icecream.select(
+                        txn,
+                        from_key=(icecream, 0),
+                        to_key=(icecream, MAX_OID + 1),
+                        return_values=False,
+                    ):
                         assert user_oid in users_by_icecream[icecream]
 
 
@@ -129,11 +136,9 @@ def test_fill_indexes_nullable(testset1):
     with records that have those column values actually NULL.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             with db.begin(write=True, stats=stats) as txn:
@@ -176,7 +181,9 @@ def test_fill_indexes_nullable(testset1):
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user_oid is None
 
-                    user_oid = schema.idx_users_by_mrealm_authid[txn, (user.mrealm, user.authid)]
+                    user_oid = schema.idx_users_by_mrealm_authid[
+                        txn, (user.mrealm, user.authid)
+                    ]
                     assert user_oid is None
 
 
@@ -186,11 +193,9 @@ def test_fill_index_non_nullable_raises(testset1):
     record having a NULL value in the indexed column raises an exception.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             with db.begin(write=True) as txn:
                 for user in testset1:
                     # "user.authid" is an indexed column that is non-nullable
@@ -211,11 +216,9 @@ def test_fill_non_unique_indexes(testset1):
     Insert records into a table with a non-unique, non-nullable indexed column.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             with db.begin(write=True, stats=stats) as txn:
@@ -226,7 +229,10 @@ def test_fill_non_unique_indexes(testset1):
             with db.begin() as txn:
                 for j in range(10):
                     user_oids = list(
-                        schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+                        schema.idx_users_by_realm.select(
+                            txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)
+                        )
+                    )
 
                     assert list(range(j * 100, (j + 1) * 100)) == user_oids
 
@@ -237,11 +243,9 @@ def test_delete_indexes(testset1):
     records have been deleted as a consequence too.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             # insert data records
@@ -260,16 +264,24 @@ def test_delete_indexes(testset1):
                     user_oid = schema.idx_users_by_email[txn, user.email]
                     assert user_oid is None
 
-                    user_oid = schema.idx_users_by_realm[txn, (user.realm_oid, user.oid)]
+                    user_oid = schema.idx_users_by_realm[
+                        txn, (user.realm_oid, user.oid)
+                    ]
                     assert user_oid is None
 
-                    user_oid = schema.idx_users_by_icecream[txn, (user.icecream, user.oid)]
+                    user_oid = schema.idx_users_by_icecream[
+                        txn, (user.icecream, user.oid)
+                    ]
                     assert user_oid is None
 
-                    user_oid = schema.idx_users_by_mrealm_authid[txn, (user.mrealm, user.authid)]
+                    user_oid = schema.idx_users_by_mrealm_authid[
+                        txn, (user.mrealm, user.authid)
+                    ]
                     assert user_oid is None
 
-                    user_oid = schema.idx_users_by_mrealm_notnull_authid[txn, (user.mrealm_notnull, user.authid)]
+                    user_oid = schema.idx_users_by_mrealm_notnull_authid[
+                        txn, (user.mrealm_notnull, user.authid)
+                    ]
                     assert user_oid is None
 
 
@@ -279,11 +291,9 @@ def test_delete_nonunique_indexes(testset1):
     that index records have been deleted as a consequence too.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             with db.begin(write=True, stats=stats) as txn:
@@ -297,7 +307,10 @@ def test_delete_nonunique_indexes(testset1):
             with db.begin() as txn:
                 for j in range(10):
                     user_oids = list(
-                        schema.idx_users_by_realm.select(txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)))
+                        schema.idx_users_by_realm.select(
+                            txn, return_keys=False, from_key=(j, 0), to_key=(j + 1, 0)
+                        )
+                    )
 
                     assert [] == user_oids
 
@@ -308,11 +321,9 @@ def test_delete_nonindexes2(testset1):
     WARNING: quadratic run-time (in testset size)
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             with db.begin(write=True, stats=stats) as txn:
@@ -328,10 +339,13 @@ def test_delete_nonindexes2(testset1):
                         fullset.discard(user_oid)
 
                         user_oids = set(
-                            schema.idx_users_by_realm.select(txn,
-                                                             return_keys=False,
-                                                             from_key=(j, 0),
-                                                             to_key=(j + 1, 0)))
+                            schema.idx_users_by_realm.select(
+                                txn,
+                                return_keys=False,
+                                from_key=(j, 0),
+                                to_key=(j + 1, 0),
+                            )
+                        )
 
                         assert fullset == user_oids
 
@@ -343,11 +357,9 @@ def test_set_null_indexes_nullable(testset1):
     to NON-NULL value and check that index records are deleted.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             # fill table with NON-NULLs in indexed column
@@ -390,11 +402,9 @@ def test_set_notnull_indexes_nullable(testset1):
     to NULL value and check that index records are created.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             # fill table with NULLs in indexed column
@@ -436,7 +446,6 @@ def test_truncate_table_with_index(testset1):
     all index records have been deleted as well.
     """
     with TemporaryDirectory() as dbpath:
-
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:

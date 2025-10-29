@@ -36,6 +36,7 @@ class TransactionStats(object):
     """
     Value class for holding transaction statistics.
     """
+
     def __init__(self):
         self.puts = 0
         self.dels = 0
@@ -98,13 +99,15 @@ class Transaction(object):
         self._log = None
 
     def __enter__(self):
-        assert (self._txn is None)
+        assert self._txn is None
 
-        self._txn = lmdb.Transaction(self._db._env, write=self._write, buffers=self._buffers)
+        self._txn = lmdb.Transaction(
+            self._db._env, write=self._write, buffers=self._buffers
+        )
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert (self._txn is not None)
+        assert self._txn is not None
 
         # https://docs.python.org/3/reference/datamodel.html#object.__exit__
         # If the context was exited without an exception, all three arguments will be None.
@@ -112,8 +115,8 @@ class Transaction(object):
             if self._log:
                 cnt = 0
                 for op, key in self._log:
-                    _key = struct.pack('>H', 0)
-                    _data = struct.pack('>H', op) + key
+                    _key = struct.pack(">H", 0)
+                    _data = struct.pack(">H", op) + key
                     self._txn.put(_key, _data)
                     cnt += 1
             self._txn.commit()
@@ -127,7 +130,7 @@ class Transaction(object):
 
         :return:
         """
-        assert (self._txn is not None)
+        assert self._txn is not None
 
         return self._txn.id()
 
@@ -137,7 +140,7 @@ class Transaction(object):
         :param key:
         :return:
         """
-        assert (self._txn is not None)
+        assert self._txn is not None
 
         return self._txn.get(key)
 
@@ -149,7 +152,7 @@ class Transaction(object):
         :param overwrite:
         :return:
         """
-        assert (self._txn is not None)
+        assert self._txn is not None
 
         # store the record, returning True if it was written, or False to indicate the key
         # was already present and overwrite=False.
@@ -167,7 +170,7 @@ class Transaction(object):
         :param key:
         :return:
         """
-        assert (self._txn is not None)
+        assert self._txn is not None
 
         was_deleted = self._txn.delete(key)
         if was_deleted:

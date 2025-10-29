@@ -29,6 +29,7 @@ import sys
 import random
 
 import txaio
+
 txaio.use_twisted()
 
 try:
@@ -50,12 +51,11 @@ class UsersSchema(zlmdb.Schema):
 
 def test_pmap_flatbuffers_values():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = UsersSchema()
 
         with zlmdb.Database(dbpath) as db:
-
             N = 100
             stats = zlmdb.TransactionStats()
 
@@ -76,13 +76,12 @@ def test_pmap_flatbuffers_values():
 
 def test_pmap_flatbuffers_count():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = UsersSchema()
 
         # max DB size is 100 MB
         with zlmdb.Database(dbpath, maxsize=100 * (2**20)) as db:
-
             oids = set()
             oid_to_referred_by = {}
 
@@ -104,10 +103,15 @@ def test_pmap_flatbuffers_count():
                 assert stats.puts == N
                 assert stats.dels == 0
                 duration_ns = stats.duration
-                duration_ms = int(duration_ns / 1000000.)
-                rows_per_sec = int(round(float(stats.puts + stats.dels) * 1000. / float(duration_ms)))
-                print('Transaction ended: puts={} / dels={} rows in {} ms, {} rows/sec'.format(
-                    stats.puts, stats.dels, duration_ms, rows_per_sec))
+                duration_ms = int(duration_ns / 1000000.0)
+                rows_per_sec = int(
+                    round(float(stats.puts + stats.dels) * 1000.0 / float(duration_ms))
+                )
+                print(
+                    "Transaction ended: puts={} / dels={} rows in {} ms, {} rows/sec".format(
+                        stats.puts, stats.dels, duration_ms, rows_per_sec
+                    )
+                )
 
                 stats.reset()
 
@@ -128,7 +132,12 @@ def test_pmap_flatbuffers_count():
                             assert user
                             assert user.referred_by == oid_to_referred_by.get(oid, None)
                     duration_ns = zlmdb.walltime() - started
-                    duration_ms = int(duration_ns / 1000000.)
-                    rows_per_sec = int(round(float(M * N) * 1000. / float(duration_ms)))
-                    print('Transaction ended: {} rows read in {} ms, {} rows/sec'.format(
-                        M * N, duration_ms, rows_per_sec))
+                    duration_ms = int(duration_ns / 1000000.0)
+                    rows_per_sec = int(
+                        round(float(M * N) * 1000.0 / float(duration_ms))
+                    )
+                    print(
+                        "Transaction ended: {} rows read in {} ms, {} rows/sec".format(
+                            M * N, duration_ms, rows_per_sec
+                        )
+                    )

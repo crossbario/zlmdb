@@ -29,6 +29,7 @@ import os
 import pytest
 
 import txaio
+
 txaio.use_twisted()
 
 import zlmdb  # noqa
@@ -46,7 +47,7 @@ else:
     from _schema_py2 import User, Schema2
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def testset1():
     users = []
     for i in range(1000):
@@ -79,12 +80,16 @@ def test_open3():
         assert db.is_open
         try:
             zlmdb.Database(dbpath)
-            assert False, 'opening same dbpath twice in same process did not throw an exception'
+            assert False, (
+                "opening same dbpath twice in same process did not throw an exception"
+            )
         except RuntimeError as e:
             # RuntimeError: tried to open same dbpath "/tmp/tmpwc1dw5c8" twice within same process
-            assert 'twice within same process' in str(e), 'exception did not contain text we excepted: {}'.format(e)
+            assert "twice within same process" in str(e), (
+                "exception did not contain text we excepted: {}".format(e)
+            )
         except Exception as e:
-            assert False, 'unexpected exception {} raised'.format(e)
+            assert False, "unexpected exception {} raised".format(e)
 
 
 def test_open4():
@@ -100,54 +105,51 @@ def test_open4():
 
 def test_transaction():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
-                print('transaction open', txn.id())
-            print('transaction committed')
-        print('database closed')
+                print("transaction open", txn.id())
+            print("transaction committed")
+        print("database closed")
 
 
 def test_save_load():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
         user = User.create_test_user()
 
         with zlmdb.Database(dbpath) as db:
-
             with db.begin(write=True) as txn:
-
                 schema.users[txn, user.oid] = user
-                print('user saved')
+                print("user saved")
 
                 _user = schema.users[txn, user.oid]
                 assert _user
                 assert user == _user
-                print('user loaded')
+                print("user loaded")
 
-            print('transaction committed')
+            print("transaction committed")
 
-        print('database closed')
+        print("database closed")
 
 
 def test_save_load_many_1(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
         with zlmdb.Database(dbpath) as db:
-
             with db.begin(write=True) as txn:
                 for user in testset1:
                     schema.users[txn, user.oid] = user
 
                 cnt = schema.users.count(txn)
-                print('user saved:', cnt)
+                print("user saved:", cnt)
                 assert cnt == len(testset1)
 
             with db.begin() as txn:
@@ -162,24 +164,22 @@ def test_save_load_many_1(testset1):
 
 def test_save_load_many_2(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
         oids = []
 
         with zlmdb.Database(dbpath) as db:
-
             # write records in a 1st transaction
             with db.begin(write=True) as txn:
-
                 c = 0
                 for user in testset1:
                     schema.users[txn, user.oid] = user
                     oids.append(user.oid)
                     c += 1
                 assert c == len(testset1)
-                print('[1] successfully stored {} records'.format(c))
+                print("[1] successfully stored {} records".format(c))
 
                 # in the same transaction, read back records
                 c = 0
@@ -188,7 +188,7 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
                 assert c == len(testset1)
-                print('[1] successfully loaded {} records'.format(c))
+                print("[1] successfully loaded {} records".format(c))
 
             # in a new transaction, read back records
             c = 0
@@ -198,16 +198,14 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
             assert c == len(testset1)
-            print('[2] successfully loaded {} records'.format(c))
+            print("[2] successfully loaded {} records".format(c))
 
         # in a new database environment (and hence new transaction), read back records
         with zlmdb.Database(dbpath) as db:
-
             with db.begin() as txn:
-
                 count = schema.users.count(txn)
                 assert count == len(testset1)
-                print('total records:', count)
+                print("total records:", count)
 
                 c = 0
                 for oid in oids:
@@ -215,4 +213,4 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
                 assert c == len(testset1)
-                print('[3] successfully loaded {} records'.format(c))
+                print("[3] successfully loaded {} records".format(c))

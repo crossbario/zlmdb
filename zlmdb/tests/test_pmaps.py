@@ -29,6 +29,7 @@ import sys
 import pytest
 
 import txaio
+
 txaio.use_twisted()
 
 import zlmdb  # noqa
@@ -46,7 +47,7 @@ else:
     from _schema_py2 import User, Schema1, Schema3, Schema4
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def testset1():
     users = []
     for j in range(10):
@@ -58,7 +59,7 @@ def testset1():
 
 def test_truncate_table():
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema1()
 
@@ -86,7 +87,7 @@ def test_truncate_table():
 
 def test_fill_check(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -105,7 +106,7 @@ def test_fill_check(testset1):
 
 def test_fill_check2(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -126,7 +127,7 @@ def test_select(testset1):
     testset1_keys = set([user.authid for user in testset1])
 
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -147,12 +148,11 @@ def test_select(testset1):
 
 def test_count_all(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
         with zlmdb.Database(dbpath) as db:
-
             # count on empty table
             with db.begin() as txn:
                 cnt = schema.users.count(txn)
@@ -187,7 +187,7 @@ def test_count_all(testset1):
 
 def test_count_prefix(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -199,11 +199,11 @@ def test_count_prefix(testset1):
         n = len(testset1)
         tests = [
             (None, n),
-            (u'', n),
-            (u'test-', n),
-            (u'test-1', 111),
-            (u'test-11', 11),
-            (u'test-111', 1),
+            ("", n),
+            ("test-", n),
+            ("test-1", 111),
+            ("test-11", 11),
+            ("test-111", 1),
         ]
         with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
@@ -214,12 +214,11 @@ def test_count_prefix(testset1):
 
 def test_fill_with_indexes(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
         with zlmdb.Database(dbpath) as db:
-
             stats = zlmdb.TransactionStats()
 
             with db.begin(write=True, stats=stats) as txn:
@@ -233,7 +232,7 @@ def test_fill_with_indexes(testset1):
 
 def test_truncate_table_with_index(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -247,7 +246,7 @@ def test_truncate_table_with_index(testset1):
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True, stats=stats) as txn:
                 records = schema.users.truncate(txn)
-                print('table truncated:', records)
+                print("table truncated:", records)
 
         print(stats.puts)
         print(stats.dels)
@@ -255,7 +254,7 @@ def test_truncate_table_with_index(testset1):
 
 def test_rebuild_index(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -266,13 +265,17 @@ def test_rebuild_index(testset1):
 
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
-                records = schema.users.rebuild_index(txn, 'idx1')
-                print('\nrebuilt specific index "idx1" on "users": {} records affected'.format(records))
+                records = schema.users.rebuild_index(txn, "idx1")
+                print(
+                    '\nrebuilt specific index "idx1" on "users": {} records affected'.format(
+                        records
+                    )
+                )
 
 
 def test_rebuild_all_indexes(testset1):
     with TemporaryDirectory() as dbpath:
-        print('Using temporary directory {} for database'.format(dbpath))
+        print("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -284,4 +287,8 @@ def test_rebuild_all_indexes(testset1):
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 records = schema.users.rebuild_indexes(txn)
-                print('\nrebuilt all indexes on "users": {} records affected'.format(records))
+                print(
+                    '\nrebuilt all indexes on "users": {} records affected'.format(
+                        records
+                    )
+                )

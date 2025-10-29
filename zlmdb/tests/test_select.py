@@ -38,6 +38,7 @@ import zlmdb  # noqa
 from _schema_mnode_log import Schema, MNodeLog
 
 import txaio
+
 txaio.use_twisted()
 
 from txaio import time_ns  # noqa
@@ -47,29 +48,30 @@ try:
 except ImportError:
     from backports.tempfile import TemporaryDirectory  # type:ignore
 
-if 'COVERAGE_PROCESS_START' in os.environ:
+if "COVERAGE_PROCESS_START" in os.environ:
     COVERAGE = True
 else:
     COVERAGE = False
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def builder():
     _builder = flatbuffers.Builder(0)
     return _builder
 
 
 def rfloat():
-    return struct.unpack('>f', struct.pack('>f', random.random() * 10**10))[0]
+    return struct.unpack(">f", struct.pack(">f", random.random() * 10**10))[0]
 
 
 def fill_mnodelog(obj):
-
-    obj.timestamp = np.datetime64(time_ns(), 'ns') + np.timedelta64(random.randint(1, 120), 's')
+    obj.timestamp = np.datetime64(time_ns(), "ns") + np.timedelta64(
+        random.randint(1, 120), "s"
+    )
     obj.node_id = uuid.uuid4()
     obj.run_id = uuid.uuid4()
     obj.state = random.randint(1, 2)
-    obj.ended = obj.timestamp + np.timedelta64(random.randint(1, 120), 's')
+    obj.ended = obj.timestamp + np.timedelta64(random.randint(1, 120), "s")
     obj.session = random.randint(1, 9007199254740992)
     obj.sent = obj.timestamp
     obj.seq = random.randint(1, 10000)
@@ -137,7 +139,7 @@ def fill_mnodelog(obj):
     obj.disk_write_time = random.randint(1, M)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mnodelog():
     _mnodelog = MNodeLog()
     fill_mnodelog(_mnodelog)
@@ -286,15 +288,28 @@ def test_mnodelog_insert(N=1000):
 
                     assert mnodelog.network_bytes_recv == _mnodelog.network_bytes_recv
                     assert mnodelog.network_bytes_sent == _mnodelog.network_bytes_sent
-                    assert mnodelog.network_connection_af_inet == _mnodelog.network_connection_af_inet
-                    assert mnodelog.network_connection_af_inet6 == _mnodelog.network_connection_af_inet6
-                    assert mnodelog.network_connection_af_unix == _mnodelog.network_connection_af_unix
+                    assert (
+                        mnodelog.network_connection_af_inet
+                        == _mnodelog.network_connection_af_inet
+                    )
+                    assert (
+                        mnodelog.network_connection_af_inet6
+                        == _mnodelog.network_connection_af_inet6
+                    )
+                    assert (
+                        mnodelog.network_connection_af_unix
+                        == _mnodelog.network_connection_af_unix
+                    )
                     assert mnodelog.network_dropin == _mnodelog.network_dropin
                     assert mnodelog.network_dropout == _mnodelog.network_dropout
                     assert mnodelog.network_errin == _mnodelog.network_errin
                     assert mnodelog.network_errout == _mnodelog.network_errout
-                    assert mnodelog.network_packets_recv == _mnodelog.network_packets_recv
-                    assert mnodelog.network_packets_sent == _mnodelog.network_packets_sent
+                    assert (
+                        mnodelog.network_packets_recv == _mnodelog.network_packets_recv
+                    )
+                    assert (
+                        mnodelog.network_packets_sent == _mnodelog.network_packets_sent
+                    )
 
                     assert mnodelog.memory_active == _mnodelog.memory_active
                     assert mnodelog.memory_available == _mnodelog.memory_available
@@ -311,11 +326,17 @@ def test_mnodelog_insert(N=1000):
                     assert mnodelog.disk_busy_time == _mnodelog.disk_busy_time
                     assert mnodelog.disk_read_bytes == _mnodelog.disk_read_bytes
                     assert mnodelog.disk_read_count == _mnodelog.disk_read_count
-                    assert mnodelog.disk_read_merged_count == _mnodelog.disk_read_merged_count
+                    assert (
+                        mnodelog.disk_read_merged_count
+                        == _mnodelog.disk_read_merged_count
+                    )
                     assert mnodelog.disk_read_time == _mnodelog.disk_read_time
                     assert mnodelog.disk_write_bytes == _mnodelog.disk_write_bytes
                     assert mnodelog.disk_write_count == _mnodelog.disk_write_count
-                    assert mnodelog.disk_write_merged_count == _mnodelog.disk_write_merged_count
+                    assert (
+                        mnodelog.disk_write_merged_count
+                        == _mnodelog.disk_write_merged_count
+                    )
                     assert mnodelog.disk_write_time == _mnodelog.disk_write_time
 
 
@@ -347,27 +368,40 @@ def test_mnodelog_queries(N=1000):
                     mnodelog = schema.mnode_logs[txn, key]
                     assert mnodelog
 
-                first_key = (np.datetime64(0, 'ns'), uuid.UUID(bytes=b'\0' * 16))
-                last_key = (np.datetime64(2**63 - 1, 'ns'), uuid.UUID(bytes=b'\xff' * 16))
-                cnt = schema.mnode_logs.count_range(txn, from_key=first_key, to_key=last_key)
+                first_key = (np.datetime64(0, "ns"), uuid.UUID(bytes=b"\0" * 16))
+                last_key = (
+                    np.datetime64(2**63 - 1, "ns"),
+                    uuid.UUID(bytes=b"\xff" * 16),
+                )
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=first_key, to_key=last_key
+                )
                 assert cnt == N
 
-                cnt = schema.mnode_logs.count_range(txn, from_key=skeys[0], to_key=skeys[-1])
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=skeys[0], to_key=skeys[-1]
+                )
                 assert cnt == N - 1
 
                 from_key = skeys[0]
-                to_key = (skeys[-1][0], uuid.UUID(bytes=b'\xff' * 16))
-                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                to_key = (skeys[-1][0], uuid.UUID(bytes=b"\xff" * 16))
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=from_key, to_key=to_key
+                )
                 assert cnt == N
 
                 K = len(skeys) // 2
-                cnt = schema.mnode_logs.count_range(txn, from_key=skeys[0], to_key=skeys[K])
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=skeys[0], to_key=skeys[K]
+                )
                 assert cnt == N - K
 
                 K = 10
                 from_key = skeys[-K]
-                to_key = (skeys[-1][0], uuid.UUID(bytes=b'\xff' * 16))
-                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                to_key = (skeys[-1][0], uuid.UUID(bytes=b"\xff" * 16))
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=from_key, to_key=to_key
+                )
                 assert cnt == K
 
                 # do some scanning queries
@@ -375,14 +409,18 @@ def test_mnodelog_queries(N=1000):
 
                 # full scan
                 keys1 = []
-                for key in schema.mnode_logs.select(txn, return_values=False, reverse=False):
+                for key in schema.mnode_logs.select(
+                    txn, return_values=False, reverse=False
+                ):
                     keys1.append(key)
 
                 assert len(keys1) == N
 
                 # full reverse scan
                 keys2 = []
-                for key in schema.mnode_logs.select(txn, return_values=False, reverse=True):
+                for key in schema.mnode_logs.select(
+                    txn, return_values=False, reverse=True
+                ):
                     keys2.append(key)
 
                 assert len(keys2) == N
@@ -390,22 +428,26 @@ def test_mnodelog_queries(N=1000):
 
                 # scan [from_key, to_key[
                 keys1 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=False):
+                for key in schema.mnode_logs.select(
+                    txn,
+                    return_values=False,
+                    from_key=from_key,
+                    to_key=to_key,
+                    reverse=False,
+                ):
                     keys1.append(key)
 
                 assert len(keys1) == K
 
                 # reverse scan [from_key, to_key[
                 keys2 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=True):
+                for key in schema.mnode_logs.select(
+                    txn,
+                    return_values=False,
+                    from_key=from_key,
+                    to_key=to_key,
+                    reverse=True,
+                ):
                     keys2.append(key)
 
                 assert len(keys2) == K
@@ -416,7 +458,9 @@ def test_mnodelog_queries(N=1000):
 
                 # scan [from_key, ..
                 keys1 = []
-                for key in schema.mnode_logs.select(txn, return_values=False, from_key=anchor_key, reverse=False):
+                for key in schema.mnode_logs.select(
+                    txn, return_values=False, from_key=anchor_key, reverse=False
+                ):
                     keys1.append(key)
 
                 assert len(keys1) == K
@@ -424,7 +468,9 @@ def test_mnodelog_queries(N=1000):
 
                 # reverse scan ..., to_key[
                 keys2 = []
-                for key in schema.mnode_logs.select(txn, return_values=False, to_key=anchor_key, reverse=True):
+                for key in schema.mnode_logs.select(
+                    txn, return_values=False, to_key=anchor_key, reverse=True
+                ):
                     keys2.append(key)
 
                 assert len(keys2) == K
@@ -439,16 +485,20 @@ def test_mnodelog_queries(N=1000):
                 _skeys = skeys[K:-K]
                 L = len(_skeys)
 
-                cnt = schema.mnode_logs.count_range(txn, from_key=from_key, to_key=to_key)
+                cnt = schema.mnode_logs.count_range(
+                    txn, from_key=from_key, to_key=to_key
+                )
                 assert cnt == L
 
                 # scan [from_key, to_key[
                 keys1 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=False):
+                for key in schema.mnode_logs.select(
+                    txn,
+                    return_values=False,
+                    from_key=from_key,
+                    to_key=to_key,
+                    reverse=False,
+                ):
                     keys1.append(key)
 
                 assert len(keys1) == L
@@ -456,11 +506,13 @@ def test_mnodelog_queries(N=1000):
 
                 # reverse scan [from_key, to_key[
                 keys2 = []
-                for key in schema.mnode_logs.select(txn,
-                                                    return_values=False,
-                                                    from_key=from_key,
-                                                    to_key=to_key,
-                                                    reverse=True):
+                for key in schema.mnode_logs.select(
+                    txn,
+                    return_values=False,
+                    from_key=from_key,
+                    to_key=to_key,
+                    reverse=True,
+                ):
                     keys2.append(key)
 
                 assert len(keys2) == L
@@ -485,10 +537,14 @@ def _test_mnodelog_bigtable(N, M, K):
                     key = (rec.timestamp, rec.node_id)
                     schema.mnode_logs[txn, key] = rec
                     data[key] = rec
-            duration = (time_ns() - started) / 1000000000.
+            duration = (time_ns() - started) / 1000000000.0
             rps = int(round(N / duration))
             duration = int(round(duration))
-            print('Inserted {} records in {} seconds [{} records/sec]'.format(N, duration, rps))
+            print(
+                "Inserted {} records in {} seconds [{} records/sec]".format(
+                    N, duration, rps
+                )
+            )
 
             skeys = sorted(data.keys())
 
@@ -501,10 +557,14 @@ def _test_mnodelog_bigtable(N, M, K):
                         key = random.choice(skeys)
                         mnodelog = schema.mnode_logs[txn, key]
                         assert mnodelog
-                duration = (time_ns() - started) / 1000000000.
+                duration = (time_ns() - started) / 1000000000.0
                 rps = int(round(M / duration))
                 duration = int(round(duration))
-                print('Selected {} records in {} seconds [{} records/sec]'.format(M, duration, rps))
+                print(
+                    "Selected {} records in {} seconds [{} records/sec]".format(
+                        M, duration, rps
+                    )
+                )
 
             # random range counts
             #
@@ -517,12 +577,18 @@ def _test_mnodelog_bigtable(N, M, K):
                         i2 = random.randint(i1, min(len(skeys) - 1, i1 + 1000))
                         key1 = skeys[i1]
                         key2 = skeys[i2]
-                        cnt = schema.mnode_logs.count_range(txn, from_key=key1, to_key=key2)
+                        cnt = schema.mnode_logs.count_range(
+                            txn, from_key=key1, to_key=key2
+                        )
                         assert cnt == len(skeys[i1:i2])
-                duration = (time_ns() - started) / 1000000000.
+                duration = (time_ns() - started) / 1000000000.0
                 rps = int(round(K / duration))
                 duration = int(round(duration))
-                print('Performed {} range counts in {} seconds [{} queries/sec]'.format(K, duration, rps))
+                print(
+                    "Performed {} range counts in {} seconds [{} queries/sec]".format(
+                        K, duration, rps
+                    )
+                )
 
 
 def test_mnodelog_bigtable_size10k():
