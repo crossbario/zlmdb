@@ -93,10 +93,10 @@ def apply_patches():
                 success = patchset.apply(strip=3, root=abs_build_dir)
 
                 if success:
-                    print("  ✓ Applied successfully")
+                    print("  [OK] Applied successfully")
                 else:
                     # patch-ng returns False if any patch failed
-                    print(f"  ✗ Failed to apply patch {patch_file}")
+                    print(f"  [FAIL] Failed to apply patch {patch_file}")
                     # Try to get more info about what failed
                     for item in patchset.items:
                         target_file = os.path.join(build_dir, item.target)
@@ -129,7 +129,7 @@ def apply_patches():
                     print(result.stderr)
                     sys.exit(1)
             else:
-                print("  ✓ Applied successfully")
+                print("  [OK] Applied successfully")
 
     return build_dir
 
@@ -194,7 +194,7 @@ def generate_config(build_dir):
             f.write(f'    {key!r}: {value!r},\n')
         f.write('}\n')
 
-    print("  ✓ Configuration written")
+    print("  [OK] Configuration written")
     return config
 
 
