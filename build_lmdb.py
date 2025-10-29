@@ -101,7 +101,7 @@ def apply_patches():
                 # The patches have paths like: a/libraries/liblmdb/lmdb.h
                 # We need to strip 3 levels: a/, libraries/, liblmdb/
                 # to get: lmdb.h (which is directly in build/lmdb-src/)
-                print(f"  Attempting to apply with strip=3...")
+                print("  Attempting to apply with strip=3...")
                 success = False
 
                 # Try strip levels 0-4 until one works
