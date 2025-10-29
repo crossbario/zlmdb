@@ -16,7 +16,18 @@ This software includes and distributes the following third-party components:
    LMDB C sources are included via git submodule and compiled into zlmdb.
    The OpenLDAP Public License is included in the LICENSE file.
 
-2. Flatbuffers
+2. py-lmdb (Python LMDB bindings)
+   Copyright: 2013-2024 The py-lmdb authors
+   Original author: David Wilson
+   Current maintainer: Nic Watson
+   License: OpenLDAP Public License 2.8
+   Source: https://github.com/jnwatson/py-lmdb
+   Vendored files: lmdb/ directory, lmdb-patches/ directory
+
+   Python CFFI bindings and patches from py-lmdb are vendored and built into zlmdb.
+   The OpenLDAP Public License is included in the LICENSE file.
+
+3. Flatbuffers
    Version: 25.9.23
    Copyright: 2014 Google Inc.
    License: Apache License 2.0

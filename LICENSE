@@ -27,10 +27,12 @@ Third-Party Component Licenses
 zlmdb includes and distributes the following third-party components:
 
 1. LMDB (Lightning Memory-Mapped Database)
-2. Flatbuffers
+2. py-lmdb (Python LMDB bindings)
+3. Flatbuffers
 
-These components are included via git submodules and are built into the
-zlmdb distribution. The licenses for these components are reproduced below.
+These components are included via git submodules and/or vendored code and are
+built into the zlmdb distribution. The licenses for these components are
+reproduced below.
 
 -------------------------------------------------------------------------------
 LMDB License (OpenLDAP Public License)
@@ -86,6 +88,30 @@ OpenLDAP is a registered trademark of the OpenLDAP Foundation.
 Copyright 1999-2003 The OpenLDAP Foundation, Redwood City,
 California, USA.  All Rights Reserved.  Permission to copy and
 distribute verbatim copies of this document is granted.
+
+-------------------------------------------------------------------------------
+py-lmdb License (OpenLDAP Public License)
+-------------------------------------------------------------------------------
+
+py-lmdb is Copyright 2013-2024 The py-lmdb authors, all rights reserved.
+Original author: David Wilson
+Current maintainer: Nic Watson
+Source: https://github.com/jnwatson/py-lmdb
+
+zlmdb includes vendored Python CFFI bindings and patches from py-lmdb,
+which are licensed under the OpenLDAP Public License 2.8 (same as above).
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted only as authorized by the OpenLDAP
+Public License.
+
+A copy of this license is available above in the LMDB License section,
+or alternatively at <http://www.OpenLDAP.org/license.html>.
+
+OpenLDAP is a registered trademark of the OpenLDAP Foundation.
+
+Individual files and/or contributed packages may be copyright by
+other parties and/or subject to additional restrictions.
 
 -------------------------------------------------------------------------------
 Flatbuffers License (Apache License 2.0)
