@@ -371,8 +371,25 @@ clean: distclean
 # -- Testing (expanded from Makefile)
 # -----------------------------------------------------------------------------
 
+# Internal helper to ensure LMDB sources are built before running tests
+_prepare-lmdb-sources venv="":
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    # Ensure LMDB sources are built (required for CFFI compilation at import time)
+    # This is especially important for editable installs where build hooks may not run
+    if [ ! -d "build/lmdb-src" ]; then
+        echo "==> Preparing LMDB sources..."
+        ${VENV_PYTHON} build_lmdb.py
+    fi
+
 # Run quick tests with pytest (no tox)
-test-quick venv="": (install-tools venv) (install venv)
+test-quick venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -385,7 +402,7 @@ test-quick venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -m pytest -v tests/ zlmdb/tests/
 
 # Run single test file
-test-single venv="": (install-tools venv) (install venv)
+test-single venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -398,7 +415,7 @@ test-single venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_basic.py
 
 # Run pmap tests
-test-pmaps venv="": (install-tools venv) (install venv)
+test-pmaps venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -411,7 +428,7 @@ test-pmaps venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmaps.py
 
 # Run index tests
-test-indexes venv="": (install-tools venv) (install venv)
+test-indexes venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -424,7 +441,7 @@ test-indexes venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmap_indexes.py
 
 # Run select tests
-test-select venv="": (install-tools venv) (install venv)
+test-select venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -437,7 +454,7 @@ test-select venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_select.py
 
 # Run zdb etcd tests
-test-zdb-etcd venv="": (install-tools venv) (install venv)
+test-zdb-etcd venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -449,7 +466,7 @@ test-zdb-etcd venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} tests/zdb/test_zdb_etcd.py
 
 # Run zdb dataframe tests
-test-zdb-df venv="": (install-tools venv) (install venv)
+test-zdb-df venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -461,7 +478,7 @@ test-zdb-df venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} tests/zdb/test_zdb_df.py
 
 # Run zdb dynamic tests
-test-zdb-dyn venv="": (install-tools venv) (install venv)
+test-zdb-dyn venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -473,7 +490,7 @@ test-zdb-dyn venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} tests/zdb/test_zdb_dyn.py
 
 # Run zdb flatbuffers tests
-test-zdb-fbs venv="": (install-tools venv) (install venv)
+test-zdb-fbs venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -498,7 +515,7 @@ test-tox-all:
     tox
 
 # Generate code coverage report
-coverage venv="": (install-tools venv) (install venv)
+coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
