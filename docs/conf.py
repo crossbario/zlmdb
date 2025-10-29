@@ -108,8 +108,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autodoc.typehints',
 
-    'sphinxcontrib.spelling',
-
     # https://sphinx-autoapi.readthedocs.io
     # 'autoapi.extension',
 
@@ -123,7 +121,7 @@ extensions = [
 # for a list of supported languages.
 language = 'en'
 
-# extensions not available on RTD
+# extensions not available on RTD (spell checking requires pyenchant)
 if spelling is not None:
     extensions.append('sphinxcontrib.spelling')
 
