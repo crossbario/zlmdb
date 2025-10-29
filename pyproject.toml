@@ -170,13 +170,13 @@ docstring-code-format = false
 # -----------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
-# Only search for tests in these directories
+# Only search for tests in these directories (non-recursive into subdirs outside these)
 testpaths = [
     "tests",
     "zlmdb/tests",
 ]
 
-# Exclude directories from test discovery
+# Exclude patterns - these override testpaths if files match
 norecursedirs = [
     ".*",           # Hidden directories (.git, .ai, .venvs, .uv-cache, etc.)
     "build",        # Build artifacts
@@ -188,9 +188,18 @@ norecursedirs = [
     "deps",         # Dependencies
     "docs",         # Documentation
     "*.egg-info",   # Egg info directories
+    "_*",           # Private/internal directories
 ]
 
-# Python files to ignore
+# Additional ignores for specific problematic paths
+ignore = [
+    ".uv-cache",
+    ".venvs",
+    "build",
+    "dist",
+]
+
+# Python files to collect
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

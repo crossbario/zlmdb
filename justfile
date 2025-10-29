@@ -381,7 +381,8 @@ test-quick venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running quick tests with pytest in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v
+    # Explicitly specify test directories to avoid pytest searching .uv-cache/, .venvs/, etc.
+    ${VENV_PYTHON} -m pytest -v tests/ zlmdb/tests/
 
 # Run single test file
 test-single venv="": (install-tools venv) (install venv)

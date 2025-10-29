@@ -99,8 +99,12 @@ def apply_patches():
                     print(f"  [FAIL] Failed to apply patch {patch_file}")
                     # Try to get more info about what failed
                     for item in patchset.items:
-                        target_file = os.path.join(build_dir, item.target)
-                        print(f"    Target: {item.target}")
+                        # Handle both bytes and str from patch-ng
+                        target = item.target
+                        if isinstance(target, bytes):
+                            target = target.decode('utf-8', errors='replace')
+                        target_file = os.path.join(abs_build_dir, target)
+                        print(f"    Target: {target}")
                         print(f"    Full path: {target_file}")
                         print(f"    Exists: {os.path.exists(target_file)}")
                     print(f"ERROR: Failed to apply patch {patch_file}")
