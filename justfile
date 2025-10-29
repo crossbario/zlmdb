@@ -557,8 +557,10 @@ check-typing venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
-    # Only check core zlmdb code, exclude tests and vendored code
-    "${VENV_PATH}/bin/mypy" --exclude 'zlmdb/tests' --exclude 'zlmdb/flatbuffers' zlmdb/
+    # Only check core zlmdb package, explicitly exclude vendored/test code
+    "${VENV_PATH}/bin/mypy" \
+        --exclude '(zlmdb/tests|zlmdb/flatbuffers|lmdb)' \
+        zlmdb/
 
 # -----------------------------------------------------------------------------
 # -- Publishing

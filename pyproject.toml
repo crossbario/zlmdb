@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel", "cffi>=1.15.1"]
+requires = ["setuptools>=80.9.0", "wheel", "cffi>=1.15.1", "patch-ng>=1.18.0; sys_platform == 'win32'"]
 build-backend = "setuptools.build_meta"
 
 [project]
