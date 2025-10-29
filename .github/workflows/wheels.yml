@@ -116,7 +116,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           # Build binary wheels with compiled LMDB C sources via CFFI
-          # This is REQUIRED for both CPython and PyPy
+          # This builds wheels for ALL Python environments (CPython + PyPy)
           just build-all
         shell: bash
 
@@ -124,8 +124,13 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           # Build binary wheels with compiled LMDB C sources via CFFI
-          # This is REQUIRED for both CPython and PyPy
-          just build-all
+          # This is REQUIRED for CPython
+          # NOTE: PyPy builds are skipped on Windows due to PyPy JIT compilation issues
+          just build cpy314
+          just build cpy313
+          just build cpy312
+          just build cpy311
+          Get-ChildItem dist
         shell: pwsh
 
       - name: Build source distribution (Linux x86_64 only)
