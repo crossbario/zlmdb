@@ -166,13 +166,12 @@ pygments_style = 'sphinx'
 html_static_path = ['_static']
 
 intersphinx_mapping = {
-    'py3': ('https://docs.python.org/3', None),
     'python': ('https://docs.python.org/3', None),
     'rtd': ('https://docs.readthedocs.io/en/latest/', None),
     'txaio': ('https://txaio.readthedocs.io/en/latest/', None),
     'autobahn': ('https://autobahn.readthedocs.io/en/latest/', None),
     'zlmdb': ('https://zlmdb.readthedocs.io/en/latest/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy/reference', None),
-    'matplotlib': ('http://matplotlib.org/stable', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
 }
