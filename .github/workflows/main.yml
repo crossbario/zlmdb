@@ -2,179 +2,215 @@ name: main
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
+    tags:
+      - 'v*'
   pull_request:
-    branches:
-      - master
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
 
 jobs:
-  check:
-    runs-on: ubuntu-22.04
+  identifiers:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+
+  quality-checks:
+    name: Code Quality Checks
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install OS package dependencies
-      run: |
-        sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        architecture: 'x64'
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: Install Just
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
-        echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev
 
-    - name: Install uv
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        source $HOME/.cargo/env
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
 
-    - name: Setup uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-cache-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
-        restore-keys: |
-          uv-cache-${{ runner.os }}-
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-ubuntu-quality-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-quality-
 
-    - name: Install zlmdb with dev tools
-      run: |
-        just install-dev
-        just install-tools
+      - name: Create Python environment and install tools
+        run: |
+          just create cpy312
+          just install-tools cpy312
 
-    - name: Run Ruff format check
-      run: just check-format
+      - name: Code formatting / linting (via ruff)
+        run: just check-format cpy312
 
-    - name: Run MyPy type checking
-      run: just check-typing
+      - name: Code static typing (via mypy)
+        run: just check-typing cpy312
 
   test:
+    name: Test Suite
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
     env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
       CB_FULLTESTS: 1
 
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        python-version: ['3.9', '3.11', '3.12', 'pypy-3.9']
-
-    continue-on-error: false
+        python-env: [cpy39, cpy311, cpy312, pypy39]
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    # Install OS packages, as we install Python packages from source:
-    # libenchant-dev: needed for pyenchant, needed for sphinx-spellcheck
-    # libbz2-dev, libsnappy-dev: needed for compression
-    # libunwind-dev: needed for vmprof
-    - name: Install OS package dependencies
-      run: |
-        sudo apt update
-        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
-          libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
-          libsnappy-dev
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: Install Just
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
-        echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev libffi-dev libunwind-dev \
+            libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+            libsnappy-dev
 
-    - name: Install uv
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        source $HOME/.cargo/env
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
 
-    - name: Setup uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-cache-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
-        restore-keys: |
-          uv-cache-${{ runner.os }}-${{ matrix.python-version }}-
-          uv-cache-${{ runner.os }}-
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-ubuntu-test-${{ matrix.python-env }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-test-${{ matrix.python-env }}-
+            uv-cache-ubuntu-test-
 
-    - name: Install zlmdb
-      run: |
-        just install-dev
+      - name: Create Python environment and install package
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-dev ${{ matrix.python-env }}
 
-    - name: Run unit tests (PyTest)
-      run: |
-        just test-quick
+      - name: Run unit tests (PyTest)
+        run: just test-quick ${{ matrix.python-env }}
 
-  docs:
-    runs-on: ubuntu-22.04
+  documentation:
+    name: Documentation Build
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install OS package dependencies
-      run: |
-        sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
 
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        architecture: 'x64'
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: Install Just
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
-        echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev
 
-    - name: Install uv
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        source $HOME/.cargo/env
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
 
-    - name: Setup uv cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.UV_CACHE_DIR }}
-        key: uv-cache-${{ runner.os }}-docs-${{ hashFiles('pyproject.toml') }}
-        restore-keys: |
-          uv-cache-${{ runner.os }}-docs-
-          uv-cache-${{ runner.os }}-
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-ubuntu-docs-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-docs-
 
-    - name: Install zlmdb with dev tools
-      run: |
-        just install-dev
-        just install-tools
+      - name: Create Python environment and install tools
+        run: |
+          just create cpy312
+          just install-tools cpy312
 
-    - name: Build documentation with Sphinx
-      run: just docs
+      - name: Build documentation
+        run: just docs cpy312
+
+      - name: Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/
+          retention-days: 14
