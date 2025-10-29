@@ -68,6 +68,8 @@ dev = [
     "twine>=3.3.0",
     "ruff>=0.1.0",  # Fast Python linter and formatter (replaces flake8/black/yapf)
     "mypy>=1.0.0",  # Static type checker
+    "types-PyYAML>=6.0.0",  # Type stubs for PyYAML
+    "types-cffi>=1.0.0",  # Type stubs for cffi
     "coverage>=5.0.0",
 ]
 
