@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zlmdb"
-version = "23.1.1"
+version = "25.10.1"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.rst"
 requires-python = ">=3.9"
