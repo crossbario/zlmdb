@@ -65,15 +65,9 @@ Complete Recipe List
 
 **Code Quality:** ✨
 
-<<<<<<< Updated upstream
-* ``just autoformat [venv]`` - Auto-format code with Ruff (modifies files!)
-* ``just check-format [venv]`` - Check formatting with Ruff (dry run)
-* ``just check-typing [venv]`` - Run static type checking with mypy
-=======
-* [ ] ``just lint [venv]`` - Run flake8
-* [ ] ``just yapf [venv]`` - Check formatting (dry run)
-* [ ] ``just autoformat [venv]`` - Auto-format code (WARNING: modifies files!)
->>>>>>> Stashed changes
+* [x] ``just autoformat [venv]`` - Auto-format code with Ruff (modifies files!)
+* [x] ``just check-format [venv]`` - Check formatting with Ruff (dry run)
+* [x] ``just check-typing [venv]`` - Run static type checking with mypy
 
 **Building:** 📦
 
