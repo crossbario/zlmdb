@@ -334,9 +334,9 @@ verify-wheels venv="": (install-tools venv)
     echo "==> Verifying built wheels using ${VENV_NAME}..."
     echo ""
 
-    WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
+    WHEEL_COUNT=$(ls "{{PROJECT_DIR}}/dist/"*.whl 2>/dev/null | wc -l)
     if [ "$WHEEL_COUNT" -eq 0 ]; then
-        echo "ERROR: No wheels found in dist/"
+        echo "ERROR: No wheels found in {{PROJECT_DIR}}/dist/"
         exit 1
     fi
 
@@ -347,7 +347,7 @@ verify-wheels venv="": (install-tools venv)
     BINARY_WHEELS=0
     FAILURES=0
 
-    for wheel in dist/*.whl; do
+    for wheel in "{{PROJECT_DIR}}/dist/"*.whl; do
         WHEEL_NAME=$(basename "$wheel")
         echo "========================================================================"
         echo "Checking: $WHEEL_NAME"
