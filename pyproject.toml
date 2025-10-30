@@ -200,11 +200,14 @@ ignore = [
     "dist",
 ]
 
-# Ignore specific test files with known issues (API incompatibilities, code errors)
-# Note: autobahn[twisted] is now in dev dependencies, so zdb tests can run
+# Ignore specific test files with known issues (API incompatibilities, missing optional deps)
 ignore_collect = [
+    "tests/test_fbs_reflection.py",      # Requires autobahn.xbr (XBR subpackage)
     "tests/test_flatbuffers.py",         # FlatBuffers API incompatibility (Builder.EndVector signature)
     "tests/test_new.py",                 # Code error: MySchema has no 'open' attribute
+    "tests/zdb/test_zdb_df.py",          # Requires pandas
+    "tests/zdb/test_zdb_etcd.py",        # Requires txaioetcd
+    "tests/zdb/test_zdb_fbs.py",         # Requires zlmdb.flatbuffers.demo (missing module)
 ]
 
 # Python files to collect
