@@ -108,6 +108,8 @@ distclean:
     find . -type f -name "*.pyo" -delete 2>/dev/null || true
     echo "--> Searching for and removing setuptools egg-info directories..."
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+    echo "--> Removing CFFI build artifacts..."
+    rm -f lmdb/_lmdb_cffi.c lmdb/_lmdb_cffi.o lmdb/_lmdb_cffi*.so lmdb/_lmdb_cffi*.pyd
     echo "==> Distclean complete. The project is now pristine."
 
 # -----------------------------------------------------------------------------
@@ -363,6 +365,8 @@ clean-build:
     rm -rf build/ dist/ .eggs/
     find . -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
     find . -name '*.egg' -delete 2>/dev/null || true
+    echo "==> Removing CFFI build artifacts..."
+    rm -f lmdb/_lmdb_cffi.c lmdb/_lmdb_cffi.o lmdb/_lmdb_cffi*.so lmdb/_lmdb_cffi*.pyd
 
 # Clean test and coverage artifacts
 clean-test:

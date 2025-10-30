@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# CFFI build artifacts
+lmdb/_lmdb_cffi.c
+lmdb/_lmdb_cffi.o
+
 # Distribution / packaging
 .Python
 env/
