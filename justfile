@@ -322,16 +322,17 @@ build-all:
     ls -lh dist/
 
 # Verify wheels using auditwheel and other checks
-verify-wheels:
+verify-wheels venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
-    echo "==> Verifying built wheels..."
-    echo ""
-
-    if ! command -v auditwheel &> /dev/null; then
-        echo "WARNING: auditwheel not installed. Installing..."
-        python3 -m pip install --user auditwheel 2>/dev/null || pip install --user auditwheel
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "==> Verifying built wheels using ${VENV_NAME}..."
+    echo ""
 
     WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
     if [ "$WHEEL_COUNT" -eq 0 ]; then
@@ -386,7 +387,7 @@ verify-wheels:
         if [[ "$WHEEL_NAME" == *"-linux_"* ]]; then
             echo ""
             echo "Running auditwheel check:"
-            if auditwheel show "$wheel" 2>&1; then
+            if "${VENV_PATH}/bin/auditwheel" show "$wheel" 2>&1; then
                 echo "  ✓ auditwheel check passed"
             else
                 echo "  ❌ FAIL: auditwheel check failed"

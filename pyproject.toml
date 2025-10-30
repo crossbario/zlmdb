@@ -67,6 +67,7 @@ dev = [
     "sphinx-autoapi>=2.0.0",  # Automatic API documentation generation
     "pyenchant>=3.0.0",  # Required by sphinxcontrib-spelling
     "twine>=3.3.0",
+    "auditwheel>=5.0.0",  # Wheel verification and manylinux compliance checking
     "ruff>=0.1.0",  # Fast Python linter and formatter (replaces flake8/black/yapf)
     "mypy>=1.0.0",  # Static type checker
     "types-PyYAML>=6.0.0",  # Type stubs for PyYAML
