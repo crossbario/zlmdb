@@ -93,7 +93,7 @@ include = ["zlmdb*", "lmdb*", "flatbuffers*"]
 exclude = ["tests*", "lmdb-upstream*", "lmdb-patches*", "deps*", ".ai*", ".cicd*"]
 
 [tool.setuptools.package-data]
-lmdb = ["*.py"]
+lmdb = ["*.py", "*.so", "*.pyd", "*.dll"]
 zlmdb = ["py.typed"]
 
 # Configure build to run our custom LMDB patch/build script
