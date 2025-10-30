@@ -221,6 +221,12 @@ install-dev venv="": (create venv)
     echo "==> Installing zlmdb in editable mode in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pip install -e .
 
+    # Prepare LMDB sources for editable installs (build hooks don't run for -e)
+    if [ ! -d "build/lmdb-src" ]; then
+        echo "==> Preparing LMDB sources for editable install..."
+        ${VENV_PYTHON} build_lmdb.py
+    fi
+
 # Install all environments
 install-all:
     #!/usr/bin/env bash
