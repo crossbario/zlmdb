@@ -59,6 +59,7 @@ dev = [
     "pytest>=3.4.2",
     "pytest-runner>=2.11.1",
     "twisted>=20.3.0",  # Required for running tests that use txaio with Twisted
+    "autobahn[twisted]>=25.10.2",  # Required for zdb tests and advanced features
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "sphinxcontrib-spelling>=7.0.0",  # Spell checking for documentation
@@ -199,16 +200,11 @@ ignore = [
     "dist",
 ]
 
-# Ignore specific test files with known issues
-# These tests require optional dependencies or have API incompatibilities
+# Ignore specific test files with known issues (API incompatibilities, code errors)
+# Note: autobahn[twisted] is now in dev dependencies, so zdb tests can run
 ignore_collect = [
-    "tests/test_fbs_reflection.py",      # Requires autobahn (optional dependency)
     "tests/test_flatbuffers.py",         # FlatBuffers API incompatibility (Builder.EndVector signature)
     "tests/test_new.py",                 # Code error: MySchema has no 'open' attribute
-    "tests/zdb/test_zdb_df.py",          # Requires autobahn.twisted
-    "tests/zdb/test_zdb_dyn.py",         # Requires autobahn.twisted
-    "tests/zdb/test_zdb_etcd.py",        # Requires autobahn.twisted
-    "tests/zdb/test_zdb_fbs.py",         # Requires autobahn.twisted
 ]
 
 # Python files to collect
