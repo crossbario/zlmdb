@@ -1,0 +1,302 @@
+name: wheels-docker
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: ["**"]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [master]
+
+  # Publish to GitHub Releases when merged to master
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Registry for caching build images
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/wheel-builder
+
+jobs:
+  identifiers:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+
+  build-wheels:
+    name: Build wheels (${{ matrix.target.name }})
+    needs: identifiers
+    runs-on: ubuntu-latest
+    container: ${{ matrix.target.base_image }}
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # manylinux_2_34 (glibc 2.34+) - PEP 600 compliant for modern Linux
+          # https://github.com/pypa/manylinux
+          - name: "manylinux_2_34_x86_64"
+            base_image: "quay.io/pypa/manylinux_2_34_x86_64"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          # manylinux images use yum/dnf and come with many build tools pre-installed
+          if command -v yum >/dev/null 2>&1; then
+            yum update -y
+            yum install -y \
+              curl \
+              git \
+              openssl-devel \
+              libffi-devel \
+              zlib-devel \
+              bzip2-devel \
+              readline-devel \
+              sqlite-devel \
+              ncurses-devel
+            yum install -y snappy-devel || echo "snappy-devel not available, skipping"
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf update -y
+            dnf install -y \
+              curl \
+              git \
+              openssl-devel \
+              libffi-devel \
+              zlib-devel \
+              bzip2-devel \
+              readline-devel \
+              sqlite-devel \
+              ncurses-devel
+            dnf install -y snappy-devel || echo "snappy-devel not available, skipping"
+          fi
+
+      - name: Setup Python environment
+        run: |
+          # manylinux images come with multiple Python versions pre-installed in /opt/python/
+          echo "==> Available Python versions:"
+          ls -la /opt/python/*/bin/python* 2>/dev/null || echo "No /opt/python found"
+
+          # Add all Python versions to PATH for uv/just to discover
+          for pyver in /opt/python/*/bin; do
+            if [ -d "$pyver" ]; then
+              echo "Adding $pyver to PATH"
+              export PATH="$pyver:$PATH"
+            fi
+          done
+
+          # Ensure we have a working python3 symlink
+          which python3 || ln -sf $(find /opt/python -name python3 | head -1) /usr/local/bin/python3
+
+          echo "==> Current Python version:"
+          python3 --version
+          echo "==> pip version:"
+          python3 -m pip --version
+
+          # Save the updated PATH for subsequent steps
+          echo "PATH=$PATH" >> $GITHUB_ENV
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+          just --version
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "/root/.cargo/bin" >> $GITHUB_PATH
+          echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
+          export PATH="/root/.cargo/bin:$PATH"
+          uv --version
+
+      - name: Verify toolchain
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+          echo "==> Build environment summary:"
+          echo "Container: ${{ matrix.target.base_image }}"
+          echo "Just: $(just --version)"
+          echo "uv: $(uv --version)"
+          echo "Python: $(python3 --version)"
+          echo "GCC: $(gcc --version | head -1)"
+          echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')"
+
+      - name: Build manylinux wheels with LMDB CFFI extension
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+
+          echo "==> Environment verification:"
+          echo "PATH=$PATH"
+          echo "Python: $(python3 --version)"
+          echo "uv: $(uv --version)"
+          echo "just: $(just --version)"
+          echo "auditwheel: $(auditwheel --version || echo 'not available')"
+
+          # Build binary wheels with LMDB for manylinux
+          just build-all
+
+          command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
+          mkdir -p wheelhouse
+
+          # Convert linux_x86_64 wheels to manylinux_2_34_x86_64 using auditwheel
+          echo ""
+          echo "==> Converting wheels to manylinux_2_34_x86_64 format..."
+          for wheel in dist/*.whl; do
+            if [[ "$wheel" == *"linux_x86_64"* ]]; then
+              echo "Converting: $(basename $wheel)"
+              auditwheel show "$wheel"
+              auditwheel repair "$wheel" -w wheelhouse/
+            else
+              echo "Copying non-linux wheel: $(basename $wheel)"
+              cp "$wheel" wheelhouse/
+            fi
+          done
+
+          echo ""
+          echo "==> Final wheel inventory after manylinux conversion:"
+          ls -la wheelhouse/
+          for wheel in wheelhouse/*.whl; do
+            auditwheel show "$wheel"
+          done
+
+      - name: Force file system sync (post-build, pre-validation)
+        run: |
+          sync
+          echo "[OK] All buffers flushed to disk"
+
+      - name: Validate wheels integrity
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity"
+          echo "======================================================================"
+
+          python3 -m ensurepip --upgrade 2>/dev/null || true
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
+
+          VALIDATION_FILE="wheelhouse/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time" > "$VALIDATION_FILE"
+          echo "======================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+
+          for wheel in wheelhouse/*.whl; do
+            [ -f "$wheel" ] || { echo "No wheels found"; HAS_ERRORS=1; continue; }
+
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            # Test 1: ZIP integrity
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  [OK] ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] ZIP test FAIL"
+              echo "  ZIP test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  [OK] Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] Python zipfile test FAIL"
+              echo "  Python zipfile test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            if [ ${PIPESTATUS[0]} -eq 0 ] && ! grep -Eqi "ERROR|FAILED" /tmp/twine_output.txt; then
+              echo "  [OK] Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] Twine check FAIL"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "[FAIL] WHEEL VALIDATION FAILED"
+            exit 1
+          else
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "[OK] All wheels validated successfully"
+          fi
+
+      - name: Generate SHA256 checksums (chain of custody)
+        run: |
+          sync
+          cd wheelhouse
+
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+          for wheel in *.whl; do
+            [ -f "$wheel" ] && openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
+          done
+
+          echo ""
+          cat "$CHECKSUM_FILE"
+          cd ..
+
+      - name: Force file system sync (post-checksum, pre-upload)
+        run: |
+          sync
+          echo "[OK] All buffers flushed to disk"
+
+      - name: Generate build metadata
+        run: |
+          BUILD_INFO=wheelhouse/build-info.txt
+
+          echo "manylinux x86_64 Build Information" > $BUILD_INFO
+          echo "===================================" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
+          echo "Base Image: ${{ matrix.target.base_image }}" >> $BUILD_INFO
+          echo "Platform: linux/x86_64" >> $BUILD_INFO
+          echo "Manylinux Tag: manylinux_2_34_x86_64" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + Docker container" >> $BUILD_INFO
+          echo "LMDB: CFFI binary wheels with vendored LMDB sources" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Wheels Built:" >> $BUILD_INFO
+          for whl in wheelhouse/*.whl; do
+            echo "- $(basename "$whl")" >> $BUILD_INFO
+          done
+          
+          cat $BUILD_INFO
+
+      - name: List built artifacts
+        run: |
+          echo "==> Built artifacts:"
+          ls -la wheelhouse/ 2>/dev/null || echo "No wheelhouse/ directory"
+
+      - name: Upload wheels and build metadata
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
+        with:
+          name: artifacts-docker-${{ matrix.target.name }}
+          path: wheelhouse/
+          retention-days: 30

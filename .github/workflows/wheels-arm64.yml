@@ -1,0 +1,270 @@
+name: wheels-arm64
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: ["**"]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [master]
+
+  # Publish to GitHub Releases when merged to master
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Platform target
+  ARCH: aarch64
+
+jobs:
+  identifiers:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+
+  build-wheels:
+    name: Build ARM64 wheels (${{ matrix.target.name }})
+    needs: identifiers
+    runs-on: ubuntu-latest
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # ============================================================
+          # CPython ARM64 wheels (using official PyPA manylinux images)
+          # ============================================================
+
+          # CPython 3.11 - manylinux_2_28_aarch64 (glibc 2.28)
+          # Modern baseline (Debian 10+, Ubuntu 18.04+, RHEL 8+)
+          - name: "cpython-3.11-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+            manylinux_tag: "manylinux_2_28_aarch64"
+            glibc_version: "2.28"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy311"
+
+          # CPython 3.14 - manylinux_2_28_aarch64 (glibc 2.28)
+          - name: "cpython-3.14-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+            manylinux_tag: "manylinux_2_28_aarch64"
+            glibc_version: "2.28"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy314"
+
+          # ============================================================
+          # PyPy ARM64 wheels (using custom manylinux images)
+          # ============================================================
+
+          # PyPy 3.11 - manylinux_2_36_aarch64 (Debian 12 Bookworm)
+          - name: "pypy-3.11-manylinux_2_36_aarch64"
+            base_image: "debian:12"  # Simplified for zlmdb
+            manylinux_tag: "manylinux_2_36_aarch64"
+            glibc_version: "2.36"
+            python_impl: "pypy"
+            build_type: "simple"
+            python_versions: "pypy311"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ============================================================
+      # QEMU + Docker Buildx Setup
+      # ============================================================
+
+      - name: Set up QEMU for ARM64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify QEMU setup
+        run: |
+          echo "==> QEMU platforms available:"
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx ls
+
+      # ============================================================
+      # Build wheels inside ARM64 containers
+      # ============================================================
+
+      - name: Build ARM64 wheels with LMDB extension (with retry for QEMU flakiness)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_on: error
+          warning_on_retry: true
+          command: |
+            set -e
+            echo "==> Building ARM64 wheels for ${{ matrix.target.name }}"
+            echo "Container: ${{ matrix.target.base_image }}"
+            echo "Platform: linux/arm64"
+            echo "Manylinux tag: ${{ matrix.target.manylinux_tag }}"
+            echo "glibc: ${{ matrix.target.glibc_version }}"
+
+            # Create wheelhouse directory on host
+            mkdir -p wheelhouse
+
+            # Run build script inside ARM64 container via QEMU
+            docker run --rm \
+              --platform linux/arm64 \
+              -v $PWD:/io \
+              -w /io \
+              -e PYTHON_VERSIONS="${{ matrix.target.python_versions }}" \
+              -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+              ${{ matrix.target.base_image }} \
+              /bin/bash /io/.github/scripts/build-arm64-wheel.sh
+
+            echo "[OK] ARM64 wheels built successfully"
+
+      - name: Force file system sync (post-build, pre-validation)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (QEMU Buffer Flush)"
+          echo "======================================================================"
+          sync
+          echo "[OK] All buffers flushed to disk"
+
+      - name: Validate wheels integrity
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (Fail Fast)"
+          echo "======================================================================"
+          
+          python3 -m ensurepip --upgrade 2>/dev/null || true
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
+
+          VALIDATION_FILE="wheelhouse/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time" > "$VALIDATION_FILE"
+          echo "======================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+
+          for wheel in wheelhouse/*.whl; do
+            [ -f "$wheel" ] || { echo "No wheels found"; HAS_ERRORS=1; continue; }
+
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            # Test 1: ZIP integrity
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  [OK] ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] ZIP test FAIL"
+              echo "  ZIP test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  [OK] Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] Python zipfile test FAIL"
+              echo "  Python zipfile test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            if [ ${PIPESTATUS[0]} -eq 0 ] && ! grep -Eqi "ERROR|FAILED" /tmp/twine_output.txt; then
+              echo "  [OK] Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  [FAIL] Twine check FAIL"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "[FAIL] WHEEL VALIDATION FAILED"
+            exit 1
+          else
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "[OK] All wheels validated successfully"
+          fi
+
+      - name: Generate SHA256 checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Generating SHA256 Checksums for Chain of Custody"
+          echo "======================================================================"
+          
+          sync
+          cd wheelhouse
+
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+          for wheel in *.whl; do
+            [ -f "$wheel" ] && openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
+          done
+
+          echo ""
+          cat "$CHECKSUM_FILE"
+          cd ..
+
+      - name: Force file system sync (post-checksum, pre-upload)
+        run: |
+          sync
+          echo "[OK] All buffers flushed to disk"
+
+      - name: Generate build metadata
+        run: |
+          BUILD_INFO=wheelhouse/build-info.txt
+
+          echo "ARM64 manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "================================================================" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
+          echo "Base Image: ${{ matrix.target.base_image }}" >> $BUILD_INFO
+          echo "Platform: linux/arm64 (aarch64)" >> $BUILD_INFO
+          echo "Manylinux Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
+          echo "glibc Version: ${{ matrix.target.glibc_version }}" >> $BUILD_INFO
+          echo "Python Implementation: ${{ matrix.target.python_impl }}" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + QEMU + Docker (ARM64 emulation)" >> $BUILD_INFO
+          echo "LMDB: CFFI binary wheels with vendored LMDB sources" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Wheels Built:" >> $BUILD_INFO
+          for whl in wheelhouse/*.whl; do
+            echo "- $(basename "$whl")" >> $BUILD_INFO
+          done
+          
+          cat $BUILD_INFO
+
+      - name: List built artifacts
+        run: |
+          echo "==> Built artifacts for ${{ matrix.target.name }}:"
+          ls -la wheelhouse/ 2>/dev/null || echo "No wheelhouse/ directory"
+
+      - name: Upload wheels and build metadata
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
+        with:
+          name: artifacts-arm64-${{ matrix.target.name }}
+          path: wheelhouse/
+          retention-days: 30
