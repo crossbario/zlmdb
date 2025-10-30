@@ -321,6 +321,101 @@ build-all:
     done
     ls -lh dist/
 
+# Verify wheels using auditwheel and other checks
+verify-wheels:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Verifying built wheels..."
+    echo ""
+
+    if ! command -v auditwheel &> /dev/null; then
+        echo "WARNING: auditwheel not installed. Installing..."
+        python3 -m pip install --user auditwheel 2>/dev/null || pip install --user auditwheel
+    fi
+
+    WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
+    if [ "$WHEEL_COUNT" -eq 0 ]; then
+        echo "ERROR: No wheels found in dist/"
+        exit 1
+    fi
+
+    echo "Found $WHEEL_COUNT wheel(s) in dist/"
+    echo ""
+
+    PURE_PYTHON_WHEELS=0
+    BINARY_WHEELS=0
+    FAILURES=0
+
+    for wheel in dist/*.whl; do
+        WHEEL_NAME=$(basename "$wheel")
+        echo "========================================================================"
+        echo "Checking: $WHEEL_NAME"
+        echo "========================================================================"
+
+        # Check if it's a pure Python wheel (should NOT be!)
+        if [[ "$WHEEL_NAME" == *"-py3-none-any.whl" ]] || [[ "$WHEEL_NAME" == *"-py2.py3-none-any.whl" ]]; then
+            echo "❌ FAIL: Pure Python wheel detected (should be binary!)"
+            echo "   This wheel does not contain compiled extensions"
+            ((PURE_PYTHON_WHEELS++))
+            ((FAILURES++))
+            echo ""
+            continue
+        fi
+
+        # Check if it's a platform-specific wheel
+        if [[ "$WHEEL_NAME" == *"-linux_"* ]] || [[ "$WHEEL_NAME" == *"-macosx_"* ]] || [[ "$WHEEL_NAME" == *"-win_"* ]]; then
+            echo "✓ Platform-specific wheel: $(echo "$WHEEL_NAME" | grep -oE '(linux|macosx|win)[_-][^-]*')"
+            ((BINARY_WHEELS++))
+        else
+            echo "⚠ WARNING: Unexpected wheel naming format"
+        fi
+
+        # Check wheel contents for CFFI extension
+        echo ""
+        echo "Checking for CFFI extension (.so file):"
+        if python3 -m zipfile -l "$wheel" | grep -q "_lmdb_cffi.*\.so"; then
+            SO_FILE=$(python3 -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
+            SO_SIZE=$(python3 -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $2}')
+            echo "  ✓ Found: $SO_FILE ($(numfmt --to=iec-i --suffix=B $SO_SIZE 2>/dev/null || echo "$SO_SIZE bytes"))"
+        else
+            echo "  ❌ FAIL: No CFFI extension found in wheel"
+            ((FAILURES++))
+        fi
+
+        # Run auditwheel check (only for Linux wheels)
+        if [[ "$WHEEL_NAME" == *"-linux_"* ]]; then
+            echo ""
+            echo "Running auditwheel check:"
+            if auditwheel show "$wheel" 2>&1; then
+                echo "  ✓ auditwheel check passed"
+            else
+                echo "  ❌ FAIL: auditwheel check failed"
+                ((FAILURES++))
+            fi
+        fi
+
+        echo ""
+    done
+
+    echo "========================================================================"
+    echo "Summary"
+    echo "========================================================================"
+    echo "Total wheels: $WHEEL_COUNT"
+    echo "Binary wheels: $BINARY_WHEELS"
+    echo "Pure Python wheels: $PURE_PYTHON_WHEELS (should be 0)"
+    echo "Failures: $FAILURES"
+    echo ""
+
+    if [ $FAILURES -gt 0 ]; then
+        echo "❌ VERIFICATION FAILED"
+        exit 1
+    elif [ $PURE_PYTHON_WHEELS -gt 0 ]; then
+        echo "❌ VERIFICATION FAILED: Pure Python wheels detected"
+        exit 1
+    else
+        echo "✅ ALL WHEELS VERIFIED SUCCESSFULLY"
+    fi
+
 # -----------------------------------------------------------------------------
 # -- Documentation
 # -----------------------------------------------------------------------------
