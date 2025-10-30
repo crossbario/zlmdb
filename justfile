@@ -330,6 +330,7 @@ verify-wheels venv="": (install-tools venv)
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
     echo "==> Verifying built wheels using ${VENV_NAME}..."
     echo ""
@@ -365,7 +366,8 @@ verify-wheels venv="": (install-tools venv)
 
         # Check if it's a platform-specific wheel
         if [[ "$WHEEL_NAME" == *"-linux_"* ]] || [[ "$WHEEL_NAME" == *"-macosx_"* ]] || [[ "$WHEEL_NAME" == *"-win_"* ]]; then
-            echo "✓ Platform-specific wheel: $(echo "$WHEEL_NAME" | grep -oE '(linux|macosx|win)[_-][^-]*')"
+            PLATFORM=$(echo "$WHEEL_NAME" | grep -oE '(linux|macosx|win)[_-][a-z0-9_]+' | head -1)
+            echo "✓ Platform-specific wheel: $PLATFORM"
             ((BINARY_WHEELS++))
         else
             echo "⚠ WARNING: Unexpected wheel naming format"
@@ -374,9 +376,9 @@ verify-wheels venv="": (install-tools venv)
         # Check wheel contents for CFFI extension
         echo ""
         echo "Checking for CFFI extension (.so file):"
-        if python3 -m zipfile -l "$wheel" | grep -q "_lmdb_cffi.*\.so"; then
-            SO_FILE=$(python3 -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
-            SO_SIZE=$(python3 -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $2}')
+        if ${VENV_PYTHON} -m zipfile -l "$wheel" | grep -q "_lmdb_cffi.*\.so"; then
+            SO_FILE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
+            SO_SIZE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $2}')
             echo "  ✓ Found: $SO_FILE ($(numfmt --to=iec-i --suffix=B $SO_SIZE 2>/dev/null || echo "$SO_SIZE bytes"))"
         else
             echo "  ❌ FAIL: No CFFI extension found in wheel"
