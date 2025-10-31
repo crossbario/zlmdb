@@ -61,7 +61,7 @@ _get-venv-python venv="":
     if [ -z "${VENV_NAME}" ]; then
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
-    VENV_PATH="{{PROJECT_DIR}}/{{VENV_DIR}}/${VENV_NAME}"
+    VENV_PATH="{{PROJECT_DIR}}/.venvs/${VENV_NAME}"
     if [[ "$OS" == "Windows_NT" ]]; then
         echo "${VENV_PATH}/Scripts/python.exe"
     else
