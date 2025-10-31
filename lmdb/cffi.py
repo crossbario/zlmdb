@@ -367,16 +367,20 @@ if not lmdb._reading_docs():
     if _have_patched_lmdb:
         _CFFI_CDEF += _CFFI_CDEF_PATCHED
 
-    _ffi = cffi.FFI()
-    _ffi.cdef(_CFFI_CDEF)
-
     # Try to load pre-compiled extension first (for binary wheels)
     _lib = None
+    _ffi = None
     try:
         from lmdb import _lmdb_cffi
         _lib = _lmdb_cffi.lib
+        _ffi = _lmdb_cffi.ffi
     except ImportError:
         pass
+
+    # Fall back to creating our own FFI instance for source builds
+    if _ffi is None:
+        _ffi = cffi.FFI()
+        _ffi.cdef(_CFFI_CDEF)
 
     # Fall back to ffi.verify() for source builds
     if _lib is None:
