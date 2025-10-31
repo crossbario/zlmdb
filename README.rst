@@ -17,14 +17,83 @@ Introduction to zLMDB
    :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Adeploy
    :alt: Deploy
 
-Object-relational in-memory database layer based on LMDB:
+zlmdb is a complete LMDB solution for Python providing **two APIs in one package**:
 
-* High-performance (see below)
-* Supports multiple serializers (JSON, CBOR, Pickle, Flatbuffers)
-* Supports export/import from/to Apache Arrow
-* Support native Numpy arrays and Pandas data frames
-* Automatic indexes
+1. **Low-level py-lmdb compatible API** - Direct LMDB access with full control
+2. **High-level object-relational API** - Type-safe ORM with automatic serialization
+
+Key Features
+------------
+
+**Low-level LMDB API (py-lmdb compatible):**
+
+* Drop-in replacement for py-lmdb
+* Direct access to LMDB transactions, cursors, and databases
+* Full LMDB feature set (subdatabases, duplicate keys, etc.)
+* Works with all py-lmdb examples and code
+
+**High-level Object-Relational API:**
+
+* Type-safe persistent objects with automatic serialization
+* Multiple serializers (JSON, CBOR, Pickle, Flatbuffers)
+* Export/import from/to Apache Arrow
+* Native Numpy arrays and Pandas data frames support
+* Automatic indexes and relationships
+* Schema management
+
+**Implementation:**
+
+* CFFI-only (no CPyExt) for maximum compatibility
+* Works on both CPython and PyPy
+* Native binary wheels for x86-64 and ARM64
+* Vendored LMDB (no external dependencies)
+* High-performance with zero-copy operations
 * Free software (MIT license)
+
+Usage Examples
+--------------
+
+**Low-level API (py-lmdb compatible):**
+
+.. code-block:: python
+
+    import lmdb
+
+    # Open database
+    env = lmdb.open('/tmp/mydb', max_dbs=10)
+    db = env.open_db(b'users')
+
+    # Write data
+    with env.begin(write=True) as txn:
+        txn.put(b'alice', b'alice@example.com', db=db)
+        txn.put(b'bob', b'bob@example.com', db=db)
+
+    # Read data
+    with env.begin() as txn:
+        email = txn.get(b'alice', db=db)
+        print(email)  # b'alice@example.com'
+
+**High-level API (zlmdb ORM):**
+
+.. code-block:: python
+
+    import zlmdb
+
+    # Define schema
+    class User(object):
+        def __init__(self, oid, name, email):
+            self.oid = oid
+            self.name = name
+            self.email = email
+
+    schema = zlmdb.Schema()
+    schema.users = zlmdb.MapUuidCbor(1, marshal=lambda obj: obj.__dict__)
+
+    # Use it
+    db = zlmdb.Database('/tmp/mydb', schema=schema)
+    with db.begin(write=True) as txn:
+        user = User(uuid.uuid4(), 'Alice', 'alice@example.com')
+        schema.users[txn, user.oid] = user
 
 Development Workflow
 ====================
