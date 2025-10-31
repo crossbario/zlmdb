@@ -329,7 +329,7 @@ verify-wheels venv="": (install-tools venv)
     if [ -z "${VENV_NAME}" ]; then
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
-    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PATH="{{PROJECT_DIR}}/.venvs/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
     echo "==> Verifying built wheels using ${VENV_NAME}..."
@@ -358,8 +358,8 @@ verify-wheels venv="": (install-tools venv)
         if [[ "$WHEEL_NAME" == *"-py3-none-any.whl" ]] || [[ "$WHEEL_NAME" == *"-py2.py3-none-any.whl" ]]; then
             echo "❌ FAIL: Pure Python wheel detected (should be binary!)"
             echo "   This wheel does not contain compiled extensions"
-            ((PURE_PYTHON_WHEELS++))
-            ((FAILURES++))
+            ((++PURE_PYTHON_WHEELS))
+            ((++FAILURES))
             echo ""
             continue
         fi
@@ -368,7 +368,7 @@ verify-wheels venv="": (install-tools venv)
         if [[ "$WHEEL_NAME" == *"-linux_"* ]] || [[ "$WHEEL_NAME" == *"-macosx_"* ]] || [[ "$WHEEL_NAME" == *"-win_"* ]]; then
             PLATFORM=$(echo "$WHEEL_NAME" | grep -oE '(linux|macosx|win)[_-][a-z0-9_]+' | head -1)
             echo "✓ Platform-specific wheel: $PLATFORM"
-            ((BINARY_WHEELS++))
+            ((++BINARY_WHEELS))
         else
             echo "⚠ WARNING: Unexpected wheel naming format"
         fi
@@ -377,12 +377,12 @@ verify-wheels venv="": (install-tools venv)
         echo ""
         echo "Checking for CFFI extension (.so file):"
         if ${VENV_PYTHON} -m zipfile -l "$wheel" | grep -q "_lmdb_cffi.*\.so"; then
-            SO_FILE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
-            SO_SIZE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $2}')
+            SO_FILE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $1}')
+            SO_SIZE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
             echo "  ✓ Found: $SO_FILE ($(numfmt --to=iec-i --suffix=B $SO_SIZE 2>/dev/null || echo "$SO_SIZE bytes"))"
         else
             echo "  ❌ FAIL: No CFFI extension found in wheel"
-            ((FAILURES++))
+            ((++FAILURES))
         fi
 
         # Run auditwheel check (only for Linux wheels)
@@ -393,7 +393,7 @@ verify-wheels venv="": (install-tools venv)
                 echo "  ✓ auditwheel check passed"
             else
                 echo "  ❌ FAIL: auditwheel check failed"
-                ((FAILURES++))
+                ((++FAILURES))
             fi
         fi
 
