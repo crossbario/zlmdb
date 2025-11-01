@@ -42,7 +42,7 @@ import zlmdb.lmdb as lmdb
 import testlib
 
 from testlib import B
-from testlib import O
+from testlib import byte_chr as O
 
 
 class CrashTest(unittest.TestCase):

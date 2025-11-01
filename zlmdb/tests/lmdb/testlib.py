@@ -118,18 +118,34 @@ except NameError:
 # B(ascii 'string') -> bytes
 try:
     bytes("")  # Python>=2.6, alias for str().
-    B = lambda s: s
+
+    def B(s):
+        return s
+
 except TypeError:  # Python3.x, requires encoding parameter.
-    B = lambda s: bytes(s, "ascii")
+
+    def B(s):
+        return bytes(s, "ascii")
+
 
 # BL('s1', 's2') -> ['bytes1', 'bytes2']
-BL = lambda *args: list(map(B, args))
-# TS('s1', 's2') -> ('bytes1', 'bytes2')
-BT = lambda *args: tuple(B(s) for s in args)
-# O(int) -> length-1 bytes
-O = lambda arg: B(chr(arg))
+def BL(*args):
+    return list(map(B, args))
+
+
+# BT('s1', 's2') -> ('bytes1', 'bytes2')
+def BT(*args):
+    return tuple(B(s) for s in args)
+
+
+# byte_chr(int) -> single byte from int (via chr)
+def byte_chr(arg):
+    return B(chr(arg))
+
+
 # OCT(s) -> parse string as octal
-OCT = lambda s: int(s, 8)
+def OCT(s):
+    return int(s, 8)
 
 
 KEYS = BL("a", "b", "baa", "d")

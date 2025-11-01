@@ -813,7 +813,9 @@ class OpenDbTest(unittest.TestCase):
         assert db is not None
 
 
-reader_count = lambda env: env.readers().count("\n") - 1
+def reader_count(env):
+    """Count the number of active readers."""
+    return env.readers().count("\n") - 1
 
 
 class SpareTxnTest(unittest.TestCase):
