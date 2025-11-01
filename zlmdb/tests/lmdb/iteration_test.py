@@ -27,11 +27,11 @@ from __future__ import absolute_import
 from __future__ import with_statement
 import unittest
 
-import testlib
-from testlib import B
-from testlib import BT
-from testlib import KEYS, ITEMS, KEYS2, ITEMS2
-from testlib import putData, putBigData
+from . import testlib
+from .testlib import B
+from .testlib import BT
+from .testlib import KEYS, ITEMS, KEYS2, ITEMS2
+from .testlib import putData, putBigData
 
 
 class IterationTestBase(unittest.TestCase):

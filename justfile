@@ -410,6 +410,18 @@ test-orm venv="": (install-tools venv) (install venv)
     echo "==> Running test suite in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pytest -v zlmdb/tests/orm/
 
+# Run LMDB low-level API tests
+test-lmdb venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running LMDB tests in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v zlmdb/tests/lmdb/
+
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash

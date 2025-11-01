@@ -2,10 +2,10 @@ from __future__ import absolute_import
 from __future__ import with_statement
 import unittest
 
-import testlib
+from . import testlib
 import struct
-from testlib import KEYSFIXED, ITEMS_MULTI_FIXEDKEY
-from testlib import putBigDataMultiFixed
+from .testlib import KEYSFIXED, ITEMS_MULTI_FIXEDKEY
+from .testlib import putBigDataMultiFixed
 
 
 class GetMultiTestBase(unittest.TestCase):

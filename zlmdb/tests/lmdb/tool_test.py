@@ -28,7 +28,7 @@ import unittest
 
 import zlmdb.lmdb as lmdb
 import zlmdb.lmdb.tool
-import testlib
+from . import testlib
 
 
 def call_tool(cmdline):

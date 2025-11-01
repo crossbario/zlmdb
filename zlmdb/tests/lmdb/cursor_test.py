@@ -29,9 +29,9 @@ import unittest
 
 import zlmdb.lmdb as lmdb
 
-import testlib
-from testlib import B
-from testlib import BT
+from . import testlib
+from .testlib import B
+from .testlib import BT
 
 
 class ContextManagerTest(unittest.TestCase):

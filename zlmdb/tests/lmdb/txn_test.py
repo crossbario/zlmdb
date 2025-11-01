@@ -26,10 +26,10 @@ import struct
 import unittest
 import weakref
 
-import testlib
-from testlib import B
-from testlib import INT_TYPES
-from testlib import BytesType
+from . import testlib
+from .testlib import B
+from .testlib import INT_TYPES
+from .testlib import BytesType
 
 import zlmdb.lmdb as lmdb
 
