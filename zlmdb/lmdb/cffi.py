@@ -40,7 +40,7 @@ if is_win32:
     import msvcrt
 
 try:
-    import __builtin__
+    import __builtin__  # type: ignore[import-not-found]
 except ImportError:
     import builtins as __builtin__  # type: ignore
 
@@ -380,7 +380,7 @@ if not _reading_docs():
     _lib = None
     _ffi = None
     try:
-        from zlmdb.lmdb import _lmdb_cffi
+        from zlmdb.lmdb import _lmdb_cffi  # type: ignore[attr-defined]
 
         _lib = _lmdb_cffi.lib
         _ffi = _lmdb_cffi.ffi
@@ -593,7 +593,7 @@ if not _reading_docs():
     _error_map = {}
     for obj in list(globals().values()):
         if inspect.isclass(obj) and issubclass(obj, Error) and obj is not Error:
-            _error_map[getattr(_lib, obj.MDB_NAME)] = obj
+            _error_map[getattr(_lib, obj.MDB_NAME)] = obj  # type: ignore[attr-defined]
     del obj
 
 

@@ -18,8 +18,8 @@
 # Additional information about OpenLDAP can be obtained at
 # <http://www.openldap.org/>.
 
-# Hack to support Python >=v2.6 'python -mlmdb'
+# Hack to support Python >=v2.6 'python -m zlmdb.lmdb'
 from __future__ import absolute_import
-import lmdb.tool
+from . import tool  # type: ignore[import-not-found]
 
-lmdb.tool.main()
+tool.main()
