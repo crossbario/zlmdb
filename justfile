@@ -94,7 +94,7 @@ setup-completion:
     echo "    source \"${COMPLETION_FILE}\""
 
 # Remove ALL generated files, including venvs, caches, and build artifacts
-distclean:
+distclean: clean-build clean-pyc clean-test
     #!/usr/bin/env bash
     set -e
     echo "==> Performing a deep clean (distclean)..."
@@ -471,9 +471,6 @@ clean-test:
     echo "==> Removing test and coverage artifacts..."
     rm -rf .tox/ .coverage .coverage.* htmlcov/ .pytest_cache/ .mypy_cache/ .ruff_cache/
     rm -rf .test* 2>/dev/null || true
-
-# Clean all generated files (alias for distclean)
-clean: distclean
 
 # -----------------------------------------------------------------------------
 # -- Testing (expanded from Makefile)
