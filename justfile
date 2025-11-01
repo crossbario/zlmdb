@@ -325,8 +325,11 @@ test-import venv="": (install venv)
     echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
     echo "========================================================================"
 
-# Test address book
-test-addressbook venv="": (install venv)
+# Test all LMDB examples
+test-examples-lmdb: test-examples-lmdb-addressbook test-examples-lmdb-dirtybench-gdbm test-examples-lmdb-dirtybench test-examples-lmdb-nastybench test-examples-lmdb-parabench
+
+# Test example LMDB address book
+test-examples-lmdb-addressbook venv="": (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -334,10 +337,66 @@ test-addressbook venv="": (install venv)
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Testing in ${VENV_NAME}..."
     echo ""
-    ${VENV_PYTHON} zlmdb/tests/lmdb/examples/address-book.py
-    ${VENV_PYTHON} zlmdb/tests/lmdb/examples/test_lmdb_address_book.py
+    echo "==> Testing in ${VENV_NAME} ..."
+    echo ""
+    ${VENV_PYTHON} examples/lmdb/address-book.py
+
+# Test example LMDB dirtybench-gdbm
+test-examples-lmdb-dirtybench-gdbm venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo ""
+    echo "==> Testing in ${VENV_NAME} ..."
+    echo ""
+    ${VENV_PYTHON} examples/lmdb/dirtybench-gdbm.py
+
+# Test example LMDB dirtybench
+test-examples-lmdb-dirtybench venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo ""
+    echo "==> Testing in ${VENV_NAME} ..."
+    echo ""
+    ${VENV_PYTHON} examples/lmdb/dirtybench.py
+
+# Test example LMDB nastybench
+test-examples-lmdb-nastybench venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo ""
+    echo "==> Testing in ${VENV_NAME} ..."
+    echo ""
+    ${VENV_PYTHON} examples/lmdb/nastybench.py
+
+# Test example LMDB parabench
+test-examples-lmdb-parabench venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo ""
+    echo "==> Testing in ${VENV_NAME} ..."
+    echo ""
+    ${VENV_PYTHON} examples/lmdb/parabench.py
 
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
