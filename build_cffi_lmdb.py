@@ -264,7 +264,8 @@ _CFFI_CDEF = '''
 
 # Patched LMDB extensions
 _CFFI_CDEF_PATCHED = '''
-    int mdb_env_copy3(MDB_env *env, MDB_txn *txn, const char *path, unsigned int flags);
+    int mdb_env_copy3(MDB_env *env, const char *path, unsigned int flags, MDB_txn *txn);
+    int mdb_env_copyfd3(MDB_env *env, int fd, unsigned int flags, MDB_txn *txn);
 '''
 
 # Combine definitions if we have patched LMDB

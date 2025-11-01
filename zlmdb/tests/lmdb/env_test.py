@@ -27,11 +27,19 @@ import sys
 import unittest
 import weakref
 
-from . import testlib
-from .testlib import B
-from .testlib import OCT
-from .testlib import INT_TYPES
-from .testlib import UnicodeType
+try:
+    from . import testlib
+    from .testlib import B
+    from .testlib import OCT
+    from .testlib import INT_TYPES
+    from .testlib import UnicodeType
+except ImportError:
+    # Running as script, not as module
+    import testlib
+    from testlib import B
+    from testlib import OCT
+    from testlib import INT_TYPES
+    from testlib import UnicodeType
 
 import zlmdb.lmdb as lmdb
 

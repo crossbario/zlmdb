@@ -1711,6 +1711,12 @@ class Transaction(object):
                 Named database to operate on. If unspecified, defaults to the
                 database given to the :py:class:`Transaction` constructor.
         """
+        # Handle None key/value according to LMDB behavior
+        if key is None:
+            raise BadValsizeError("Key cannot be None")
+        if value is None:
+            value = b""
+
         flags = 0
         if not dupdata:
             flags |= _lib.MDB_NODUPDATA
