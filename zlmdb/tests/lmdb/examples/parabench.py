@@ -1,4 +1,3 @@
-
 # Roughly approximates some of Symas microbenchmark.
 
 import multiprocessing
@@ -16,40 +15,42 @@ except:
 import zlmdb.lmdb as lmdb
 
 
-USE_SPARSE_FILES = sys.platform != 'darwin'
-DB_PATH = '/ram/dbtest'
+USE_SPARSE_FILES = sys.platform != "darwin"
+DB_PATH = "/ram/dbtest"
 MAX_KEYS = int(4e6)
 
-if os.path.exists('/ram'):
-    DB_PATH = '/ram/dbtest'
+if os.path.exists("/ram"):
+    DB_PATH = "/ram/dbtest"
 else:
-    DB_PATH = tempfile.mktemp(prefix='parabench')
+    DB_PATH = tempfile.mktemp(prefix="parabench")
 
 
 def open_env():
-    return lmdb.open(DB_PATH,
+    return lmdb.open(
+        DB_PATH,
         map_size=1048576 * 1024,
         metasync=False,
         sync=False,
         map_async=True,
-        writemap=USE_SPARSE_FILES)
+        writemap=USE_SPARSE_FILES,
+    )
 
 
 def make_keys():
     t0 = time.time()
-    urandom = file('/dev/urandom', 'rb', 1048576).read
+    urandom = file("/dev/urandom", "rb", 1048576).read
 
     keys = set()
     while len(keys) < MAX_KEYS:
         for _ in xrange(min(1000, MAX_KEYS - len(keys))):
             keys.add(urandom(16))
 
-    print 'make %d keys in %.2fsec' % (len(keys), time.time() - t0)
+    print("make %d keys in %.2fsec" % (len(keys), time.time() - t0))
     keys = list(keys)
 
     nextkey = iter(keys).next
     run = True
-    val = ' ' * 100
+    val = " " * 100
     env = open_env()
     while run:
         with env.begin(write=True) as txn:
@@ -62,10 +63,10 @@ def make_keys():
     d = time.time() - t0
     env.sync(True)
     env.close()
-    print 'insert %d keys in %.2fsec (%d/sec)' % (len(keys), d, len(keys) / d)
+    print("insert %d keys in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))
 
 
-if 'drop' in sys.argv and os.path.exists(DB_PATH):
+if "drop" in sys.argv and os.path.exists(DB_PATH):
     shutil.rmtree(DB_PATH)
 
 if not os.path.exists(DB_PATH):
@@ -98,9 +99,8 @@ def run(idx):
             arr[idx] += len(k)
 
 
-
 nproc = int(sys.argv[1])
-arr = multiprocessing.Array('L', xrange(nproc))
+arr = multiprocessing.Array("L", xrange(nproc))
 for x in xrange(nproc):
     arr[x] = 0
 procs = [multiprocessing.Process(target=run, args=(x,)) for x in xrange(nproc)]
@@ -112,5 +112,4 @@ while True:
     time.sleep(2)
     d = time.time() - t0
     lk = sum(arr)
-    print 'lookup %d keys in %.2fsec (%d/sec)' % (lk, d, lk / d)
-
+    print("lookup %d keys in %.2fsec (%d/sec)" % (lk, d, lk / d))

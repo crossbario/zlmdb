@@ -325,6 +325,20 @@ test-import venv="": (install venv)
     echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
     echo "========================================================================"
 
+# Test address book
+test-addressbook venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Testing in ${VENV_NAME}..."
+    echo ""
+    ${VENV_PYTHON} zlmdb/tests/lmdb/examples/address-book.py
+    ${VENV_PYTHON} zlmdb/tests/lmdb/examples/test_lmdb_address_book.py
+
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash

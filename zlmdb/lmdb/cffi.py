@@ -35,7 +35,7 @@ import os
 import sys
 import threading
 
-is_win32 = sys.platform == 'win32'
+is_win32 = sys.platform == "win32"
 if is_win32:
     import msvcrt
 
@@ -44,9 +44,11 @@ try:
 except ImportError:
     import builtins as __builtin__  # type: ignore
 
+
 def _reading_docs():
     """Return True if Sphinx is currently parsing this file."""
-    return 'sphinx' in __import__('sys').modules
+    return "sphinx" in __import__("sys").modules
+
 
 try:
     from zlmdb.lmdb import _config
@@ -55,57 +57,57 @@ except ImportError:
 
 
 __all__ = [
-    'Cursor',
-    'Environment',
-    'Transaction',
-    '_Database',
-    'enable_drop_gil',
-    'version',
+    "Cursor",
+    "Environment",
+    "Transaction",
+    "_Database",
+    "enable_drop_gil",
+    "version",
 ]
 
 __all__ += [
-    'BadDbiError',
-    'BadRslotError',
-    'BadTxnError',
-    'BadValsizeError',
-    'CorruptedError',
-    'CursorFullError',
-    'DbsFullError',
-    'DiskError',
-    'Error',
-    'IncompatibleError',
-    'InvalidError',
-    'InvalidParameterError',
-    'KeyExistsError',
-    'LockError',
-    'MapFullError',
-    'MapResizedError',
-    'MemoryError',
-    'NotFoundError',
-    'PageFullError',
-    'PageNotFoundError',
-    'PanicError',
-    'ReadersFullError',
-    'ReadonlyError',
-    'TlsFullError',
-    'TxnFullError',
-    'VersionMismatchError',
+    "BadDbiError",
+    "BadRslotError",
+    "BadTxnError",
+    "BadValsizeError",
+    "CorruptedError",
+    "CursorFullError",
+    "DbsFullError",
+    "DiskError",
+    "Error",
+    "IncompatibleError",
+    "InvalidError",
+    "InvalidParameterError",
+    "KeyExistsError",
+    "LockError",
+    "MapFullError",
+    "MapResizedError",
+    "MemoryError",
+    "NotFoundError",
+    "PageFullError",
+    "PageNotFoundError",
+    "PanicError",
+    "ReadersFullError",
+    "ReadonlyError",
+    "TlsFullError",
+    "TxnFullError",
+    "VersionMismatchError",
 ]
 
 
 # Handle moronic Python 3 mess.
-UnicodeType = getattr(__builtin__, 'unicode', str)
-BytesType = getattr(__builtin__, 'bytes', str)
+UnicodeType = getattr(__builtin__, "unicode", str)
+BytesType = getattr(__builtin__, "bytes", str)
 
-O_0755 = int('0755', 8)
-O_0111 = int('0111', 8)
+O_0755 = int("0755", 8)
+O_0111 = int("0111", 8)
 EMPTY_BYTES = UnicodeType().encode()
 
 
 # Used to track context across CFFI callbacks.
 _callbacks = threading.local()
 
-_CFFI_CDEF = '''
+_CFFI_CDEF = """
     typedef int mode_t;
     typedef ... MDB_env;
     typedef struct MDB_txn MDB_txn;
@@ -284,13 +286,13 @@ _CFFI_CDEF = '''
     // Prefaults a range
     static void preload(int rc, void *x, size_t size);
 
-'''
-_CFFI_CDEF_PATCHED = '''
+"""
+_CFFI_CDEF_PATCHED = """
     int mdb_env_copy3(MDB_env *env, const char *path, unsigned int flags, MDB_txn *txn);
     int mdb_env_copyfd3(MDB_env *env, int fd, unsigned int flags, MDB_txn *txn);
-'''
+"""
 
-_CFFI_VERIFY = '''
+_CFFI_VERIFY = """
     #include <sys/stat.h>
     #include "lmdb.h"
     #include "preload.h"
@@ -350,22 +352,26 @@ _CFFI_VERIFY = '''
         return mdb_cursor_put(cursor, &tmpkey, &tmpval, flags);
     }
 
-'''
+"""
 
 if not _reading_docs():
     import cffi
 
     # Try to use distutils-bundled CFFI configuration to avoid a recompile and
     # potential compile errors during first module import.
-    _config_vars = _config.CONFIG if _config else {
-        'extra_compile_args': ['-w'],
-        'extra_sources': ['lib/mdb.c', 'lib/midl.c'],
-        'extra_include_dirs': ['lib'],
-        'extra_library_dirs': [],
-        'libraries': []
-    }
+    _config_vars = (
+        _config.CONFIG
+        if _config
+        else {
+            "extra_compile_args": ["-w"],
+            "extra_sources": ["lib/mdb.c", "lib/midl.c"],
+            "extra_include_dirs": ["lib"],
+            "extra_library_dirs": [],
+            "libraries": [],
+        }
+    )
 
-    _have_patched_lmdb = '-DHAVE_PATCHED_LMDB=1' in _config.CONFIG['extra_compile_args']  # type: ignore
+    _have_patched_lmdb = "-DHAVE_PATCHED_LMDB=1" in _config.CONFIG["extra_compile_args"]  # type: ignore
 
     if _have_patched_lmdb:
         _CFFI_CDEF += _CFFI_CDEF_PATCHED
@@ -375,6 +381,7 @@ if not _reading_docs():
     _ffi = None
     try:
         from zlmdb.lmdb import _lmdb_cffi
+
         _lib = _lmdb_cffi.lib
         _ffi = _lmdb_cffi.ffi
     except ImportError:
@@ -387,40 +394,46 @@ if not _reading_docs():
 
     # Fall back to ffi.verify() for source builds
     if _lib is None:
-        _lib = _ffi.verify(_CFFI_VERIFY,
-                           modulename='lmdb_cffi',
-                           ext_package='lmdb',
-                           sources=_config_vars['extra_sources'],
-                           extra_compile_args=_config_vars['extra_compile_args'],
-                           include_dirs=_config_vars['extra_include_dirs'],
-                           libraries=_config_vars['libraries'],
-                           library_dirs=_config_vars['extra_library_dirs'])
+        _lib = _ffi.verify(
+            _CFFI_VERIFY,
+            modulename="lmdb_cffi",
+            ext_package="lmdb",
+            sources=_config_vars["extra_sources"],
+            extra_compile_args=_config_vars["extra_compile_args"],
+            include_dirs=_config_vars["extra_include_dirs"],
+            libraries=_config_vars["libraries"],
+            library_dirs=_config_vars["extra_library_dirs"],
+        )
 
     @_ffi.callback("int(char *, void *)")
     def _msg_func(s, _):
-        """mdb_msg_func() callback. Appends `s` to _callbacks.msg_func list.
-        """
+        """mdb_msg_func() callback. Appends `s` to _callbacks.msg_func list."""
         _callbacks.msg_func.append(_ffi.string(s).decode())
         return 0
+
 
 class Error(Exception):
     """Raised when an LMDB-related error occurs, and no more specific
     :py:class:`lmdb.Error` subclass exists."""
+
     def __init__(self, what, code=0):
         self.what = what
         self.code = code
         self.reason = _ffi.string(_lib.mdb_strerror(code))
         msg = what
         if code:
-            msg = '%s: %s' % (what, self.reason)
-            hint = getattr(self, 'MDB_HINT', None)
+            msg = "%s: %s" % (what, self.reason)
+            hint = getattr(self, "MDB_HINT", None)
             if hint:
-                msg += ' (%s)' % (hint,)
+                msg += " (%s)" % (hint,)
         Exception.__init__(self, msg)
+
 
 class KeyExistsError(Error):
     """Key/data pair already exists."""
-    MDB_NAME = 'MDB_KEYEXIST'
+
+    MDB_NAME = "MDB_KEYEXIST"
+
 
 class NotFoundError(Error):
     """No matching key/data pair found.
@@ -429,103 +442,151 @@ class NotFoundError(Error):
     user-supplied default value, however LMDB may return this error where
     py-lmdb does not know to convert it into a non-exceptional return.
     """
-    MDB_NAME = 'MDB_NOTFOUND'
+
+    MDB_NAME = "MDB_NOTFOUND"
+
 
 class PageNotFoundError(Error):
     """Request page not found."""
-    MDB_NAME = 'MDB_PAGE_NOTFOUND'
+
+    MDB_NAME = "MDB_PAGE_NOTFOUND"
+
 
 class CorruptedError(Error):
     """Located page was of the wrong type."""
-    MDB_NAME = 'MDB_CORRUPTED'
+
+    MDB_NAME = "MDB_CORRUPTED"
+
 
 class PanicError(Error):
     """Update of meta page failed."""
-    MDB_NAME = 'MDB_PANIC'
+
+    MDB_NAME = "MDB_PANIC"
+
 
 class VersionMismatchError(Error):
     """Database environment version mismatch."""
-    MDB_NAME = 'MDB_VERSION_MISMATCH'
+
+    MDB_NAME = "MDB_VERSION_MISMATCH"
+
 
 class InvalidError(Error):
     """File is not an MDB file."""
-    MDB_NAME = 'MDB_INVALID'
+
+    MDB_NAME = "MDB_INVALID"
+
 
 class MapFullError(Error):
     """Environment map_size= limit reached."""
-    MDB_NAME = 'MDB_MAP_FULL'
-    MDB_HINT = 'Please use a larger Environment(map_size=) parameter'
+
+    MDB_NAME = "MDB_MAP_FULL"
+    MDB_HINT = "Please use a larger Environment(map_size=) parameter"
+
 
 class DbsFullError(Error):
     """Environment max_dbs= limit reached."""
-    MDB_NAME = 'MDB_DBS_FULL'
-    MDB_HINT = 'Please use a larger Environment(max_dbs=) parameter'
+
+    MDB_NAME = "MDB_DBS_FULL"
+    MDB_HINT = "Please use a larger Environment(max_dbs=) parameter"
+
 
 class ReadersFullError(Error):
     """Environment max_readers= limit reached."""
-    MDB_NAME = 'MDB_READERS_FULL'
-    MDB_HINT = 'Please use a larger Environment(max_readers=) parameter'
+
+    MDB_NAME = "MDB_READERS_FULL"
+    MDB_HINT = "Please use a larger Environment(max_readers=) parameter"
+
 
 class TlsFullError(Error):
     """Thread-local storage keys full - too many environments open."""
-    MDB_NAME = 'MDB_TLS_FULL'
+
+    MDB_NAME = "MDB_TLS_FULL"
+
 
 class TxnFullError(Error):
     """Transaciton has too many dirty pages - transaction too big."""
-    MDB_NAME = 'MDB_TXN_FULL'
-    MDB_HINT = 'Please do less work within your transaction'
+
+    MDB_NAME = "MDB_TXN_FULL"
+    MDB_HINT = "Please do less work within your transaction"
+
 
 class CursorFullError(Error):
     """Internal error - cursor stack limit reached."""
-    MDB_NAME = 'MDB_CURSOR_FULL'
+
+    MDB_NAME = "MDB_CURSOR_FULL"
+
 
 class PageFullError(Error):
     """Internal error - page has no more space."""
-    MDB_NAME = 'MDB_PAGE_FULL'
+
+    MDB_NAME = "MDB_PAGE_FULL"
+
 
 class MapResizedError(Error):
     """Database contents grew beyond environment map_size=."""
-    MDB_NAME = 'MDB_MAP_RESIZED'
+
+    MDB_NAME = "MDB_MAP_RESIZED"
+
 
 class IncompatibleError(Error):
     """Operation and DB incompatible, or DB flags changed."""
-    MDB_NAME = 'MDB_INCOMPATIBLE'
+
+    MDB_NAME = "MDB_INCOMPATIBLE"
+
 
 class BadRslotError(Error):
     """Invalid reuse of reader locktable slot."""
-    MDB_NAME = 'MDB_BAD_RSLOT'
+
+    MDB_NAME = "MDB_BAD_RSLOT"
+
 
 class BadDbiError(Error):
     """The specified DBI was changed unexpectedly."""
-    MDB_NAME = 'MDB_BAD_DBI'
+
+    MDB_NAME = "MDB_BAD_DBI"
+
 
 class BadTxnError(Error):
     """Transaction cannot recover - it must be aborted."""
-    MDB_NAME = 'MDB_BAD_TXN'
+
+    MDB_NAME = "MDB_BAD_TXN"
+
 
 class BadValsizeError(Error):
     """Too big key/data, key is empty, or wrong DUPFIXED size."""
-    MDB_NAME = 'MDB_BAD_VALSIZE'
+
+    MDB_NAME = "MDB_BAD_VALSIZE"
+
 
 class ReadonlyError(Error):
     """An attempt was made to modify a read-only database."""
-    MDB_NAME = 'EACCES'
+
+    MDB_NAME = "EACCES"
+
 
 class InvalidParameterError(Error):
     """An invalid parameter was specified."""
-    MDB_NAME = 'EINVAL'
+
+    MDB_NAME = "EINVAL"
+
 
 class LockError(Error):
     """The environment was locked by another process."""
-    MDB_NAME = 'EAGAIN'
+
+    MDB_NAME = "EAGAIN"
+
 
 class MemoryError(Error):
     """Out of memory."""
-    MDB_NAME = 'ENOMEM'
+
+    MDB_NAME = "ENOMEM"
+
 
 class DiskError(Error):
     """No more disk space."""
-    MDB_NAME = 'ENOSPC'
+
+    MDB_NAME = "ENOSPC"
+
 
 # Prepare _error_map, a mapping of integer MDB_ERROR_CODE to exception class.
 if not _reading_docs():
@@ -535,10 +596,12 @@ if not _reading_docs():
             _error_map[getattr(_lib, obj.MDB_NAME)] = obj
     del obj
 
+
 def _error(what, rc):
     """Lookup and instantiate the correct exception class for the error code
     `rc`, using :py:class:`Error` if no better class exists."""
     return _error_map.get(rc, Error)(what, rc)
+
 
 class Some_LMDB_Resource_That_Was_Deleted_Or_Closed(object):
     """We need this because CFFI on PyPy treats None as cffi.NULL, instead of
@@ -551,6 +614,7 @@ class Some_LMDB_Resource_That_Was_Deleted_Or_Closed(object):
     of a native handle to ensure the handle is still valid prior to calling
     LMDB, or doing no crash-safety checking at all.
     """
+
     def __nonzero__(self):
         return 0
 
@@ -559,21 +623,28 @@ class Some_LMDB_Resource_That_Was_Deleted_Or_Closed(object):
 
     def __repr__(self):
         return "<This used to be a LMDB resource but it was deleted or closed>"
+
+
 _invalid = Some_LMDB_Resource_That_Was_Deleted_Or_Closed()
+
 
 def _mvbuf(mv):
     """Convert a MDB_val cdata to a CFFI buffer object."""
     return _ffi.buffer(mv.mv_data, mv.mv_size)
 
+
 def _mvstr(mv):
     """Convert a MDB_val cdata to Python bytes."""
     return _ffi.buffer(mv.mv_data, mv.mv_size)[:]
 
+
 def preload(mv):
     _lib.preload(0, mv.mv_data, mv.mv_size)
 
+
 def enable_drop_gil():
     """Deprecated."""
+
 
 def version(subpatch=False):
     """
@@ -588,14 +659,14 @@ def version(subpatch=False):
 
     """
     if subpatch:
-        return (_lib.MDB_VERSION_MAJOR,
-                _lib.MDB_VERSION_MINOR,
-                _lib.MDB_VERSION_PATCH,
-                1 if _have_patched_lmdb else 0)
-
-    return (_lib.MDB_VERSION_MAJOR,
+        return (
+            _lib.MDB_VERSION_MAJOR,
             _lib.MDB_VERSION_MINOR,
-            _lib.MDB_VERSION_PATCH)
+            _lib.MDB_VERSION_PATCH,
+            1 if _have_patched_lmdb else 0,
+        )
+
+    return (_lib.MDB_VERSION_MAJOR, _lib.MDB_VERSION_MINOR, _lib.MDB_VERSION_PATCH)
 
 
 class Environment(object):
@@ -731,15 +802,30 @@ class Environment(object):
             writer is active. The simplest approach is to use an exclusive lock
             so that no readers may be active at all when a writer begins.
     """
-    def __init__(self, path, map_size=10485760, subdir=True,
-                 readonly=False, metasync=True, sync=True, map_async=False,
-                 mode=O_0755, create=True, readahead=True, writemap=False,
-                 meminit=True, max_readers=126, max_dbs=0, max_spare_txns=1,
-                 lock=True):
+
+    def __init__(
+        self,
+        path,
+        map_size=10485760,
+        subdir=True,
+        readonly=False,
+        metasync=True,
+        sync=True,
+        map_async=False,
+        mode=O_0755,
+        create=True,
+        readahead=True,
+        writemap=False,
+        meminit=True,
+        max_readers=126,
+        max_dbs=0,
+        max_spare_txns=1,
+        lock=True,
+    ):
         self._max_spare_txns = max_spare_txns
         self._spare_txns = []
 
-        envpp = _ffi.new('MDB_env **')
+        envpp = _ffi.new("MDB_env **")
 
         rc = _lib.mdb_env_create(envpp)
         if rc:
@@ -803,7 +889,7 @@ class Environment(object):
                 create=True,
                 integerkey=False,
                 integerdup=False,
-                dupfixed=False
+                dupfixed=False,
             )
 
         self._dbs = {None: self._db}
@@ -880,7 +966,7 @@ class Environment(object):
         Equivalent to `mdb_env_get_path()
         <http://lmdb.tech/doc/group__mdb.html#gac699fdd8c4f8013577cb933fb6a757fe>`_
         """
-        path = _ffi.new('char **')
+        path = _ffi.new("char **")
         rc = _lib.mdb_env_get_path(self._env, path)
         if rc:
             raise _error("mdb_env_get_path", rc)
@@ -908,14 +994,18 @@ class Environment(object):
         """
         flags = _lib.MDB_CP_COMPACT if compact else 0
         if txn and not _have_patched_lmdb:
-            raise TypeError("Non-patched LMDB doesn't support transaction with env.copy")
+            raise TypeError(
+                "Non-patched LMDB doesn't support transaction with env.copy"
+            )
 
         if txn and not flags:
             raise TypeError("txn argument only compatible with compact=True")
 
         encoded = path.encode(sys.getfilesystemencoding())
         if _have_patched_lmdb:
-            rc = _lib.mdb_env_copy3(self._env, encoded, flags, txn._txn if txn else _ffi.NULL)
+            rc = _lib.mdb_env_copy3(
+                self._env, encoded, flags, txn._txn if txn else _ffi.NULL
+            )
             if rc:
                 raise _error("mdb_env_copy3", rc)
         else:
@@ -943,7 +1033,9 @@ class Environment(object):
         <http://lmdb.tech/doc/group__mdb.html#ga5d51d6130325f7353db0955dbedbc378>`_
         """
         if txn and not _have_patched_lmdb:
-            raise TypeError("Non-patched LMDB doesn't support transaction with env.copy")
+            raise TypeError(
+                "Non-patched LMDB doesn't support transaction with env.copy"
+            )
         if is_win32:
             # Convert C library handle to kernel handle.
             fd = msvcrt.get_osfhandle(fd)
@@ -953,7 +1045,9 @@ class Environment(object):
             raise TypeError("txn argument only compatible with compact=True")
 
         if _have_patched_lmdb:
-            rc = _lib.mdb_env_copyfd3(self._env, fd, flags, txn._txn if txn else _ffi.NULL)
+            rc = _lib.mdb_env_copyfd3(
+                self._env, fd, flags, txn._txn if txn else _ffi.NULL
+            )
             if rc:
                 raise _error("mdb_env_copyfd3", rc)
         else:
@@ -982,15 +1076,14 @@ class Environment(object):
             raise _error("mdb_env_sync", rc)
 
     def _convert_stat(self, st):
-        """Convert a MDB_stat to a dict.
-        """
+        """Convert a MDB_stat to a dict."""
         return {
             "psize": st.ms_psize,
             "depth": st.ms_depth,
             "branch_pages": st.ms_branch_pages,
             "leaf_pages": st.ms_leaf_pages,
             "overflow_pages": st.ms_overflow_pages,
-            "entries": st.ms_entries
+            "entries": st.ms_entries,
         }
 
     def stat(self):
@@ -1015,7 +1108,7 @@ class Environment(object):
         Equivalent to `mdb_env_stat()
         <http://lmdb.tech/doc/group__mdb.html#gaf881dca452050efbd434cd16e4bae255>`_
         """
-        st = _ffi.new('MDB_stat *')
+        st = _ffi.new("MDB_stat *")
         rc = _lib.mdb_env_stat(self._env, st)
         if rc:
             raise _error("mdb_env_stat", rc)
@@ -1046,37 +1139,37 @@ class Environment(object):
         Equivalent to `mdb_env_info()
         <http://lmdb.tech/doc/group__mdb.html#ga18769362c7e7d6cf91889a028a5c5947>`_
         """
-        info = _ffi.new('MDB_envinfo *')
+        info = _ffi.new("MDB_envinfo *")
         rc = _lib.mdb_env_info(self._env, info)
         if rc:
             raise _error("mdb_env_info", rc)
         return {
-            "map_addr": int(_ffi.cast('long', info.me_mapaddr)),
+            "map_addr": int(_ffi.cast("long", info.me_mapaddr)),
             "map_size": info.me_mapsize,
             "last_pgno": info.me_last_pgno,
             "last_txnid": info.me_last_txnid,
             "max_readers": info.me_maxreaders,
-            "num_readers": info.me_numreaders
+            "num_readers": info.me_numreaders,
         }
 
     def flags(self):
         """Return a dict describing Environment constructor flags used to
         instantiate this environment."""
-        flags_ = _ffi.new('unsigned int[]', 1)
+        flags_ = _ffi.new("unsigned int[]", 1)
         rc = _lib.mdb_env_get_flags(self._env, flags_)
         if rc:
             raise _error("mdb_env_get_flags", rc)
         flags = flags_[0]
         return {
-            'subdir': not (flags & _lib.MDB_NOSUBDIR),
-            'readonly': bool(flags & _lib.MDB_RDONLY),
-            'metasync': not (flags & _lib.MDB_NOMETASYNC),
-            'sync': not (flags & _lib.MDB_NOSYNC),
-            'map_async': bool(flags & _lib.MDB_MAPASYNC),
-            'readahead': not (flags & _lib.MDB_NORDAHEAD),
-            'writemap': bool(flags & _lib.MDB_WRITEMAP),
-            'meminit': not (flags & _lib.MDB_NOMEMINIT),
-            'lock': not (flags & _lib.MDB_NOLOCK),
+            "subdir": not (flags & _lib.MDB_NOSUBDIR),
+            "readonly": bool(flags & _lib.MDB_RDONLY),
+            "metasync": not (flags & _lib.MDB_NOMETASYNC),
+            "sync": not (flags & _lib.MDB_NOSYNC),
+            "map_async": bool(flags & _lib.MDB_MAPASYNC),
+            "readahead": not (flags & _lib.MDB_NORDAHEAD),
+            "writemap": bool(flags & _lib.MDB_WRITEMAP),
+            "meminit": not (flags & _lib.MDB_NOMEMINIT),
+            "lock": not (flags & _lib.MDB_NOLOCK),
         }
 
     def max_key_size(self):
@@ -1089,7 +1182,7 @@ class Environment(object):
         environment by the first process. This is the same as `max_readers=`
         specified to the constructor if this process was the first to open the
         environment."""
-        readers_ = _ffi.new('unsigned int[]', 1)
+        readers_ = _ffi.new("unsigned int[]", 1)
         rc = _lib.mdb_env_get_maxreaders(self._env, readers_)
         if rc:
             raise _error("mdb_env_get_maxreaders", rc)
@@ -1111,15 +1204,23 @@ class Environment(object):
         """Search the reader lock table for stale entries, for example due to a
         crashed process. Returns the number of stale entries that were cleared.
         """
-        reaped = _ffi.new('int[]', 1)
+        reaped = _ffi.new("int[]", 1)
         rc = _lib.mdb_reader_check(self._env, reaped)
         if rc:
-            raise _error('mdb_reader_check', rc)
+            raise _error("mdb_reader_check", rc)
         return reaped[0]
 
-    def open_db(self, key=None, txn=None, reverse_key=False, dupsort=False,
-                create=True, integerkey=False, integerdup=False,
-                dupfixed=False):
+    def open_db(
+        self,
+        key=None,
+        txn=None,
+        reverse_key=False,
+        dupsort=False,
+        create=True,
+        integerkey=False,
+        integerdup=False,
+        dupfixed=False,
+    ):
         """
         Open a database, returning an instance of :py:class:`_Database`. Repeat
         :py:meth:`Environment.open_db` calls for the same name will return the
@@ -1211,11 +1312,12 @@ class Environment(object):
                 indicating its size.  Implies `dupsort` is ``True``.
         """
         if isinstance(key, UnicodeType):
-            raise TypeError('key must be bytes')
+            raise TypeError("key must be bytes")
 
-        if key is None and (reverse_key or dupsort or integerkey or integerdup
-                            or dupfixed):
-            raise ValueError('May not set flags on the main database')
+        if key is None and (
+            reverse_key or dupsort or integerkey or integerdup or dupfixed
+        ):
+            raise ValueError("May not set flags on the main database")
 
         db = self._dbs.get(key)
         if db:
@@ -1228,14 +1330,32 @@ class Environment(object):
             dupsort = True
 
         if txn:
-            db = _Database(self, txn, key, reverse_key, dupsort, create,
-                           integerkey, integerdup, dupfixed)
+            db = _Database(
+                self,
+                txn,
+                key,
+                reverse_key,
+                dupsort,
+                create,
+                integerkey,
+                integerdup,
+                dupfixed,
+            )
         else:
             try:
                 self._creating_db_in_readonly = True
                 with self.begin(write=not self.readonly) as txn:
-                    db = _Database(self, txn, key, reverse_key, dupsort, create,
-                                   integerkey, integerdup, dupfixed)
+                    db = _Database(
+                        self,
+                        txn,
+                        key,
+                        reverse_key,
+                        dupsort,
+                        create,
+                        integerkey,
+                        integerdup,
+                        dupfixed,
+                    )
             finally:
                 self._creating_db_in_readonly = False
         self._dbs[key] = db
@@ -1253,8 +1373,19 @@ class _Database(object):
     Should not be constructed directly.  Use :py:meth:`Environment.open_db`
     instead.
     """
-    def __init__(self, env, txn, name, reverse_key, dupsort, create,
-                 integerkey, integerdup, dupfixed):
+
+    def __init__(
+        self,
+        env,
+        txn,
+        name,
+        reverse_key,
+        dupsort,
+        create,
+        integerkey,
+        integerdup,
+        dupfixed,
+    ):
         env._deps.add(self)
         self._deps = set()
         self._name = name
@@ -1272,7 +1403,7 @@ class _Database(object):
             flags |= _lib.MDB_INTEGERDUP
         if dupfixed:
             flags |= _lib.MDB_DUPFIXED
-        dbipp = _ffi.new('MDB_dbi *')
+        dbipp = _ffi.new("MDB_dbi *")
         self._dbi = None
         rc = _lib.mdb_dbi_open(txn._txn, name or _ffi.NULL, flags, dbipp)
         if rc:
@@ -1282,7 +1413,7 @@ class _Database(object):
 
     def _load_flags(self, txn):
         """Load MDB's notion of the database flags."""
-        flags_ = _ffi.new('unsigned int[]', 1)
+        flags_ = _ffi.new("unsigned int[]", 1)
         rc = _lib.mdb_dbi_flags(txn._txn, self._dbi, flags_)
         if rc:
             raise _error("mdb_dbi_flags", rc)
@@ -1292,18 +1423,19 @@ class _Database(object):
         """Return the database's associated flags as a dict of _Database
         constructor kwargs."""
         if len(args) > 1:
-            raise TypeError('flags takes 0 or 1 arguments')
+            raise TypeError("flags takes 0 or 1 arguments")
 
         return {
-            'reverse_key': bool(self._flags & _lib.MDB_REVERSEKEY),
-            'dupsort': bool(self._flags & _lib.MDB_DUPSORT),
-            'integerkey': bool(self._flags & _lib.MDB_INTEGERKEY),
-            'integerdup': bool(self._flags & _lib.MDB_INTEGERDUP),
-            'dupfixed': bool(self._flags & _lib.MDB_DUPFIXED),
+            "reverse_key": bool(self._flags & _lib.MDB_REVERSEKEY),
+            "dupsort": bool(self._flags & _lib.MDB_DUPSORT),
+            "integerkey": bool(self._flags & _lib.MDB_INTEGERKEY),
+            "integerdup": bool(self._flags & _lib.MDB_INTEGERDUP),
+            "dupfixed": bool(self._flags & _lib.MDB_DUPFIXED),
         }
 
     def _invalidate(self):
         self._dbi = _invalid
+
 
 open = Environment
 
@@ -1373,8 +1505,8 @@ class Transaction(object):
         self.env = env  # hold ref
         self._db = db or env._db
         self._env = env._env
-        self._key = _ffi.new('MDB_val *')
-        self._val = _ffi.new('MDB_val *')
+        self._key = _ffi.new("MDB_val *")
+        self._val = _ffi.new("MDB_val *")
         self._to_py = _mvbuf if buffers else _mvstr
         self._deps = set()
 
@@ -1387,10 +1519,10 @@ class Transaction(object):
 
         if write:
             if env.readonly:
-                msg = 'Cannot start write transaction with read-only env'
+                msg = "Cannot start write transaction with read-only env"
                 raise _error(msg, _lib.EACCES)
 
-            txnpp = _ffi.new('MDB_txn **')
+            txnpp = _ffi.new("MDB_txn **")
             rc = _lib.mdb_txn_begin(self._env, parent_txn, 0, txnpp)
             if rc:
                 raise _error("mdb_txn_begin", rc)
@@ -1398,7 +1530,9 @@ class Transaction(object):
             self._write = True
         else:
             try:  # Exception catch in order to avoid racy 'if txns:' test
-                if env._creating_db_in_readonly:  # Don't use spare txns for creating a DB when read-only
+                if (
+                    env._creating_db_in_readonly
+                ):  # Don't use spare txns for creating a DB when read-only
                     raise IndexError
                 self._txn = env._spare_txns.pop()
                 env._max_spare_txns += 1
@@ -1411,7 +1545,7 @@ class Transaction(object):
                     self._invalidate()
                     raise _error("mdb_txn_renew", rc)
             except IndexError:
-                txnpp = _ffi.new('MDB_txn **')
+                txnpp = _ffi.new("MDB_txn **")
                 flags = _lib.MDB_RDONLY
                 rc = _lib.mdb_txn_begin(self._env, parent_txn, flags, txnpp)
                 if rc:
@@ -1454,10 +1588,10 @@ class Transaction(object):
         Return statistics like :py:meth:`Environment.stat`, except for a single
         DBI. `db` must be a database handle returned by :py:meth:`open_db`.
         """
-        st = _ffi.new('MDB_stat *')
+        st = _ffi.new("MDB_stat *")
         rc = _lib.mdb_stat(self._txn, db._dbi, st)
         if rc:
-            raise _error('mdb_stat', rc)
+            raise _error("mdb_stat", rc)
         return self.env._convert_stat(st)
 
     def drop(self, db, delete=True):
@@ -1535,8 +1669,7 @@ class Transaction(object):
         Equivalent to `mdb_get()
         <http://lmdb.tech/doc/group__mdb.html#ga8bf10cd91d3f3a83a34d04ce6b07992d>`_
         """
-        rc = _lib.pymdb_get(self._txn, (db or self._db)._dbi,
-                            key, len(key), self._val)
+        rc = _lib.pymdb_get(self._txn, (db or self._db)._dbi, key, len(key), self._val)
         if rc:
             if rc == _lib.MDB_NOTFOUND:
                 return default
@@ -1545,8 +1678,7 @@ class Transaction(object):
         preload(self._val)
         return self._to_py(self._val)
 
-    def put(self, key, value, dupdata=True, overwrite=True, append=False,
-            db=None):
+    def put(self, key, value, dupdata=True, overwrite=True, append=False, db=None):
         """Store a record, returning ``True`` if it was written, or ``False``
         to indicate the key was already present and `overwrite=False`.
         On success, the cursor is positioned on the new record.
@@ -1587,8 +1719,9 @@ class Transaction(object):
         if append:
             flags |= _lib.MDB_APPEND
 
-        rc = _lib.pymdb_put(self._txn, (db or self._db)._dbi,
-                            key, len(key), value, len(value), flags)
+        rc = _lib.pymdb_put(
+            self._txn, (db or self._db)._dbi, key, len(key), value, len(value), flags
+        )
         self._mutations += 1
         if rc:
             if rc == _lib.MDB_KEYEXIST:
@@ -1599,9 +1732,9 @@ class Transaction(object):
     def replace(self, key, value, db=None):
         """Use a temporary cursor to invoke :py:meth:`Cursor.replace`.
 
-            `db`:
-                Named database to operate on. If unspecified, defaults to the
-                database given to the :py:class:`Transaction` constructor.
+        `db`:
+            Named database to operate on. If unspecified, defaults to the
+            database given to the :py:class:`Transaction` constructor.
         """
         with Cursor(db or self._db, self) as curs:
             return curs.replace(key, value)
@@ -1609,9 +1742,9 @@ class Transaction(object):
     def pop(self, key, db=None):
         """Use a temporary cursor to invoke :py:meth:`Cursor.pop`.
 
-            `db`:
-                Named database to operate on. If unspecified, defaults to the
-                database given to the :py:class:`Transaction` constructor.
+        `db`:
+            Named database to operate on. If unspecified, defaults to the
+            database given to the :py:class:`Transaction` constructor.
         """
         with Cursor(db or self._db, self) as curs:
             return curs.pop(key)
@@ -1635,8 +1768,9 @@ class Transaction(object):
         if value is None:  # for bug-compatibility with cpython impl
             value = EMPTY_BYTES
 
-        rc = _lib.pymdb_del(self._txn, (db or self._db)._dbi,
-                            key, len(key), value, len(value))
+        rc = _lib.pymdb_del(
+            self._txn, (db or self._db)._dbi, key, len(key), value, len(value)
+        )
         self._mutations += 1
         if rc:
             if rc == _lib.MDB_NOTFOUND:
@@ -1734,18 +1868,19 @@ class Cursor(object):
             ...         'Tree is broken! Path: %s' % (path,)
             ...     path.append(cursor.value())
     """
+
     def __init__(self, db, txn):
         db._deps.add(self)
         txn._deps.add(self)
-        self.db = db # hold ref
-        self.txn = txn # hold ref
+        self.db = db  # hold ref
+        self.txn = txn  # hold ref
         self._dbi = db._dbi
         self._txn = txn._txn
-        self._key = _ffi.new('MDB_val *')
-        self._val = _ffi.new('MDB_val *')
+        self._key = _ffi.new("MDB_val *")
+        self._val = _ffi.new("MDB_val *")
         self._valid = False
         self._to_py = txn._to_py
-        curpp = _ffi.new('MDB_cursor **')
+        curpp = _ffi.new("MDB_cursor **")
         self._cur = None
         rc = _lib.mdb_cursor_open(self._txn, self._dbi, curpp)
         if rc:
@@ -1842,6 +1977,7 @@ class Cursor(object):
         if not self._valid:
             self.first()
         return self._iter(_lib.MDB_NEXT, keys, values)
+
     __iter__ = iternext
 
     def iternext_dup(self, keys=False, values=True):
@@ -1933,8 +2069,9 @@ class Cursor(object):
         return v
 
     def _cursor_get_kv(self, op, k, v):
-        rc = _lib.pymdb_cursor_get(self._cur, k, len(k), v, len(v),
-                                   self._key, self._val, op)
+        rc = _lib.pymdb_cursor_get(
+            self._cur, k, len(k), v, len(v), self._key, self._val, op
+        )
         self._valid = v = not rc
         if rc:
             self._key.mv_size = 0
@@ -2176,8 +2313,9 @@ class Cursor(object):
 
                     if dupfixed_bytes:
                         gen = (
-                            (key, val[i:i + dupfixed_bytes])
-                            for i in range(0, len(val), dupfixed_bytes))
+                            (key, val[i : i + dupfixed_bytes])
+                            for i in range(0, len(val), dupfixed_bytes)
+                        )
                         if keyfixed:
                             for k, v in gen:
                                 a.extend(k + v)
@@ -2264,7 +2402,7 @@ class Cursor(object):
         Equivalent to `mdb_cursor_count()
         <http://lmdb.tech/doc/group__mdb.html#ga4041fd1e1862c6b7d5f10590b86ffbe2>`_
         """
-        countp = _ffi.new('size_t *')
+        countp = _ffi.new("size_t *")
         rc = _lib.mdb_cursor_count(self._cur, countp)
         if rc:
             raise _error("mdb_cursor_count", rc)
@@ -2365,8 +2503,9 @@ class Cursor(object):
         added = 0
         skipped = 0
         for key, value in items:
-            rc = _lib.pymdb_cursor_put(self._cur, key, len(key),
-                                       value, len(value), flags)
+            rc = _lib.pymdb_cursor_put(
+                self._cur, key, len(key), value, len(value), flags
+            )
             self.txn._mutations += 1
             added += 1
             if rc:

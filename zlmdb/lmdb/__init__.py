@@ -24,9 +24,11 @@ Python wrapper for OpenLDAP's "Lightning" MDB database.
 Please see https://lmdb.readthedocs.io/
 """
 
+
 def _reading_docs():
     """Return True if Sphinx is currently parsing this file."""
-    return 'sphinx' in __import__('sys').modules
+    return "sphinx" in __import__("sys").modules
+
 
 # CFFI-only mode (bundled with zlmdb)
 from zlmdb.lmdb.cffi import *

@@ -1,4 +1,3 @@
-
 # Roughly approximates some of Symas microbenchmark.
 
 from time import time
@@ -10,31 +9,32 @@ import tempfile
 import zlmdb.lmdb as lmdb
 
 
-val = ' ' * 100
+val = " " * 100
 MAX_KEYS = int(1e6)
 
 t0 = time()
 
-urandom = file('/dev/urandom', 'rb', 1048576).read
+urandom = file("/dev/urandom", "rb", 1048576).read
 
 keys = set()
 while len(keys) < MAX_KEYS:
     for _ in xrange(min(1000, MAX_KEYS - len(keys))):
         keys.add(urandom(16))
 
-print 'make %d keys in %.2fsec' % (len(keys), time() - t0)
+print("make %d keys in %.2fsec" % (len(keys), time() - t0))
 keys = list(keys)
 
-if os.path.exists('/ram'):
-    DB_PATH = '/ram/dbtest'
+if os.path.exists("/ram"):
+    DB_PATH = "/ram/dbtest"
 else:
-    DB_PATH = tempfile.mktemp(prefix='nastybench')
+    DB_PATH = tempfile.mktemp(prefix="nastybench")
 
 if os.path.exists(DB_PATH):
     shutil.rmtree(DB_PATH)
 
-env = lmdb.open(DB_PATH, map_size=1048576 * 1024,
-    metasync=False, sync=False, map_async=True)
+env = lmdb.open(
+    DB_PATH, map_size=1048576 * 1024, metasync=False, sync=False, map_async=True
+)
 
 nextkey = iter(keys).next
 run = True
@@ -48,8 +48,7 @@ while run:
 
 d = time() - t0
 env.sync(True)
-print 'insert %d keys in %.2fsec (%d/sec)' % (len(keys), d, len(keys) / d)
-
+print("insert %d keys in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))
 
 
 nextkey = iter(keys).next
@@ -63,7 +62,7 @@ with env.begin() as txn:
         pass
 
 d = time() - t0
-print 'random lookup %d keys in %.2fsec (%d/sec)' % (len(keys), d, len(keys)/d)
+print("random lookup %d keys in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))
 
 
 nextkey = iter(keys).next
@@ -77,7 +76,7 @@ with env.begin(buffers=True) as txn:
         pass
 
 d = time() - t0
-print 'random lookup %d buffers in %.2fsec (%d/sec)' % (len(keys), d, len(keys)/d)
+print("random lookup %d buffers in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))
 
 
 nextkey = iter(keys).next
@@ -91,8 +90,9 @@ with env.begin(buffers=True) as txn:
         pass
 
 d = time() - t0
-print 'random lookup+hash %d buffers in %.2fsec (%d/sec)' % (len(keys), d, len(keys)/d)
-
+print(
+    "random lookup+hash %d buffers in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d)
+)
 
 
 nextkey = iter(keys).next
@@ -107,4 +107,4 @@ with env.begin(buffers=True) as txn:
         pass
 
 d = time() - t0
-print 'seq read %d buffers in %.2fsec (%d/sec)' % (len(keys), d, len(keys)/d)
+print("seq read %d buffers in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))

@@ -30,28 +30,31 @@ import zlmdb.lmdb as lmdb
 import zlmdb.lmdb.tool
 import testlib
 
+
 def call_tool(cmdline):
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         args = cmdline.split()
     else:
         args = shlex.split(cmdline)
     return zlmdb.lmdb.tool.main(args)
 
+
 class ToolTest(testlib.LmdbTest):
     def test_cmd_get(self):
         frompath, env = testlib.temp_env()
-        db = env.open_db(b'subdb')
+        db = env.open_db(b"subdb")
         with env.begin(write=True, db=db) as txn:
-            txn.put(b'foo', b'bar', db=db)
+            txn.put(b"foo", b"bar", db=db)
         env.close()
-        call_tool('-d subdb get --env %s' % (frompath,))
+        call_tool("-d subdb get --env %s" % (frompath,))
 
     def test_cmd_rewrite(self):
         frompath, env = testlib.temp_env()
-        env.open_db(b'subdb')
+        env.open_db(b"subdb")
         env.close()
         topath = testlib.temp_dir()
-        call_tool('rewrite -e %s -E %s subdb' % (frompath, topath))
+        call_tool("rewrite -e %s -E %s subdb" % (frompath, topath))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

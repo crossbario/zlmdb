@@ -54,8 +54,8 @@ class CrashTest(unittest.TestCase):
     def setUp(self):
         self.path, self.env = testlib.temp_env()
         with self.env.begin(write=True) as txn:
-            txn.put(B('dave'), B(''))
-            txn.put(B('dave2'), B(''))
+            txn.put(B("dave"), B(""))
+            txn.put(B("dave2"), B(""))
 
     def testOldCrash(self):
         txn = self.env.begin()
@@ -76,9 +76,9 @@ class CrashTest(unittest.TestCase):
         self.assertRaises(Exception, (lambda: list(it)))
 
     def testDbCloseActiveIter(self):
-        db = self.env.open_db(key=B('dave3'))
+        db = self.env.open_db(key=B("dave3"))
         with self.env.begin(write=True) as txn:
-            txn.put(B('a'), B('b'), db=db)
+            txn.put(B("a"), B("b"), db=db)
             it = txn.cursor(db=db).iternext()
         self.assertRaises(Exception, (lambda: list(it)))
 
@@ -108,17 +108,17 @@ class IteratorTest(unittest.TestCase):
 
     def testFilledSkipForward(self):
         testlib.putData(self.txn)
-        self.c.set_range(B('b'))
+        self.c.set_range(B("b"))
         self.assertEqual(testlib.ITEMS[1:], list(self.c))
 
     def testFilledSkipReverse(self):
         testlib.putData(self.txn)
-        self.c.set_range(B('b'))
+        self.c.set_range(B("b"))
         self.assertEqual(testlib.REV_ITEMS[-2:], list(self.c.iterprev()))
 
     def testFilledSkipEof(self):
         testlib.putData(self.txn)
-        self.assertEqual(False, self.c.set_range(B('z')))
+        self.assertEqual(False, self.c.set_range(B("z")))
         self.assertEqual(testlib.REV_ITEMS, list(self.c.iterprev()))
 
 
@@ -130,7 +130,7 @@ class BigReverseTest(unittest.TestCase):
     def test_big_reverse(self):
         path, env = testlib.temp_env()
         txn = env.begin(write=True)
-        keys = [B('%05d' % i) for i in range(0xffff)]
+        keys = [B("%05d" % i) for i in range(0xFFFF)]
         for k in keys:
             txn.put(k, k, append=True)
         assert list(txn.cursor().iterprev(values=False)) == list(reversed(keys))
@@ -152,16 +152,16 @@ class MultiCursorDeleteTest(unittest.TestCase):
             cur.delete()
 
         for i in range(1, 10):
-            cur.put(O(ord('a') + i) * i, B(''))
+            cur.put(O(ord("a") + i) * i, B(""))
 
         c1 = txn.cursor()
         c1f = c1.iternext(values=False)
-        while next(c1f) != B('ddd'):
+        while next(c1f) != B("ddd"):
             pass
         c2 = txn.cursor()
-        assert c2.set_key(B('ddd'))
+        assert c2.set_key(B("ddd"))
         c2.delete()
-        assert next(c1f) == B('eeee')
+        assert next(c1f) == B("eeee")
 
     def test_monster(self):
         # Generate predictable sequence of sizes.
@@ -171,8 +171,8 @@ class MultiCursorDeleteTest(unittest.TestCase):
         txn = self.env.begin(write=True)
         keys = []
         for i in range(20000):
-            key = B('%06x' % i)
-            val = B('x' * rand.randint(76, 350))
+            key = B("%06x" % i)
+            val = B("x" * rand.randint(76, 350))
             assert txn.put(key, val)
             keys.append(key)
 
@@ -203,7 +203,7 @@ class TxnFullTest(unittest.TestCase):
 
         # Should not crash with MDB_BAD_TXN:
         with env.begin(write=True) as txn:
-            txn.delete(B('1'))
+            txn.delete(B("1"))
 
 
 class EmptyIterTest(unittest.TestCase):
@@ -216,7 +216,7 @@ class EmptyIterTest(unittest.TestCase):
         txn = env.begin()
         cur = txn.cursor()
         ite = cur.iternext()
-        nex = getattr(ite, 'next', getattr(ite, '__next__', None))
+        nex = getattr(ite, "next", getattr(ite, "__next__", None))
         assert nex is not None
         self.assertRaises(StopIteration, nex)
 
@@ -228,23 +228,24 @@ class MultiputTest(unittest.TestCase):
     def test_multiput_segfault(self):
         # http://github.com/jnwatson/py-lmdb/issues/173
         _, env = testlib.temp_env()
-        db = env.open_db(b'foo', dupsort=True)
+        db = env.open_db(b"foo", dupsort=True)
         txn = env.begin(db=db, write=True)
-        txn.put(b'a', b'\x00\x00\x00\x00\x00\x00\x00\x00')
-        txn.put(b'a', b'\x05')
-        txn.put(b'a', b'\t')
-        txn.put(b'a', b'\r')
-        txn.put(b'a', b'\x11')
-        txn.put(b'a', b'\x15')
-        txn.put(b'a', b'\x19')
-        txn.put(b'a', b'\x1d')
-        txn.put(b'a', b'!')
-        txn.put(b'a', b'%')
-        txn.put(b'a', b')')
-        txn.put(b'a', b'-')
-        txn.put(b'a', b'1')
-        txn.put(b'a', b'5')
+        txn.put(b"a", b"\x00\x00\x00\x00\x00\x00\x00\x00")
+        txn.put(b"a", b"\x05")
+        txn.put(b"a", b"\t")
+        txn.put(b"a", b"\r")
+        txn.put(b"a", b"\x11")
+        txn.put(b"a", b"\x15")
+        txn.put(b"a", b"\x19")
+        txn.put(b"a", b"\x1d")
+        txn.put(b"a", b"!")
+        txn.put(b"a", b"%")
+        txn.put(b"a", b")")
+        txn.put(b"a", b"-")
+        txn.put(b"a", b"1")
+        txn.put(b"a", b"5")
         txn.commit()
+
 
 class InvalidArgTest(unittest.TestCase):
     def tearDown(self):
@@ -255,73 +256,75 @@ class InvalidArgTest(unittest.TestCase):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
         c = txn.cursor()
-        self.assertRaises(TypeError, c.get, b'a', key=True)
+        self.assertRaises(TypeError, c.get, b"a", key=True)
+
 
 class BadCursorTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
     def test_cursor_open_failure(self):
-        '''
+        """
         Test the error path for when mdb_cursor_open fails
 
         Note:
             this only would crash if cpython is built with Py_TRACE_REFS
-        '''
+        """
         # https://github.com/jnwatson/py-lmdb/issues/216
         path, env = testlib.temp_env()
-        db = env.open_db(b'db', dupsort=True)
+        db = env.open_db(b"db", dupsort=True)
         env.close()
         del env
 
         env = lmdb.open(path, readonly=True, max_dbs=4)
         txn1 = env.begin(write=False)
-        db = env.open_db(b'db', dupsort=True, txn=txn1)
+        db = env.open_db(b"db", dupsort=True, txn=txn1)
         txn2 = env.begin(write=False)
         self.assertRaises(lmdb.InvalidParameterError, txn2.cursor, db=db)
+
 
 MINDBSIZE = 64 * 1024 * 2  # certain ppcle Linux distros have a 64K page size
 
 if sys.version_info[:2] >= (3, 4):
-    class MapResizeTest(unittest.TestCase):
 
+    class MapResizeTest(unittest.TestCase):
         def tearDown(self):
             testlib.cleanup()
 
         @staticmethod
         def do_resize(path):
-            '''
+            """
             Increase map size and fill up database, making sure that the root page is no longer
             accessible in the main process.
-            '''
+            """
             with lmdb.open(path, max_dbs=10, create=False, map_size=MINDBSIZE) as env:
-                env.open_db(b'foo')
+                env.open_db(b"foo")
                 env.set_mapsize(MINDBSIZE * 2)
                 count = 0
                 try:
                     # Figure out how many keyvals we can enter before we run out of space
                     with env.begin(write=True) as txn:
                         while True:
-                            datum = count.to_bytes(4, 'little')
-                            txn.put(datum, b'0')
+                            datum = count.to_bytes(4, "little")
+                            txn.put(datum, b"0")
                             count += 1
 
                 except lmdb.MapFullError:
                     # Now put (and commit) just short of that
                     with env.begin(write=True) as txn:
                         for i in range(count - 100):
-                            datum = i.to_bytes(4, 'little')
-                            txn.put(datum, b'0')
+                            datum = i.to_bytes(4, "little")
+                            txn.put(datum, b"0")
                 else:
                     assert 0
 
         def test_opendb_resize(self):
-            '''
+            """
             Test that we correctly handle a MDB_MAP_RESIZED in env.open_db.
 
             Would seg fault in cffi implementation
-            '''
-            mpctx = multiprocessing.get_context('spawn')
+            """
+            mpctx = multiprocessing.get_context("spawn")
             path, env = testlib.temp_env(max_dbs=10, map_size=MINDBSIZE)
             env.close()
             env = lmdb.open(path, max_dbs=10, map_size=MINDBSIZE, readonly=True)
@@ -329,7 +332,8 @@ if sys.version_info[:2] >= (3, 4):
             proc.start()
             proc.join(5)
             assert proc.exitcode is not None
-            self.assertRaises(lmdb.MapResizedError, env.open_db, b'foo')
+            self.assertRaises(lmdb.MapResizedError, env.open_db, b"foo")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

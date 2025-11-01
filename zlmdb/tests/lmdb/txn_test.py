@@ -34,10 +34,10 @@ from testlib import BytesType
 import zlmdb.lmdb as lmdb
 
 
-UINT_0001 = struct.pack('I', 1)
-UINT_0002 = struct.pack('I', 2)
-ULONG_0001 = struct.pack('L', 1)  # L != size_t
-ULONG_0002 = struct.pack('L', 2)  # L != size_t
+UINT_0001 = struct.pack("I", 1)
+UINT_0002 = struct.pack("I", 2)
+ULONG_0001 = struct.pack("L", 1)  # L != size_t
+ULONG_0002 = struct.pack("L", 2)  # L != size_t
 
 
 class InitTest(testlib.LmdbTest):
@@ -47,100 +47,99 @@ class InitTest(testlib.LmdbTest):
     def test_closed(self):
         _, env = testlib.temp_env()
         env.close()
-        self.assertRaises(Exception,
-            lambda: lmdb.Transaction(env))
+        self.assertRaises(Exception, lambda: lmdb.Transaction(env))
 
     def test_readonly(self):
         _, env = testlib.temp_env()
         txn = lmdb.Transaction(env)
         # Read txn can't write.
-        self.assertRaises(lmdb.ReadonlyError,
-            lambda: txn.put(B('a'), B('')))
+        self.assertRaises(lmdb.ReadonlyError, lambda: txn.put(B("a"), B("")))
         txn.abort()
 
     def test_begin_write(self):
         _, env = testlib.temp_env()
         txn = lmdb.Transaction(env, write=True)
         # Write txn can write.
-        assert txn.put(B('a'), B(''))
+        assert txn.put(B("a"), B(""))
         txn.commit()
 
     def test_bind_db(self):
         _, env = testlib.temp_env()
         main = env.open_db(None)
-        sub = env.open_db(B('db1'))
+        sub = env.open_db(B("db1"))
 
         txn = lmdb.Transaction(env, write=True, db=sub)
-        assert txn.put(B('b'), B(''))           # -> sub
-        assert txn.put(B('a'), B(''), db=main)  # -> main
+        assert txn.put(B("b"), B(""))  # -> sub
+        assert txn.put(B("a"), B(""), db=main)  # -> main
         txn.commit()
 
         txn = lmdb.Transaction(env)
-        assert txn.get(B('a')) == B('')
-        assert txn.get(B('b')) is None
-        assert txn.get(B('a'), db=sub) is None
-        assert txn.get(B('b'), db=sub) == B('')
+        assert txn.get(B("a")) == B("")
+        assert txn.get(B("b")) is None
+        assert txn.get(B("a"), db=sub) is None
+        assert txn.get(B("b"), db=sub) == B("")
         txn.abort()
 
     def test_bind_db_methods(self):
         _, env = testlib.temp_env()
         maindb = env.open_db(None)
-        db1 = env.open_db(B('d1'))
+        db1 = env.open_db(B("d1"))
         txn = lmdb.Transaction(env, write=True, db=db1)
-        assert txn.put(B('a'), B('d1'))
-        assert txn.get(B('a'), db=db1) == B('d1')
-        assert txn.get(B('a'), db=maindb) is None
-        assert txn.replace(B('a'), B('d11')) == B('d1')
-        assert txn.pop(B('a')) == B('d11')
-        assert txn.put(B('a'), B('main'), db=maindb, overwrite=False)
-        assert not txn.delete(B('a'))
+        assert txn.put(B("a"), B("d1"))
+        assert txn.get(B("a"), db=db1) == B("d1")
+        assert txn.get(B("a"), db=maindb) is None
+        assert txn.replace(B("a"), B("d11")) == B("d1")
+        assert txn.pop(B("a")) == B("d11")
+        assert txn.put(B("a"), B("main"), db=maindb, overwrite=False)
+        assert not txn.delete(B("a"))
         txn.abort()
 
     def test_parent_readonly(self):
         _, env = testlib.temp_env()
         parent = lmdb.Transaction(env)
         # Nonsensical.
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: lmdb.Transaction(env, parent=parent))
+        self.assertRaises(
+            lmdb.InvalidParameterError, lambda: lmdb.Transaction(env, parent=parent)
+        )
 
     def test_parent(self):
         _, env = testlib.temp_env()
         parent = lmdb.Transaction(env, write=True)
-        parent.put(B('a'), B('a'))
+        parent.put(B("a"), B("a"))
 
         child = lmdb.Transaction(env, write=True, parent=parent)
-        assert child.get(B('a')) == B('a')
-        assert child.put(B('a'), B('b'))
+        assert child.get(B("a")) == B("a")
+        assert child.put(B("a"), B("b"))
         child.abort()
 
         # put() should have rolled back
-        assert parent.get(B('a')) == B('a')
+        assert parent.get(B("a")) == B("a")
 
         child = lmdb.Transaction(env, write=True, parent=parent)
-        assert child.put(B('a'), B('b'))
+        assert child.put(B("a"), B("b"))
         child.commit()
 
         # put() should be visible
-        assert parent.get(B('a')) == B('b')
+        assert parent.get(B("a")) == B("b")
 
     def test_buffers(self):
         _, env = testlib.temp_env()
         txn = lmdb.Transaction(env, write=True, buffers=True)
-        assert txn.put(B('a'), B('a'))
-        b = txn.get(B('a'))
+        assert txn.put(B("a"), B("a"))
+        b = txn.get(B("a"))
         assert b is not None
         assert len(b) == 1
-        assert not isinstance(b, type(B('')))
+        assert not isinstance(b, type(B("")))
         txn.commit()
 
         txn = lmdb.Transaction(env, buffers=False)
-        b = txn.get(B('a'))
+        b = txn.get(B("a"))
         assert b is not None
         assert len(b) == 1
-        assert isinstance(b, type(B('')))
+        assert isinstance(b, type(B("")))
         txn.abort()
 
-    @unittest.skipIf(sys.platform.startswith('win'), "No fork on Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "No fork on Windows")
     def test_cached_txn_across_fork(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=False)
@@ -151,26 +150,26 @@ class InitTest(testlib.LmdbTest):
             os.wait()  # Wait for child to finish
             txn = env.begin(write=False)  # Used to raise MDB_BAD_RSLOT (#346)
 
-    @unittest.skipIf(sys.platform.startswith('win'), "No fork on Windows")
+    @unittest.skipIf(sys.platform.startswith("win"), "No fork on Windows")
     def test_child_deleting_transaction(self):
         _, env = testlib.temp_env()
         with env.begin(write=True) as txn:
-            txn.put(b'a', b'foo')
+            txn.put(b"a", b"foo")
         txn = env.begin()
 
         r = env.readers()
-        assert r != '(no active readers)\n'
+        assert r != "(no active readers)\n"
 
         pid = os.fork()
         if pid == 0:
-            del txn   # I am the child
+            del txn  # I am the child
             os._exit(0)
 
         os.waitpid(pid, 0)
         # Make sure my child didn't mess with my environment
         r2 = env.readers()
-        assert r2 == r, '%r != %r' % (r2, r)
-        assert txn.get(b'a') == b'foo'
+        assert r2 == r, "%r != %r" % (r2, r)
+        assert txn.get(b"a") == b"foo"
         del txn
 
 
@@ -183,11 +182,11 @@ class ContextManagerTest(unittest.TestCase):
         txn = env.begin(write=True)
         with txn as txn_:
             assert txn is txn_
-            txn.put(B('foo'), B('123'))
+            txn.put(B("foo"), B("123"))
 
-        self.assertRaises(Exception, lambda: txn.get(B('foo')))
+        self.assertRaises(Exception, lambda: txn.get(B("foo")))
         with env.begin() as txn:
-            assert txn.get(B('foo')) == B('123')
+            assert txn.get(B("foo")) == B("123")
 
     def test_crash(self):
         path, env = testlib.temp_env()
@@ -195,14 +194,14 @@ class ContextManagerTest(unittest.TestCase):
 
         try:
             with txn as txn_:
-                txn.put(B('foo'), B('123'))
+                txn.put(B("foo"), B("123"))
                 txn.put(123, 123)
         except:
             pass
 
-        self.assertRaises(Exception, lambda: txn.get(B('foo')))
+        self.assertRaises(Exception, lambda: txn.get(B("foo")))
         with env.begin() as txn:
-            assert txn.get(B('foo')) is None
+            assert txn.get(B("foo")) is None
 
 
 class IdTest(unittest.TestCase):
@@ -222,7 +221,7 @@ class IdTest(unittest.TestCase):
     def test_readonly_after_write(self):
         _, env = testlib.temp_env()
         with env.begin(write=True) as txn:
-            txn.put(B('a'), B('a'))
+            txn.put(B("a"), B("a"))
         with env.begin() as txn:
             assert txn.id() == 1
 
@@ -239,35 +238,32 @@ class StatTest(unittest.TestCase):
 
     def test_stat(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'))
-        db2 = env.open_db(B('db2'))
+        db1 = env.open_db(B("db1"))
+        db2 = env.open_db(B("db2"))
 
         txn = lmdb.Transaction(env)
         for db in db1, db2:
             stat = txn.stat(db)
-            for k in 'psize', 'depth', 'branch_pages', 'overflow_pages',\
-                     'entries':
+            for k in "psize", "depth", "branch_pages", "overflow_pages", "entries":
                 assert isinstance(stat[k], INT_TYPES), k
                 assert stat[k] >= 0
-            assert stat['entries'] == 0
+            assert stat["entries"] == 0
 
         txn = lmdb.Transaction(env, write=True)
-        txn.put(B('a'), B('b'), db=db1)
+        txn.put(B("a"), B("b"), db=db1)
         txn.commit()
 
         txn = lmdb.Transaction(env)
         stat = txn.stat(db1)
-        assert stat['entries'] == 1
+        assert stat["entries"] == 1
 
         stat = txn.stat(db2)
-        assert stat['entries'] == 0
+        assert stat["entries"] == 0
 
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: env.stat(db1))
+        self.assertRaises(Exception, lambda: env.stat(db1))
         env.close()
-        self.assertRaises(Exception,
-            lambda: env.stat(db1))
+        self.assertRaises(Exception, lambda: env.stat(db1))
 
 
 class DropTest(unittest.TestCase):
@@ -276,47 +272,41 @@ class DropTest(unittest.TestCase):
 
     def test_empty(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'))
+        db1 = env.open_db(B("db1"))
         txn = env.begin(write=True)
-        txn.put(B('a'), B('a'), db=db1)
-        assert txn.get(B('a'), db=db1) == B('a')
+        txn.put(B("a"), B("a"), db=db1)
+        assert txn.get(B("a"), db=db1) == B("a")
         txn.drop(db1, False)
-        assert txn.get(B('a')) is None
+        assert txn.get(B("a")) is None
         txn.drop(db1, False)  # should succeed.
-        assert txn.get(B('a')) is None
+        assert txn.get(B("a")) is None
 
     def test_delete(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'))
+        db1 = env.open_db(B("db1"))
         txn = env.begin(write=True)
-        txn.put(B('a'), B('a'), db=db1)
+        txn.put(B("a"), B("a"), db=db1)
         txn.drop(db1)
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.get(B('a'), db=db1))
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.drop(db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.get(B("a"), db=db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.drop(db1))
 
     def test_double_delete(self):
         _, env = testlib.temp_env()
 
-        db1 = env.open_db(B('db1'))
+        db1 = env.open_db(B("db1"))
         txn = env.begin(write=True, db=db1)
-        txn.put(B('a'), B('a'), db=db1)
+        txn.put(B("a"), B("a"), db=db1)
         txn.drop(db1)
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.get(B('a'), db=db1))
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.drop(db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.get(B("a"), db=db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.drop(db1))
         txn.commit()
 
-        db1 = env.open_db(B('db1'))
+        db1 = env.open_db(B("db1"))
         txn = env.begin(write=True, db=db1)
-        txn.put(B('a'), B('a'), db=db1)
+        txn.put(B("a"), B("a"), db=db1)
         txn.drop(db1)
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.get(B('a'), db=db1))
-        self.assertRaises(lmdb.InvalidParameterError,
-            lambda: txn.drop(db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.get(B("a"), db=db1))
+        self.assertRaises(lmdb.InvalidParameterError, lambda: txn.drop(db1))
         txn.commit()
 
 
@@ -328,32 +318,28 @@ class CommitTest(unittest.TestCase):
         _, env = testlib.temp_env()
         txn = env.begin()
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: txn.commit())
+        self.assertRaises(Exception, lambda: txn.commit())
 
     def test_bad_env(self):
         _, env = testlib.temp_env()
         txn = env.begin()
         env.close()
-        self.assertRaises(Exception,
-            lambda: txn.commit())
+        self.assertRaises(Exception, lambda: txn.commit())
 
     def test_commit_ro(self):
         _, env = testlib.temp_env()
         txn = env.begin()
         txn.commit()
-        self.assertRaises(Exception,
-            lambda: txn.commit())
+        self.assertRaises(Exception, lambda: txn.commit())
 
     def test_commit_rw(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        assert txn.put(B('a'), B('a'))
+        assert txn.put(B("a"), B("a"))
         txn.commit()
-        self.assertRaises(Exception,
-            lambda: txn.commit())
+        self.assertRaises(Exception, lambda: txn.commit())
         txn = env.begin()
-        assert txn.get(B('a')) == B('a')
+        assert txn.get(B("a")) == B("a")
         txn.abort()
 
 
@@ -364,21 +350,19 @@ class AbortTest(unittest.TestCase):
     def test_abort_ro(self):
         _, env = testlib.temp_env()
         txn = env.begin()
-        assert txn.get(B('a')) is None
+        assert txn.get(B("a")) is None
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: txn.get(B('a')))
+        self.assertRaises(Exception, lambda: txn.get(B("a")))
         env.close()
-        self.assertRaises(Exception,
-            lambda: txn.get(B('a')))
+        self.assertRaises(Exception, lambda: txn.get(B("a")))
 
     def test_abort_rw(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        assert txn.put(B('a'), B('a'))
+        assert txn.put(B("a"), B("a"))
         txn.abort()
         txn = env.begin()
-        assert txn.get(B('a')) is None
+        assert txn.get(B("a")) is None
 
 
 class GetTest(unittest.TestCase):
@@ -389,81 +373,78 @@ class GetTest(unittest.TestCase):
         _, env = testlib.temp_env()
         txn = env.begin()
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: txn.get(B('a')))
+        self.assertRaises(Exception, lambda: txn.get(B("a")))
 
     def test_bad_env(self):
         _, env = testlib.temp_env()
         txn = env.begin()
         env.close()
-        self.assertRaises(Exception,
-            lambda: txn.get(B('a')))
+        self.assertRaises(Exception, lambda: txn.get(B("a")))
 
     def test_missing(self):
         _, env = testlib.temp_env()
         txn = env.begin()
-        assert txn.get(B('a')) is None
-        assert txn.get(B('a'), default='default') is 'default'
+        assert txn.get(B("a")) is None
+        assert txn.get(B("a"), default="default") == "default"
 
     def test_empty_key(self):
         _, env = testlib.temp_env()
         txn = env.begin()
-        self.assertRaises(lmdb.BadValsizeError,
-            lambda: txn.get(B('')))
+        self.assertRaises(lmdb.BadValsizeError, lambda: txn.get(B("")))
 
     def test_db(self):
         _, env = testlib.temp_env()
         maindb = env.open_db(None)
-        db1 = env.open_db(B('db1'))
+        db1 = env.open_db(B("db1"))
 
         txn = env.begin()
-        assert txn.get(B('a'), db=db1) is None
+        assert txn.get(B("a"), db=db1) is None
         txn.abort()
 
         txn = env.begin(write=True)
-        txn.put(B('a'), B('a'), db=db1)
+        txn.put(B("a"), B("a"), db=db1)
         txn.commit()
 
         txn = env.begin()
-        assert txn.get(B('a')) is None
+        assert txn.get(B("a")) is None
         txn.abort()
 
         txn = env.begin(db=db1)
-        assert txn.get(B('a')) == B('a')
-        assert txn.get(B('a'), db=maindb) is None
+        assert txn.get(B("a")) == B("a")
+        assert txn.get(B("a"), db=maindb) is None
 
     def test_buffers_no(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        assert txn.put(B('a'), B('a'))
-        assert type(txn.get(B('a'))) is BytesType
+        assert txn.put(B("a"), B("a"))
+        assert type(txn.get(B("a"))) is BytesType
 
     def test_buffers_yes(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True, buffers=True)
-        assert txn.put(B('a'), B('a'))
-        assert type(txn.get(B('a'))) is not BytesType
+        assert txn.put(B("a"), B("a"))
+        assert type(txn.get(B("a"))) is not BytesType
 
     def test_dupsort(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'), dupsort=True)
+        db1 = env.open_db(B("db1"), dupsort=True)
         txn = env.begin(write=True, db=db1)
-        assert txn.put(B('a'), B('a'))
-        assert txn.put(B('a'), B('b'))
-        assert txn.get(B('a')) == B('a')
+        assert txn.put(B("a"), B("a"))
+        assert txn.put(B("a"), B("b"))
+        assert txn.get(B("a")) == B("a")
 
     def test_integerkey(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'), integerkey=True)
+        db1 = env.open_db(B("db1"), integerkey=True)
         txn = env.begin(write=True, db=db1)
-        assert txn.put(UINT_0001, B('a'))
-        assert txn.put(UINT_0002, B('b'))
-        assert txn.get(UINT_0001) == B('a')
-        assert txn.get(UINT_0002) == B('b')
+        assert txn.put(UINT_0001, B("a"))
+        assert txn.put(UINT_0002, B("b"))
+        assert txn.get(UINT_0001) == B("a")
+        assert txn.get(UINT_0002) == B("b")
 
     def test_integerdup(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'), dupsort=True, integerdup=True)
+        db1 = env.open_db(B("db1"), dupsort=True, integerdup=True)
         txn = env.begin(write=True, db=db1)
         assert txn.put(UINT_0001, UINT_0002)
         assert txn.put(UINT_0001, UINT_0001)
@@ -471,11 +452,11 @@ class GetTest(unittest.TestCase):
 
     def test_dupfixed(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B('db1'), dupsort=True, dupfixed=True)
+        db1 = env.open_db(B("db1"), dupsort=True, dupfixed=True)
         txn = env.begin(write=True, db=db1)
-        assert txn.put(B('a'), B('a'))
-        assert txn.put(B('a'), B('b'))
-        assert txn.get(B('a')) == B('a')
+        assert txn.put(B("a"), B("a"))
+        assert txn.put(B("a"), B("b"))
+        assert txn.get(B("a")) == B("a")
 
 
 class PutTest(unittest.TestCase):
@@ -486,27 +467,23 @@ class PutTest(unittest.TestCase):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: txn.put(B('a'), B('a')))
+        self.assertRaises(Exception, lambda: txn.put(B("a"), B("a")))
 
     def test_bad_env(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
         env.close()
-        self.assertRaises(Exception,
-            lambda: txn.put(B('a'), B('a')))
+        self.assertRaises(Exception, lambda: txn.put(B("a"), B("a")))
 
     def test_ro_txn(self):
         _, env = testlib.temp_env()
         txn = env.begin()
-        self.assertRaises(lmdb.ReadonlyError,
-            lambda: txn.put(B('a'), B('a')))
+        self.assertRaises(lmdb.ReadonlyError, lambda: txn.put(B("a"), B("a")))
 
     def test_empty_key_value(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        self.assertRaises(lmdb.BadValsizeError,
-            lambda: txn.put(B(''), B('a')))
+        self.assertRaises(lmdb.BadValsizeError, lambda: txn.put(B(""), B("a")))
 
     def test_dupsort(self):
         _, env = testlib.temp_env()
@@ -514,9 +491,9 @@ class PutTest(unittest.TestCase):
     def test_dupdata_no_dupsort(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        assert txn.put(B('a'), B('a'), dupdata=True)
-        assert txn.put(B('a'), B('b'), dupdata=True)
-        txn.get(B('a'))
+        assert txn.put(B("a"), B("a"), dupdata=True)
+        assert txn.put(B("a"), B("b"), dupdata=True)
+        txn.get(B("a"))
 
 
 class ReplaceTest(unittest.TestCase):
@@ -527,56 +504,52 @@ class ReplaceTest(unittest.TestCase):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
         txn.abort()
-        self.assertRaises(Exception,
-            lambda: txn.replace(B('a'), B('a')))
+        self.assertRaises(Exception, lambda: txn.replace(B("a"), B("a")))
 
     def test_bad_env(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
         env.close()
-        self.assertRaises(Exception,
-            lambda: txn.replace(B('a'), B('a')))
+        self.assertRaises(Exception, lambda: txn.replace(B("a"), B("a")))
 
     def test_ro_txn(self):
         _, env = testlib.temp_env()
         txn = env.begin()
-        self.assertRaises(lmdb.ReadonlyError,
-            lambda: txn.replace(B('a'), B('a')))
+        self.assertRaises(lmdb.ReadonlyError, lambda: txn.replace(B("a"), B("a")))
 
     def test_empty_key_value(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        self.assertRaises(lmdb.BadValsizeError,
-            lambda: txn.replace(B(''), B('a')))
+        self.assertRaises(lmdb.BadValsizeError, lambda: txn.replace(B(""), B("a")))
 
     def test_dupsort_noexist(self):
         _, env = testlib.temp_env()
-        db = env.open_db(B('db1'), dupsort=True)
+        db = env.open_db(B("db1"), dupsort=True)
         txn = env.begin(write=True, db=db)
-        assert None is txn.replace(B('a'), B('x'))
-        assert B('x') == txn.replace(B('a'), B('y'))
-        assert B('y') == txn.replace(B('a'), B('z'))
+        assert None is txn.replace(B("a"), B("x"))
+        assert B("x") == txn.replace(B("a"), B("y"))
+        assert B("y") == txn.replace(B("a"), B("z"))
         cur = txn.cursor()
-        assert cur.set_key(B('a'))
-        assert [B('z')] == list(cur.iternext_dup())
+        assert cur.set_key(B("a"))
+        assert [B("z")] == list(cur.iternext_dup())
 
     def test_dupsort_del_none(self):
         _, env = testlib.temp_env()
-        db = env.open_db(B('db1'), dupsort=True)
+        db = env.open_db(B("db1"), dupsort=True)
         with env.begin(write=True, db=db) as txn:
-            assert txn.put(B('a'), B('a'))
-            assert txn.put(B('a'), B('b'))
+            assert txn.put(B("a"), B("a"))
+            assert txn.put(B("a"), B("b"))
             cur = txn.cursor()
-            assert cur.set_key(B('a'))
-            assert [B('a'), B('b')] == list(cur.iternext_dup())
-            assert txn.delete(B('a'), None)
+            assert cur.set_key(B("a"))
+            assert [B("a"), B("b")] == list(cur.iternext_dup())
+            assert txn.delete(B("a"), None)
 
     def test_dupdata_no_dupsort(self):
         _, env = testlib.temp_env()
         txn = env.begin(write=True)
-        assert txn.put(B('a'), B('a'), dupdata=True)
-        assert txn.put(B('a'), B('b'), dupdata=True)
-        txn.get(B('a'))
+        assert txn.put(B("a"), B("a"), dupdata=True)
+        assert txn.put(B("a"), B("b"), dupdata=True)
+        txn.get(B("a"))
 
 
 class LeakTest(unittest.TestCase):
@@ -598,5 +571,5 @@ class LeakTest(unittest.TestCase):
         assert r2() is None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

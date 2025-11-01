@@ -1,4 +1,3 @@
-
 from pprint import pprint
 import atexit
 import gzip
@@ -13,16 +12,18 @@ import random
 import zlmdb.lmdb as lmdb
 
 MAP_SIZE = 1048576 * 400
-DB_PATH = '/ram/testdb'
-USE_SPARSE_FILES = sys.platform != 'darwin'
+DB_PATH = "/ram/testdb"
+USE_SPARSE_FILES = sys.platform != "darwin"
 
-if os.path.exists('/ram'):
-    DB_PATH = '/ram/testdb'
+if os.path.exists("/ram"):
+    DB_PATH = "/ram/testdb"
 else:
-    DB_PATH = tempfile.mktemp(prefix='dirtybench')
+    DB_PATH = tempfile.mktemp(prefix="dirtybench")
 
 
 env = None
+
+
 @atexit.register
 def cleanup():
     if env:
@@ -44,28 +45,31 @@ def case(title, **params):
         t0 = now()
         count = func()
         t1 = now()
-        print('%40s:  %2.3fs   %8d/sec' % (title, t1-t0, count/(t1-t0)))
+        print("%40s:  %2.3fs   %8d/sec" % (title, t1 - t0, count / (t1 - t0)))
         return func
+
     return wrapper
 
 
 def x():
-    big = '' # '*' * 400
+    big = ""  # '*' * 400
 
     t0 = now()
-    words_path = os.path.join(os.path.dirname(__file__), 'words.gz')
+    words_path = os.path.join(os.path.dirname(__file__), "words.gz")
     words = set(gzip.open(words_path).read().splitlines())
     words.update([w.upper() for w in words])
     words.update([w[::-1] for w in words])
     words.update([w[::-1].upper() for w in words])
-    words.update(['-'.join(w) for w in words])
-    #words.update(['+'.join(w) for w in words])
-    #words.update(['/'.join(w) for w in words])
+    words.update(["-".join(w) for w in words])
+    # words.update(['+'.join(w) for w in words])
+    # words.update(['/'.join(w) for w in words])
     words = list(words)
     alllen = sum(len(w) for w in words)
-    avglen = alllen  / len(words)
-    print 'permutate %d words avglen %d took %.2fsec' % (len(words), avglen, now()-t0)
-    print 'DB_PATH:', DB_PATH
+    avglen = alllen / len(words)
+    print(
+        "permutate %d words avglen %d took %.2fsec" % (len(words), avglen, now() - t0)
+    )
+    print("DB_PATH:", DB_PATH)
 
     words_sorted = sorted(words)
     items = [(w, big or w) for w in words]
@@ -74,86 +78,80 @@ def x():
     global env
     env = reopen_env()
 
-    @case('insert')
+    @case("insert")
     def test():
         with env.begin(write=True) as txn:
             for word in words:
                 txn.put(word, big or word)
             return len(words)
 
-
     st = env.stat()
     print
-    print 'stat:', st
-    print 'k+v size %.2fkb avg %d, on-disk size: %.2fkb avg %d' %\
-        ((2*alllen) / 1024., (2*alllen)/len(words),
-         (st['psize'] * st['leaf_pages']) / 1024.,
-         (st['psize'] * st['leaf_pages']) / len(words))
-    print
+    print("stat:", st)
+    print(
+        "k+v size %.2fkb avg %d, on-disk size: %.2fkb avg %d"
+        % (
+            (2 * alllen) / 1024.0,
+            (2 * alllen) / len(words),
+            (st["psize"] * st["leaf_pages"]) / 1024.0,
+            (st["psize"] * st["leaf_pages"]) / len(words),
+        )
+    )
+    print()
 
-
-    @case('enum (key, value) pairs')
+    @case("enum (key, value) pairs")
     def test():
         with env.begin() as txn:
             return sum(1 for _ in txn.cursor())
 
-
-    @case('reverse enum (key, value) pairs')
+    @case("reverse enum (key, value) pairs")
     def test():
         with env.begin() as txn:
             return sum(1 for _ in txn.cursor().iterprev())
 
-
-    @case('enum (key, value) buffers')
+    @case("enum (key, value) buffers")
     def test():
         with env.begin(buffers=True) as txn:
             return sum(1 for _ in txn.cursor())
 
-
     print
 
-
-    @case('rand lookup')
+    @case("rand lookup")
     def test():
         with env.begin() as txn:
             for word in words:
                 txn.get(word)
         return len(words)
 
-
-    @case('per txn rand lookup')
+    @case("per txn rand lookup")
     def test():
         for word in words:
             with env.begin() as txn:
                 txn.get(word)
         return len(words)
 
-
-    @case('rand lookup+hash')
+    @case("rand lookup+hash")
     def test():
         with env.begin() as txn:
             for word in words:
                 hash(txn.get(word))
         return len(words)
 
-
-    @case('rand lookup buffers')
+    @case("rand lookup buffers")
     def test():
         with env.begin(buffers=True) as txn:
             for word in words:
                 txn.get(word)
         return len(words)
 
-
-    @case('rand lookup+hash buffers')
+    @case("rand lookup+hash buffers")
     def test():
         with env.begin(buffers=True) as txn:
             for word in words:
                 hash(txn.get(word))
         return len(words)
 
-
-    @case('rand lookup buffers (cursor)')
+    @case("rand lookup buffers (cursor)")
     def test():
         with env.begin(buffers=True) as txn:
             cursget = txn.cursor().get
@@ -161,11 +159,9 @@ def x():
                 cursget(word)
         return len(words)
 
-
     print
 
-
-    @case('get+put')
+    @case("get+put")
     def test():
         with env.begin(write=True) as txn:
             for word in words:
@@ -173,16 +169,14 @@ def x():
                 txn.put(word, word)
             return len(words)
 
-
-    @case('replace')
+    @case("replace")
     def test():
         with env.begin(write=True) as txn:
             for word in words:
                 txn.replace(word, word)
         return len(words)
 
-
-    @case('get+put (cursor)')
+    @case("get+put (cursor)")
     def test():
         with env.begin(write=True) as txn:
             with txn.cursor() as cursor:
@@ -191,8 +185,7 @@ def x():
                     cursor.put(word, word)
             return len(words)
 
-
-    @case('replace (cursor)')
+    @case("replace (cursor)")
     def test():
         with env.begin(write=True) as txn:
             with txn.cursor() as cursor:
@@ -200,40 +193,39 @@ def x():
                     cursor.replace(word, word)
         return len(words)
 
-
     print
 
-
     env = reopen_env()
-    @case('insert (rand)')
+
+    @case("insert (rand)")
     def test():
         with env.begin(write=True) as txn:
             for word in words:
                 txn.put(word, big or word)
         return len(words)
 
-
     env = reopen_env()
-    @case('insert (seq)')
+
+    @case("insert (seq)")
     def test():
         with env.begin(write=True) as txn:
             for word in words_sorted:
                 txn.put(word, big or word)
         return len(words)
 
-
     env = reopen_env()
-    @case('insert (rand), reuse cursor')
+
+    @case("insert (rand), reuse cursor")
     def test():
         with env.begin(write=True) as txn:
             curs = txn.cursor()
             for word in words:
                 curs.put(word, big or word)
         return len(words)
+
     env = reopen_env()
 
-
-    @case('insert (seq), reuse cursor')
+    @case("insert (seq), reuse cursor")
     def test():
         with env.begin(write=True) as txn:
             curs = txn.cursor()
@@ -241,37 +233,36 @@ def x():
                 curs.put(word, big or word)
         return len(words)
 
-
     env = reopen_env()
-    @case('insert, putmulti')
+
+    @case("insert, putmulti")
     def test():
         with env.begin(write=True) as txn:
             txn.cursor().putmulti(items)
         return len(words)
 
-
     env = reopen_env()
-    @case('insert, putmulti+generator')
+
+    @case("insert, putmulti+generator")
     def test():
         with env.begin(write=True) as txn:
             txn.cursor().putmulti((w, big or w) for w in words)
         return len(words)
 
-
     print
 
-
     env = reopen_env()
-    @case('append')
+
+    @case("append")
     def test():
         with env.begin(write=True) as txn:
             for word in words_sorted:
                 txn.put(word, big or word, append=True)
         return len(words)
 
-
     env = reopen_env()
-    @case('append, reuse cursor')
+
+    @case("append, reuse cursor")
     def test():
         with env.begin(write=True) as txn:
             curs = txn.cursor()
@@ -279,21 +270,26 @@ def x():
                 curs.put(word, big or word, append=True)
         return len(words)
 
-
     env = reopen_env()
-    @case('append+putmulti')
+
+    @case("append+putmulti")
     def test():
         with env.begin(write=True) as txn:
             txn.cursor().putmulti(items_sorted, append=True)
         return len(words)
 
-
     print
     st = env.stat()
-    print 'stat:', st
-    print 'k+v size %.2fkb avg %d, on-disk size: %.2fkb avg %d' %\
-        ((2*alllen) / 1024., (2*alllen)/len(words),
-         (st['psize'] * st['leaf_pages']) / 1024.,
-         (st['psize'] * st['leaf_pages']) / len(words))
+    print("stat:", st)
+    print(
+        "k+v size %.2fkb avg %d, on-disk size: %.2fkb avg %d"
+        % (
+            (2 * alllen) / 1024.0,
+            (2 * alllen) / len(words),
+            (st["psize"] * st["leaf_pages"]) / 1024.0,
+            (st["psize"] * st["leaf_pages"]) / len(words),
+        )
+    )
+
 
 x()

@@ -43,14 +43,14 @@ class IterationTestBase(unittest.TestCase):
         self.txn = self.env.begin(write=True)
         putData(self.txn)
         self.c = self.txn.cursor()
-        self.empty_entry = (B(''), B(''))
+        self.empty_entry = (B(""), B(""))
 
     def matchList(self, ls_a, ls_b):
         return all(map(lambda x, y: x == y, ls_a, ls_b))
 
 
 class IterationTestBase2(unittest.TestCase):
-    """ This puts more data than its predecessor"""
+    """This puts more data than its predecessor"""
 
     def tearDown(self):
         testlib.cleanup()
@@ -60,7 +60,7 @@ class IterationTestBase2(unittest.TestCase):
         self.txn = self.env.begin(write=True)
         putBigData(self.txn)  # HERE!
         self.c = self.txn.cursor()
-        self.empty_entry = ('', '')
+        self.empty_entry = ("", "")
 
     def matchList(self, ls_a, ls_b):
         return all(map(lambda x, y: x == y, ls_a, ls_b))
@@ -111,10 +111,10 @@ class IterationTest(IterationTestBase):
 
     def testFromNonExistentKeySetRange(self):
         self.c.first()
-        self.c.set_range(B('c'))
-        self.assertEqual(self.c.key(), B('d'))
+        self.c.set_range(B("c"))
+        self.assertEqual(self.c.key(), B("d"))
         test_list = [i for i in self.c.iternext()]
-        test_items = [i for i in ITEMS if i[0] > B('c')]
+        test_items = [i for i in ITEMS if i[0] > B("c")]
         self.assertEqual(self.matchList(test_list, test_items), True)
 
     def testFromLastKey(self):
@@ -159,10 +159,10 @@ class ReverseIterationTest(IterationTestBase):
 
     def testFromNonExistentKeySetRangeRev(self):
         self.c.first()
-        self.c.set_range(B('c'))
-        self.assertEqual(self.c.key(), B('d'))
+        self.c.set_range(B("c"))
+        self.assertEqual(self.c.key(), B("d"))
         test_list = [i for i in self.c.iterprev()]
-        test_items = [i for i in ITEMS if i[0] <= B('d')]
+        test_items = [i for i in ITEMS if i[0] <= B("d")]
         test_items = test_items[::-1]
         self.assertEqual(self.matchList(test_list, test_items), True)
 
@@ -192,18 +192,19 @@ class ReverseIterationTest(IterationTestBase):
         test_list = list(self.c.iterprev())
         self.assertEqual(test_list, ITEMS[::-1])
 
+
 class IterationTestWithDupsBase(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
     def setUp(self):
         self.path, self.env = testlib.temp_env()
-        db = self.env.open_db(B('db1'), dupsort=True)
+        db = self.env.open_db(B("db1"), dupsort=True)
         self.txn = self.env.begin(db, write=True)
         for _ in range(2):
             putData(self.txn)
         self.c = self.txn.cursor()
-        self.empty_entry = ('', '')
+        self.empty_entry = ("", "")
 
     def matchList(self, ls_a, ls_b):
         return all(map(lambda x, y: x == y, ls_a, ls_b))
@@ -220,9 +221,9 @@ class SeekIterationTest(IterationTestBase2):
         for i in self.c.iternext():
             test_list.append(i)
             # skips d and e
-            if self.c.key() == B('baa'):
-                self.c.set_key(B('e'))
-        test_item = [i for i in ITEMS2 if i[0] not in (B('d'), B('e'))]
+            if self.c.key() == B("baa"):
+                self.c.set_key(B("e"))
+        test_item = [i for i in ITEMS2 if i[0] not in (B("d"), B("e"))]
         self.assertEqual(test_list, test_item)
 
     def testPutDuringIteration(self):
@@ -232,9 +233,9 @@ class SeekIterationTest(IterationTestBase2):
         for i in c.iternext():
             test_list.append(i)
             # adds 'i' upon seeing 'e'
-            if c.key() == B('e'):
-                self.c.put(B('i'), B(''))
-        test_item = ITEMS2 + [(B('i'), B(''))]
+            if c.key() == B("e"):
+                self.c.put(B("i"), B(""))
+        test_item = ITEMS2 + [(B("i"), B(""))]
         self.assertEqual(test_list, test_item)
 
     def testDeleteDuringIteration(self):
@@ -242,16 +243,16 @@ class SeekIterationTest(IterationTestBase2):
         test_list = []
         for i in self.c.iternext():
             # deletes 'e' upon seeing it
-            if self.c.key() == B('e'):
+            if self.c.key() == B("e"):
                 # Causes 'e' to be deleted, and advances cursor to next
                 # element.
                 self.c.delete()
                 i = self.c.item()
             test_list.append(i)
 
-        test_item = [i for i in ITEMS2 if i[0] != B('e')]
+        test_item = [i for i in ITEMS2 if i[0] != B("e")]
         self.assertEqual(test_list, test_item)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
