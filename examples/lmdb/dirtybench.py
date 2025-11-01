@@ -168,7 +168,7 @@ def x():
     def test():
         with env.begin(buffers=True) as txn:
             for word in words:
-                hash(txn.get(word))
+                hash(bytes(txn.get(word)))
         return len(words)
 
     @case("rand lookup buffers (cursor)")

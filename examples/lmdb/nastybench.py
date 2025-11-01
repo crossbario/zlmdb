@@ -105,7 +105,7 @@ t0 = time()
 with env.begin(buffers=True) as txn:
     try:
         while 1:
-            hash(txn.get(nextkey()))
+            hash(bytes(txn.get(nextkey())))
     except StopIteration:
         pass
 

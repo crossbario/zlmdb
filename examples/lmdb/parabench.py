@@ -119,7 +119,8 @@ def run(idx):
             arr[idx] += len(k)
 
 
-nproc = int(sys.argv[1])
+nproc = int(sys.argv[1]) if len(sys.argv) > 1 else min(4, multiprocessing.cpu_count())
+print(f"Using {nproc} parallel processes")
 arr = multiprocessing.Array("L", range(nproc))
 for x in range(nproc):
     arr[x] = 0
