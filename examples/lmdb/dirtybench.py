@@ -72,18 +72,18 @@ def case(title, **params):
 
 
 def x():
-    big = ""  # '*' * 400
+    big = b""  # b'*' * 400
 
     t0 = now()
     words_path = os.path.join(os.path.dirname(__file__), "words.gz")
-    words = set(gzip.open(words_path).read().splitlines())
+    words = set(gzip.open(words_path, "rt").read().splitlines())
     words.update([w.upper() for w in words])
     words.update([w[::-1] for w in words])
     words.update([w[::-1].upper() for w in words])
     words.update(["-".join(w) for w in words])
     # words.update(['+'.join(w) for w in words])
     # words.update(['/'.join(w) for w in words])
-    words = list(words)
+    words = [w.encode("utf-8") for w in words]
     alllen = sum(len(w) for w in words)
     avglen = alllen / len(words)
     print(

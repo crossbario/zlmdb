@@ -21,11 +21,19 @@
 from pprint import pprint
 import os
 import shutil
+import sys
 import tempfile
 
 from time import time as now
 import random
-import gdbm
+
+try:
+    import gdbm
+except ImportError:
+    print("ERROR: gdbm module not available. This benchmark requires gdbm.")
+    print("On Debian/Ubuntu: apt-get install python3-gdbm")
+    print("This is a comparison benchmark (LMDB vs GDBM) and is optional.")
+    sys.exit(0)
 
 MAP_SIZE = 1048576 * 400
 DB_PATH = "/ram/testdb-gdbm"
@@ -43,7 +51,7 @@ def x():
         os.unlink(DB_PATH)
 
     t0 = now()
-    words = set(file("/usr/share/dict/words").readlines())
+    words = set(open("/usr/share/dict/words").readlines())
     words.update([w.upper() for w in words])
     words.update([w[::-1] for w in words])
     words.update([w[::-1].upper() for w in words])
@@ -57,7 +65,7 @@ def x():
         "permutate %d words avglen %d took %.2fsec" % (len(words), avglen, now() - t0)
     )
 
-    getword = iter(words).next
+    getword = iter(words).__next__
 
     env = gdbm.open(DB_PATH, "c")
 
@@ -66,7 +74,7 @@ def x():
     last = t0
     while run:
         try:
-            for _ in xrange(50000):
+            for _ in range(50000):
                 word = getword()
                 env[word] = big or word
         except StopIteration:
@@ -133,13 +141,13 @@ def x():
     # get+put
     #
 
-    getword = iter(sorted(words)).next
+    getword = iter(sorted(words)).__next__
     run = True
     t0 = now()
     last = t0
     while run:
         try:
-            for _ in xrange(50000):
+            for _ in range(50000):
                 word = getword()
                 old = env[word]
                 env[word] = word
@@ -162,13 +170,13 @@ def x():
     # REPLACE
     #
 
-    getword = iter(sorted(words)).next
+    getword = iter(sorted(words)).__next__
     run = True
     t0 = now()
     last = t0
     while run:
         try:
-            for _ in xrange(50000):
+            for _ in range(50000):
                 word = getword()
                 old = env[word]
         except StopIteration:

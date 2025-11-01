@@ -58,24 +58,24 @@ def open_env():
 
 def make_keys():
     t0 = time.time()
-    urandom = file("/dev/urandom", "rb", 1048576).read
+    urandom = open("/dev/urandom", "rb", 1048576).read
 
     keys = set()
     while len(keys) < MAX_KEYS:
-        for _ in xrange(min(1000, MAX_KEYS - len(keys))):
+        for _ in range(min(1000, MAX_KEYS - len(keys))):
             keys.add(urandom(16))
 
     print("make %d keys in %.2fsec" % (len(keys), time.time() - t0))
     keys = list(keys)
 
-    nextkey = iter(keys).next
+    nextkey = iter(keys).__next__
     run = True
-    val = " " * 100
+    val = b" " * 100
     env = open_env()
     while run:
         with env.begin(write=True) as txn:
             try:
-                for _ in xrange(10000):
+                for _ in range(10000):
                     txn.put(nextkey(), val)
             except StopIteration:
                 run = False
@@ -110,7 +110,7 @@ def run(idx):
 
     while 1:
         with env.begin() as txn:
-            nextkey = iter(k).next
+            nextkey = iter(k).__next__
             try:
                 while 1:
                     hash(txn.get(nextkey()))
@@ -120,10 +120,10 @@ def run(idx):
 
 
 nproc = int(sys.argv[1])
-arr = multiprocessing.Array("L", xrange(nproc))
-for x in xrange(nproc):
+arr = multiprocessing.Array("L", range(nproc))
+for x in range(nproc):
     arr[x] = 0
-procs = [multiprocessing.Process(target=run, args=(x,)) for x in xrange(nproc)]
+procs = [multiprocessing.Process(target=run, args=(x,)) for x in range(nproc)]
 [p.start() for p in procs]
 
 
