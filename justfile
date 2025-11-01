@@ -398,6 +398,18 @@ test-examples-lmdb-parabench venv="": (install venv)
     echo ""
     ${VENV_PYTHON} examples/lmdb/parabench.py
 
+# Run test suite for ORM.
+test-orm venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test suite in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v zlmdb/tests/orm/
+
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
