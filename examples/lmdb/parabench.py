@@ -18,6 +18,22 @@
 # Additional information about OpenLDAP can be obtained at
 # <http://www.openldap.org/>.
 
+"""
+Parallel LMDB benchmark - tests concurrent read performance.
+
+Usage:
+    python parabench.py [nproc] [duration]
+
+Arguments:
+    nproc    - Number of parallel processes (default: min(4, cpu_count()))
+    duration - Benchmark duration in seconds (default: 30)
+
+Examples:
+    python parabench.py           # 4 processes, 30 seconds
+    python parabench.py 8         # 8 processes, 30 seconds
+    python parabench.py 8 60      # 8 processes, 60 seconds
+"""
+
 # Roughly approximates some of Symas microbenchmark.
 
 import multiprocessing
@@ -120,7 +136,8 @@ def run(idx):
 
 
 nproc = int(sys.argv[1]) if len(sys.argv) > 1 else min(4, multiprocessing.cpu_count())
-print(f"Using {nproc} parallel processes")
+duration = int(sys.argv[2]) if len(sys.argv) > 2 else 30  # Default 30 seconds
+print(f"Using {nproc} parallel processes for {duration} seconds")
 arr = multiprocessing.Array("L", range(nproc))
 for x in range(nproc):
     arr[x] = 0
@@ -129,8 +146,30 @@ procs = [multiprocessing.Process(target=run, args=(x,)) for x in range(nproc)]
 
 
 t0 = time.time()
-while True:
-    time.sleep(2)
+try:
+    while True:
+        time.sleep(2)
+        d = time.time() - t0
+        if d >= duration:
+            break
+        lk = sum(arr)
+        print("lookup %d keys in %.2fsec (%d/sec)" % (lk, d, lk / d))
+finally:
+    # Cleanup: terminate all processes
+    print("\nStopping benchmark...")
+    for p in procs:
+        p.terminate()
+    for p in procs:
+        p.join(timeout=1)
+
+    # Print final statistics
     d = time.time() - t0
     lk = sum(arr)
-    print("lookup %d keys in %.2fsec (%d/sec)" % (lk, d, lk / d))
+    print("\n" + "=" * 70)
+    print("FINAL RESULTS")
+    print("=" * 70)
+    print("Duration:       %.2f seconds" % d)
+    print("Total lookups:  %d" % lk)
+    print("Throughput:     %d lookups/sec" % (lk / d))
+    print("Per process:    %d lookups/sec" % ((lk / d) / nproc))
+    print("=" * 70)
