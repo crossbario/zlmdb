@@ -309,8 +309,16 @@ test-import venv="": (install venv)
     # Test 4: Check version attributes
     echo "Test 4: Verifying version attributes..."
     ${VENV_PYTHON} -c "import zlmdb; print('  zlmdb.__version__:', zlmdb.__version__)"
-    ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; print('  zlmdb.lmdb.__version__:', lmdb.__version__)"
-    echo "  ✓ PASS: Both version attributes exist"
+
+    # Test 4b: Verify zlmdb.lmdb does NOT have __version__
+    echo ""
+    echo "Test 4b: Verifying zlmdb.lmdb has NO __version__ (only zlmdb has version)..."
+    if ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; lmdb.__version__" 2>/dev/null; then
+        echo "  ❌ FAIL: zlmdb.lmdb.__version__ exists (should not exist)"
+        exit 1
+    else
+        echo "  ✓ PASS: zlmdb.lmdb has no __version__ attribute (correct)"
+    fi
     echo ""
 
     echo "========================================================================"
