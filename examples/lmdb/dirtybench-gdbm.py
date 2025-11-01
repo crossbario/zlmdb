@@ -31,8 +31,11 @@ try:
     import gdbm
 except ImportError:
     print("ERROR: gdbm module not available. This benchmark requires gdbm.")
-    print("On Debian/Ubuntu: apt-get install python3-gdbm")
     print("This is a comparison benchmark (LMDB vs GDBM) and is optional.")
+    print("On Debian/Ubuntu: apt-get install python3-gdbm")
+    print(
+        "On uv, it is not available by design (it's not included because it's GPL licensed), see https://github.com/astral-sh/uv/issues/7197"
+    )
     sys.exit(0)
 
 MAP_SIZE = 1048576 * 400
