@@ -7,8 +7,8 @@ __pycache__/
 *.so
 
 # CFFI build artifacts
-lmdb/_lmdb_cffi.c
-lmdb/_lmdb_cffi.o
+zlmdb/lmdb/_lmdb_cffi.c
+zlmdb/lmdb/_lmdb_cffi.o
 
 # Distribution / packaging
 .Python
