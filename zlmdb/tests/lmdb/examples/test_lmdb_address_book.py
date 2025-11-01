@@ -12,7 +12,7 @@ import tempfile
 import shutil
 import os
 
-import lmdb
+import zlmdb.lmdb as lmdb
 import pytest
 
 

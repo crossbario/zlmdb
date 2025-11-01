@@ -93,7 +93,7 @@ except ImportError:
     except ImportError:
         from StringIO import StringIO  # type: ignore
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 
 BUF_SIZE = 10485760

@@ -57,7 +57,7 @@ Usage Examples
 
 .. code-block:: python
 
-    import lmdb
+    import zlmdb.lmdb as lmdb
 
     # Open database
     env = lmdb.open('/tmp/mydb', max_dbs=10)

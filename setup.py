@@ -50,9 +50,9 @@ print("✓ CFFI extension compiled successfully")
 # Clean up old .so files from other Python versions to prevent cross-contamination
 import sysconfig
 ext_suffix = sysconfig.get_config_var('EXT_SUFFIX') or sysconfig.get_config_var('SO')
-current_so = f'lmdb/_lmdb_cffi{ext_suffix}'
+current_so = f'zlmdb/lmdb/_lmdb_cffi{ext_suffix}'
 print(f"\nCleaning up .so files from other Python versions (keeping {os.path.basename(current_so)})...")
-for so_file in glob.glob('lmdb/_lmdb_cffi*.so') + glob.glob('lmdb/_lmdb_cffi*.pyd'):
+for so_file in glob.glob('zlmdb/lmdb/_lmdb_cffi*.so') + glob.glob('zlmdb/lmdb/_lmdb_cffi*.pyd'):
     if so_file != current_so:
         print(f"  Removing: {os.path.basename(so_file)}")
         os.remove(so_file)
@@ -73,10 +73,10 @@ class BuildPyWithCFFI(_build_py):
         # Get the expected extension filename for the current Python
         import sysconfig
         ext_suffix = sysconfig.get_config_var('EXT_SUFFIX') or sysconfig.get_config_var('SO')
-        expected_file = f'lmdb/_lmdb_cffi{ext_suffix}'
+        expected_file = f'zlmdb/lmdb/_lmdb_cffi{ext_suffix}'
 
         if os.path.exists(expected_file):
-            dest_dir = os.path.join(self.build_lib, 'lmdb')
+            dest_dir = os.path.join(self.build_lib, 'zlmdb', 'lmdb')
             dest_file = os.path.join(dest_dir, os.path.basename(expected_file))
             print(f"✓ Copying: {os.path.basename(expected_file)} -> {dest_file}")
             shutil.copy2(expected_file, dest_file)

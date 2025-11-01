@@ -31,7 +31,7 @@ from testlib import B
 from testlib import INT_TYPES
 from testlib import BytesType
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 
 UINT_0001 = struct.pack('I', 1)

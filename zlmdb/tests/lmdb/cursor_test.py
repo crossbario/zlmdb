@@ -27,7 +27,7 @@ from __future__ import with_statement
 import sys
 import unittest
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 import testlib
 from testlib import B

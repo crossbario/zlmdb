@@ -13,7 +13,7 @@ try:
     import affinity
 except:
     affinity = False
-import lmdb
+import zlmdb.lmdb as lmdb
 
 
 USE_SPARSE_FILES = sys.platform != 'darwin'

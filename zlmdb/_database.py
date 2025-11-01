@@ -34,7 +34,7 @@ import inspect
 import time
 from typing import Dict, Any, Tuple, List, Optional, Callable, Type
 
-import lmdb
+import zlmdb.lmdb as lmdb
 import yaml
 import cbor2
 

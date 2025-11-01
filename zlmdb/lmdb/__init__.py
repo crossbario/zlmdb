@@ -31,7 +31,7 @@ def _reading_docs():
     return 'sphinx' in __import__('sys').modules
 
 # CFFI-only mode (bundled with zlmdb)
-from lmdb.cffi import *
-from lmdb.cffi import open
-from lmdb.cffi import __all__
-from lmdb.cffi import __doc__
+from zlmdb.lmdb.cffi import *
+from zlmdb.lmdb.cffi import open
+from zlmdb.lmdb.cffi import __all__
+from zlmdb.lmdb.cffi import __doc__

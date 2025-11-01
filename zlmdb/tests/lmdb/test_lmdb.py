@@ -26,7 +26,7 @@
 
 import random
 import os
-import lmdb
+import zlmdb.lmdb as lmdb
 import struct
 import platform
 

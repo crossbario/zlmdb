@@ -1,5 +1,5 @@
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 # Open (and create if necessary) our database environment. Must specify
 # max_dbs=... since we're opening subdbs.

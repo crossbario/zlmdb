@@ -44,9 +44,12 @@ try:
 except ImportError:
     import builtins as __builtin__  # type: ignore
 
-import lmdb
+def _reading_docs():
+    """Return True if Sphinx is currently parsing this file."""
+    return 'sphinx' in __import__('sys').modules
+
 try:
-    from lmdb import _config
+    from zlmdb.lmdb import _config
 except ImportError:
     _config = None  # type: ignore
 
@@ -349,7 +352,7 @@ _CFFI_VERIFY = '''
 
 '''
 
-if not lmdb._reading_docs():
+if not _reading_docs():
     import cffi
 
     # Try to use distutils-bundled CFFI configuration to avoid a recompile and
@@ -371,7 +374,7 @@ if not lmdb._reading_docs():
     _lib = None
     _ffi = None
     try:
-        from lmdb import _lmdb_cffi
+        from zlmdb.lmdb import _lmdb_cffi
         _lib = _lmdb_cffi.lib
         _ffi = _lmdb_cffi.ffi
     except ImportError:
@@ -525,7 +528,7 @@ class DiskError(Error):
     MDB_NAME = 'ENOSPC'
 
 # Prepare _error_map, a mapping of integer MDB_ERROR_CODE to exception class.
-if not lmdb._reading_docs():
+if not _reading_docs():
     _error_map = {}
     for obj in list(globals().values()):
         if inspect.isclass(obj) and issubclass(obj, Error) and obj is not Error:

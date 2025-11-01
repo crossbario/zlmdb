@@ -10,7 +10,7 @@ import tempfile
 
 from time import time as now
 import random
-import lmdb
+import zlmdb.lmdb as lmdb
 
 MAP_SIZE = 1048576 * 400
 DB_PATH = '/ram/testdb'

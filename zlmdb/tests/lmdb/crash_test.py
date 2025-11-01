@@ -38,7 +38,7 @@ import random
 import unittest
 import multiprocessing
 
-import lmdb
+import zlmdb.lmdb as lmdb
 import testlib
 
 from testlib import B

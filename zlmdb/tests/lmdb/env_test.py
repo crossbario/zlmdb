@@ -33,7 +33,7 @@ from testlib import OCT
 from testlib import INT_TYPES
 from testlib import UnicodeType
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 # Whether we have the patch that allows env.copy* to take a txn
 have_txn_patch = lmdb.version(subpatch=True)[3]

@@ -7,7 +7,7 @@ import shutil
 import os
 import tempfile
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 
 val = ' ' * 100

@@ -36,7 +36,7 @@ try:
 except ImportError:
     import builtins as __builtin__
 
-import lmdb
+import zlmdb.lmdb as lmdb
 
 _cleanups = []
 

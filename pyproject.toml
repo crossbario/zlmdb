@@ -90,11 +90,11 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["zlmdb*", "lmdb*", "flatbuffers*"]
+include = ["zlmdb*", "flatbuffers*"]
 exclude = ["tests*", "lmdb-upstream*", "lmdb-patches*", "deps*", ".ai*", ".cicd*"]
 
 [tool.setuptools.package-data]
-lmdb = ["*.py", "*.so", "*.pyd", "*.dll"]
+"zlmdb.lmdb" = ["*.py", "*.so", "*.pyd", "*.dll"]
 zlmdb = ["py.typed"]
 
 # Configure build to run our custom LMDB patch/build script
@@ -122,9 +122,9 @@ exclude = [
     ".git",
     "__pycache__",
     "flatbuffers/*",
-    "lmdb/*",  # Vendored LMDB bindings
+    "zlmdb/lmdb/*",  # Vendored LMDB bindings
     "zlmdb/flatbuffers/*",  # Auto-generated flatbuffers code
-    "zlmdb/tests/MNodeLog.py",  # Auto-generated test file
+    "zlmdb/tests/orm/MNodeLog.py",  # Auto-generated test file
 ]
 
 # --- Violations to Ignore ---
@@ -183,7 +183,7 @@ norecursedirs = [
     ".*",           # Hidden directories (.git, .ai, .venvs, .uv-cache, etc.)
     "build",        # Build artifacts
     "dist",         # Distribution artifacts
-    "lmdb",         # Vendored LMDB bindings
+    "zlmdb/lmdb",   # Vendored LMDB bindings (now subpackage of zlmdb)
     "lmdb-upstream", # LMDB upstream submodule
     "lmdb-patches", # LMDB patches
     "flatbuffers",  # Vendored flatbuffers
