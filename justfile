@@ -109,7 +109,7 @@ distclean: clean-build clean-pyc clean-test
     echo "--> Searching for and removing setuptools egg-info directories..."
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
     echo "--> Removing CFFI build artifacts..."
-    rm -f lmdb/_lmdb_cffi.c lmdb/_lmdb_cffi.o lmdb/_lmdb_cffi*.so lmdb/_lmdb_cffi*.pyd
+    rm -f zlmdb/lmdb/_lmdb_cffi.c zlmdb/lmdb/_lmdb_cffi.o zlmdb/lmdb/_lmdb_cffi*.so zlmdb/lmdb/_lmdb_cffi*.pyd
     echo "==> Distclean complete. The project is now pristine."
 
 # -----------------------------------------------------------------------------
@@ -263,6 +263,59 @@ install-build-tools venv="": (create venv)
 # -----------------------------------------------------------------------------
 # -- Testing
 # -----------------------------------------------------------------------------
+
+# Test namespace isolation (verify lmdb import behavior)
+test-import venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Testing namespace isolation in ${VENV_NAME}..."
+    echo ""
+
+    # Test 1: 'import lmdb' should FAIL
+    echo "Test 1: Verifying 'import lmdb' raises ModuleNotFoundError..."
+    if ${VENV_PYTHON} -c "import lmdb" 2>/dev/null; then
+        echo "  ❌ FAIL: 'import lmdb' succeeded (should have failed)"
+        exit 1
+    else
+        echo "  ✓ PASS: 'import lmdb' correctly raises ModuleNotFoundError"
+    fi
+    echo ""
+
+    # Test 2: 'import zlmdb.lmdb as lmdb' should SUCCEED
+    echo "Test 2: Verifying 'import zlmdb.lmdb as lmdb' works..."
+    if ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; print('  Version:', lmdb.version())" 2>&1; then
+        echo "  ✓ PASS: 'import zlmdb.lmdb as lmdb' works"
+    else
+        echo "  ❌ FAIL: 'import zlmdb.lmdb as lmdb' failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 3: 'from zlmdb import lmdb' should SUCCEED
+    echo "Test 3: Verifying 'from zlmdb import lmdb' works..."
+    if ${VENV_PYTHON} -c "from zlmdb import lmdb; print('  Version:', lmdb.version())" 2>&1; then
+        echo "  ✓ PASS: 'from zlmdb import lmdb' works"
+    else
+        echo "  ❌ FAIL: 'from zlmdb import lmdb' failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 4: Check version attributes
+    echo "Test 4: Verifying version attributes..."
+    ${VENV_PYTHON} -c "import zlmdb; print('  zlmdb.__version__:', zlmdb.__version__)"
+    ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; print('  zlmdb.lmdb.__version__:', lmdb.__version__)"
+    echo "  ✓ PASS: Both version attributes exist"
+    echo ""
+
+    echo "========================================================================"
+    echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
+    echo "========================================================================"
 
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install venv)
@@ -464,7 +517,7 @@ clean-build:
     find . -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
     find . -name '*.egg' -delete 2>/dev/null || true
     echo "==> Removing CFFI build artifacts..."
-    rm -f lmdb/_lmdb_cffi.c lmdb/_lmdb_cffi.o lmdb/_lmdb_cffi*.so lmdb/_lmdb_cffi*.pyd
+    rm -f zlmdb/lmdb/_lmdb_cffi.c zlmdb/lmdb/_lmdb_cffi.o zlmdb/lmdb/_lmdb_cffi*.so zlmdb/lmdb/_lmdb_cffi*.pyd
 
 # Clean test and coverage artifacts
 clean-test:

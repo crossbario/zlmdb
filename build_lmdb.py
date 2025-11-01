@@ -5,7 +5,7 @@ Build script for vendored LMDB with CFFI.
 This script:
 1. Copies LMDB C sources from lmdb-upstream/ submodule to build directory
 2. Applies patches from lmdb-patches/
-3. Generates lmdb/_config.py for CFFI compilation
+3. Generates zlmdb/lmdb/_config.py for CFFI compilation
 4. Configures CFFI to build the LMDB extension
 
 Based on py-lmdb setup.py patch application logic.
@@ -155,8 +155,8 @@ def apply_patches():
 
 
 def generate_config(build_dir):
-    """Generate lmdb/_config.py with build configuration."""
-    print("\nGenerating lmdb/_config.py")
+    """Generate zlmdb/lmdb/_config.py with build configuration."""
+    print("\nGenerating zlmdb/lmdb/_config.py")
 
     # Source files to compile
     extra_sources = [
@@ -203,7 +203,7 @@ def generate_config(build_dir):
         'libraries': libraries,
     }
 
-    config_file = os.path.join('lmdb', '_config.py')
+    config_file = os.path.join('zlmdb', 'lmdb', '_config.py')
     print(f"  Writing to {config_file}")
 
     with open(config_file, 'w') as f:
