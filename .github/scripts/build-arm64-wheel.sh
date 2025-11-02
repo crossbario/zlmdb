@@ -3,12 +3,17 @@
 # This script runs INSIDE the manylinux ARM64 container
 set -ex
 
-# Install required tools if not present
-if ! command -v curl &> /dev/null; then
+# Install required tools and build dependencies if not present
+if ! command -v curl &> /dev/null || ! command -v gcc &> /dev/null; then
   if command -v yum &> /dev/null; then
-    yum install -y curl git
+    # RHEL/CentOS based manylinux images
+    yum install -y curl git gcc gcc-c++ make libffi-devel
   elif command -v apt-get &> /dev/null; then
-    apt-get update && apt-get install -y curl git
+    # Debian based images (used for PyPy)
+    apt-get update
+    apt-get install -y curl git build-essential libssl-dev libffi-dev \
+      libunwind-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev \
+      libncurses5-dev libsnappy-dev
   fi
 fi
 
