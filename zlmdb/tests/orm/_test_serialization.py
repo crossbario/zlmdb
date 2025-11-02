@@ -29,6 +29,7 @@ import sys
 import timeit
 import uuid
 import platform
+import logging
 
 import humanize
 
@@ -69,9 +70,9 @@ def _serialization_speed(serializer, testfun):
 
     samples = []
 
-    print("running on:")
-    print(sys.version)
-    print(platform.uname())
+    logging.info("running on:")
+    logging.info(sys.version)
+    logging.info(platform.uname())
 
     _TEST["oid"] = 0
     _TEST["uuid"] = uuid.uuid4()
@@ -83,11 +84,13 @@ def _serialization_speed(serializer, testfun):
         secs = timeit.timeit(testfun, number=M)
         ops = round(float(M) / secs, 1)
         samples.append(ops)
-        print("{} objects/sec {}".format(ops, humanize.naturalsize(_TEST["bytes"])))
+        logging.info(
+            "{} objects/sec {}".format(ops, humanize.naturalsize(_TEST["bytes"]))
+        )
 
     ops_max = max(samples)
     bytes_per_obj = float(_TEST["bytes"]) / float(N * M)
-    print(
+    logging.info(
         "{} objects/sec max, {} bytes total, {} bytes/obj".format(
             ops_max,
             humanize.naturalsize(_TEST["bytes"]),
@@ -138,4 +141,4 @@ if __name__ == "__main__":
     sers.append(_types._PickleValuesMixin())
     sers.append(_types._FlatBuffersValuesMixin(build=UserFbs.build, cast=UserFbs.cast))
     for ser in sers:
-        print(_serialization_speed(ser, _serializer_run))
+        logging.info(_serialization_speed(ser, _serializer_run))

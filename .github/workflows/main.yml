@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -146,8 +146,14 @@ jobs:
           just create ${{ matrix.python-env }}
           just install-dev ${{ matrix.python-env }}
 
-      - name: Run unit tests (PyTest)
-        run: just test-quick ${{ matrix.python-env }}
+      - name: Run unit tests (PyTest) - zLMDB LMDB ("low-level")
+        run: just test-lmdb ${{ matrix.python-env }}
+
+      - name: Run examples - zLMDB LMDB ("low-level")
+        run: just test-examples-lmdb ${{ matrix.python-env }}
+
+      - name: Run unit tests (PyTest) - zLMDB ORM
+        run: just test-orm ${{ matrix.python-env }}
 
   documentation:
     name: Documentation Build

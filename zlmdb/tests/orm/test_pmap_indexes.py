@@ -27,6 +27,7 @@
 import os
 import sys
 import pytest
+import logging
 from copy import deepcopy
 
 import txaio
@@ -43,10 +44,10 @@ except ImportError:
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if sys.version_info >= (3, 6):
-    print("Using _schema_py3 !")
+    logging.info("Using _schema_py3 !")
     from _schema_py3 import User, Schema4
 else:
-    print("Using _schema_py2 !")
+    logging.info("Using _schema_py2 !")
     from _schema_py2 import User, Schema4
 
 

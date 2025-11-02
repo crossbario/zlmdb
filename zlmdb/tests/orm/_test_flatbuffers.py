@@ -27,6 +27,7 @@
 import os
 import sys
 import random
+import logging
 
 import txaio
 
@@ -51,7 +52,7 @@ class UsersSchema(zlmdb.Schema):
 
 def test_pmap_flatbuffers_values():
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = UsersSchema()
 
@@ -76,7 +77,7 @@ def test_pmap_flatbuffers_values():
 
 def test_pmap_flatbuffers_count():
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = UsersSchema()
 
@@ -107,7 +108,7 @@ def test_pmap_flatbuffers_count():
                 rows_per_sec = int(
                     round(float(stats.puts + stats.dels) * 1000.0 / float(duration_ms))
                 )
-                print(
+                logging.info(
                     "Transaction ended: puts={} / dels={} rows in {} ms, {} rows/sec".format(
                         stats.puts, stats.dels, duration_ms, rows_per_sec
                     )
@@ -136,7 +137,7 @@ def test_pmap_flatbuffers_count():
                     rows_per_sec = int(
                         round(float(M * N) * 1000.0 / float(duration_ms))
                     )
-                    print(
+                    logging.info(
                         "Transaction ended: {} rows read in {} ms, {} rows/sec".format(
                             M * N, duration_ms, rows_per_sec
                         )

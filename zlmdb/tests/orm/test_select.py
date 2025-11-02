@@ -28,6 +28,7 @@ import os
 import uuid
 import random
 import struct
+import logging
 
 import flatbuffers
 import numpy as np
@@ -48,10 +49,10 @@ try:
 except ImportError:
     from backports.tempfile import TemporaryDirectory  # type:ignore
 
-if "COVERAGE_PROCESS_START" in os.environ:
-    COVERAGE = True
+if "COVERAGE_PROCESS_START" in os.environ or "QUICK" in os.environ:
+    QUICK = True
 else:
-    COVERAGE = False
+    QUICK = False
 
 
 @pytest.fixture(scope="function")
@@ -525,7 +526,7 @@ def _test_mnodelog_bigtable(N, M, K):
             schema = Schema.attach(db)
 
             data = {}
-            print()
+            logging.info("")
 
             # fill table
             #
@@ -540,7 +541,7 @@ def _test_mnodelog_bigtable(N, M, K):
             duration = (time_ns() - started) / 1000000000.0
             rps = int(round(N / duration))
             duration = int(round(duration))
-            print(
+            logging.info(
                 "Inserted {} records in {} seconds [{} records/sec]".format(
                     N, duration, rps
                 )
@@ -560,7 +561,7 @@ def _test_mnodelog_bigtable(N, M, K):
                 duration = (time_ns() - started) / 1000000000.0
                 rps = int(round(M / duration))
                 duration = int(round(duration))
-                print(
+                logging.info(
                     "Selected {} records in {} seconds [{} records/sec]".format(
                         M, duration, rps
                     )
@@ -584,7 +585,7 @@ def _test_mnodelog_bigtable(N, M, K):
                 duration = (time_ns() - started) / 1000000000.0
                 rps = int(round(K / duration))
                 duration = int(round(duration))
-                print(
+                logging.info(
                     "Performed {} range counts in {} seconds [{} queries/sec]".format(
                         K, duration, rps
                     )
@@ -595,21 +596,24 @@ def test_mnodelog_bigtable_size10k():
     _test_mnodelog_bigtable(N=10000, M=500000, K=10000)
 
 
-@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size20k():
     _test_mnodelog_bigtable(N=20000, M=1000000, K=20000)
 
 
-@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
 def test_mnodelog_bigtable_size40k():
     _test_mnodelog_bigtable(N=40000, M=2000000, K=40000)
 
 
-@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
+@pytest.mark.skipif(QUICK, reason="skipped in run-mode QUICK")
 def test_mnodelog_bigtable_size80k():
     _test_mnodelog_bigtable(N=80000, M=4000000, K=80000)
 
 
-@pytest.mark.skipif(COVERAGE, reason="skipping on coverage")
+@pytest.mark.skipif(QUICK, reason="skipped in run-mode QUICK")
 def test_mnodelog_bigtable_size160k():
     _test_mnodelog_bigtable(N=160000, M=8000000, K=160000)
+
+
+@pytest.mark.skipif(QUICK, reason="skipped in run-mode QUICK")
+def test_mnodelog_bigtable_size320k():
+    _test_mnodelog_bigtable(N=320000, M=16000000, K=320000)

@@ -27,6 +27,7 @@
 import sys
 import os
 import pytest
+import logging
 
 import txaio
 
@@ -105,18 +106,18 @@ def test_open4():
 
 def test_transaction():
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
-                print("transaction open", txn.id())
-            print("transaction committed")
-        print("database closed")
+                logging.info("transaction open {}".format(txn.id()))
+            logging.info("transaction committed")
+        logging.info("database closed")
 
 
 def test_save_load():
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
@@ -125,21 +126,21 @@ def test_save_load():
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 schema.users[txn, user.oid] = user
-                print("user saved")
+                logging.info("user saved")
 
                 _user = schema.users[txn, user.oid]
                 assert _user
                 assert user == _user
-                print("user loaded")
+                logging.info("user loaded")
 
-            print("transaction committed")
+            logging.info("transaction committed")
 
-        print("database closed")
+        logging.info("database closed")
 
 
 def test_save_load_many_1(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
@@ -149,7 +150,7 @@ def test_save_load_many_1(testset1):
                     schema.users[txn, user.oid] = user
 
                 cnt = schema.users.count(txn)
-                print("user saved:", cnt)
+                logging.info("user saved: {}".format(cnt))
                 assert cnt == len(testset1)
 
             with db.begin() as txn:
@@ -164,7 +165,7 @@ def test_save_load_many_1(testset1):
 
 def test_save_load_many_2(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema2()
 
@@ -179,7 +180,7 @@ def test_save_load_many_2(testset1):
                     oids.append(user.oid)
                     c += 1
                 assert c == len(testset1)
-                print("[1] successfully stored {} records".format(c))
+                logging.info("[1] successfully stored {} records".format(c))
 
                 # in the same transaction, read back records
                 c = 0
@@ -188,7 +189,7 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
                 assert c == len(testset1)
-                print("[1] successfully loaded {} records".format(c))
+                logging.info("[1] successfully loaded {} records".format(c))
 
             # in a new transaction, read back records
             c = 0
@@ -198,14 +199,14 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
             assert c == len(testset1)
-            print("[2] successfully loaded {} records".format(c))
+            logging.info("[2] successfully loaded {} records".format(c))
 
         # in a new database environment (and hence new transaction), read back records
         with zlmdb.Database(dbpath) as db:
             with db.begin() as txn:
                 count = schema.users.count(txn)
                 assert count == len(testset1)
-                print("total records:", count)
+                logging.info("total records: {}".format(count))
 
                 c = 0
                 for oid in oids:
@@ -213,4 +214,4 @@ def test_save_load_many_2(testset1):
                     if user:
                         c += 1
                 assert c == len(testset1)
-                print("[3] successfully loaded {} records".format(c))
+                logging.info("[3] successfully loaded {} records".format(c))

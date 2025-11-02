@@ -326,7 +326,7 @@ test-import venv="": (install venv)
     echo "========================================================================"
 
 # Test all LMDB examples
-test-examples-lmdb: test-examples-lmdb-addressbook test-examples-lmdb-dirtybench-gdbm test-examples-lmdb-dirtybench test-examples-lmdb-nastybench test-examples-lmdb-parabench
+test-examples-lmdb venv="": (test-examples-lmdb-addressbook venv) (test-examples-lmdb-dirtybench-gdbm venv) (test-examples-lmdb-dirtybench venv) (test-examples-lmdb-nastybench venv) (test-examples-lmdb-parabench venv)
 
 # Test example LMDB address book
 test-examples-lmdb-addressbook venv="": (install venv)
@@ -408,7 +408,7 @@ test-orm venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v zlmdb/tests/orm/
+    QUICK=1 ${VENV_PYTHON} -m pytest --log-cli-level=INFO -v zlmdb/tests/orm/
 
 # Run LMDB low-level API tests
 test-lmdb venv="": (install-tools venv) (install venv)

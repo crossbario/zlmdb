@@ -27,6 +27,7 @@
 import os
 import sys
 import pytest
+import logging
 
 import txaio
 
@@ -58,7 +59,7 @@ def testset1():
 
 def test_truncate_table():
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema1()
 
@@ -80,13 +81,13 @@ def test_truncate_table():
                 for tab in tabs:
                     tab.truncate(txn)
 
-        print(stats.puts)
-        print(stats.dels)
+        logging.info(stats.puts)
+        logging.info(stats.dels)
 
 
 def test_fill_check(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -107,7 +108,7 @@ def test_select(testset1):
     testset1_keys = set([user.authid for user in testset1])
 
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -128,7 +129,7 @@ def test_select(testset1):
 
 def test_count_all(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -167,7 +168,7 @@ def test_count_all(testset1):
 
 def test_count_prefix(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema3()
 
@@ -194,7 +195,7 @@ def test_count_prefix(testset1):
 
 def test_fill_with_indexes(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -212,7 +213,7 @@ def test_fill_with_indexes(testset1):
 
 def test_truncate_table_with_index(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -226,15 +227,15 @@ def test_truncate_table_with_index(testset1):
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True, stats=stats) as txn:
                 records = schema.users.truncate(txn)
-                print("table truncated:", records)
+                logging.info("table truncated: {}".format(records))
 
-        print(stats.puts)
-        print(stats.dels)
+        logging.info(stats.puts)
+        logging.info(stats.dels)
 
 
 def test_rebuild_index(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -246,7 +247,7 @@ def test_rebuild_index(testset1):
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 records = schema.users.rebuild_index(txn, "idx1")
-                print(
+                logging.info(
                     '\nrebuilt specific index "idx1" on "users": {} records affected'.format(
                         records
                     )
@@ -255,7 +256,7 @@ def test_rebuild_index(testset1):
 
 def test_rebuild_all_indexes(testset1):
     with TemporaryDirectory() as dbpath:
-        print("Using temporary directory {} for database".format(dbpath))
+        logging.info("Using temporary directory {} for database".format(dbpath))
 
         schema = Schema4()
 
@@ -267,7 +268,7 @@ def test_rebuild_all_indexes(testset1):
         with zlmdb.Database(dbpath) as db:
             with db.begin(write=True) as txn:
                 records = schema.users.rebuild_indexes(txn)
-                print(
+                logging.info(
                     '\nrebuilt all indexes on "users": {} records affected'.format(
                         records
                     )
