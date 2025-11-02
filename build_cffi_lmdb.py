@@ -98,7 +98,7 @@ _CFFI_CDEF = '''
         unsigned int me_numreaders;
     } MDB_envinfo;
 
-    int mdb_version(int *major, int *minor, int *patch);
+    char *mdb_version(int *major, int *minor, int *patch);
     char *mdb_strerror(int err);
 
     int mdb_env_create(MDB_env **env);
