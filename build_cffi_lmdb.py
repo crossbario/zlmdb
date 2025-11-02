@@ -122,8 +122,10 @@ _CFFI_CDEF = '''
     int mdb_env_set_userctx(MDB_env *env, void *ctx);
     void *mdb_env_get_userctx(MDB_env *env);
 
+    typedef void (*MDB_assert_func)(MDB_env *env, const char *msg);
+    int mdb_env_set_assert(MDB_env *env, MDB_assert_func func);
+
     typedef int (*MDB_msg_func)(const char *msg, void *ctx);
-    int mdb_env_set_assert(MDB_env *env, MDB_msg_func func);
 
     int mdb_txn_begin(MDB_env *env, MDB_txn *parent, unsigned int flags,
         MDB_txn **txn);
