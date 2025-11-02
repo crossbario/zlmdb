@@ -21,6 +21,17 @@ jobs:
       main_run_id: ${{ steps.check.outputs.main_run_id }}
       is_tag: ${{ steps.check.outputs.is_tag }}
       tag_name: ${{ steps.check.outputs.tag_name }}
+      # Artifact names with hash suffixes
+      artifact_macos_wheels: ${{ steps.check.outputs.artifact_macos_wheels }}
+      artifact_windows_wheels: ${{ steps.check.outputs.artifact_windows_wheels }}
+      artifact_linux_wheels: ${{ steps.check.outputs.artifact_linux_wheels }}
+      artifact_source_dist: ${{ steps.check.outputs.artifact_source_dist }}
+      artifact_manylinux_x86_64: ${{ steps.check.outputs.artifact_manylinux_x86_64 }}
+      artifact_arm64_cp311: ${{ steps.check.outputs.artifact_arm64_cp311 }}
+      artifact_arm64_cp312: ${{ steps.check.outputs.artifact_arm64_cp312 }}
+      artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
+      artifact_arm64_cp314: ${{ steps.check.outputs.artifact_arm64_cp314 }}
+      artifact_arm64_pypy311: ${{ steps.check.outputs.artifact_arm64_pypy311 }}
 
     steps:
       - name: Check all required workflows completed
@@ -88,6 +99,58 @@ jobs:
             core.setOutput('wheels_arm64_run_id', latestRuns['wheels-arm64']?.id || '');
             core.setOutput('main_run_id', latestRuns['main']?.id || '');
 
+            // Query artifact names with meta-checksum suffixes
+            if (allComplete) {
+              console.log('');
+              console.log('─────────────────────────────────────────────────');
+              console.log('🔍 Querying unique artifact names');
+              console.log('─────────────────────────────────────────────────');
+
+              // Helper function to find artifact by prefix
+              async function findArtifact(runId, prefix) {
+                if (!runId) return '';
+                try {
+                  const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: runId
+                  });
+                  const artifact = artifacts.artifacts.find(a => a.name.startsWith(prefix + '-'));
+                  if (artifact) {
+                    console.log(`  ✅ ${prefix.padEnd(50)} → ${artifact.name}`);
+                    return artifact.name;
+                  } else {
+                    console.log(`  ⚠️  ${prefix.padEnd(50)} → NOT FOUND`);
+                    return '';
+                  }
+                } catch (error) {
+                  console.log(`  ❌ ${prefix.padEnd(50)} → ERROR: ${error.message}`);
+                  return '';
+                }
+              }
+
+              // Query artifacts from wheels workflow
+              const wheelsRunId = latestRuns['wheels']?.id;
+              core.setOutput('artifact_macos_wheels', await findArtifact(wheelsRunId, 'wheels-macos-arm64'));
+              core.setOutput('artifact_windows_wheels', await findArtifact(wheelsRunId, 'wheels-windows-x86_64'));
+              core.setOutput('artifact_linux_wheels', await findArtifact(wheelsRunId, 'wheels-linux-x86_64'));
+              core.setOutput('artifact_source_dist', await findArtifact(wheelsRunId, 'source-distribution'));
+
+              // Query artifacts from wheels-docker workflow
+              const wheelsDockerRunId = latestRuns['wheels-docker']?.id;
+              core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-docker-manylinux_2_34_x86_64'));
+
+              // Query artifacts from wheels-arm64 workflow
+              const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
+              core.setOutput('artifact_arm64_cp311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp312', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_pypy311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-manylinux_2_36_aarch64'));
+
+              console.log('─────────────────────────────────────────────────');
+            }
+
             // Check if this is a tag push
             const ref = context.payload.workflow_run?.head_branch || context.ref;
             const isTag = ref && ref.startsWith('refs/tags/v');
@@ -151,69 +214,202 @@ jobs:
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download manylinux x86_64 wheels (from wheels-docker)
-        uses: actions/github-script@v7
+      - name: Download and verify manylinux x86_64 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          script: |
-            const fs = require('fs');
-            const runId = '${{ needs.check-workflows.outputs.wheels_docker_run_id }}';
+          name: ${{ needs.check-workflows.outputs.artifact_manylinux_x86_64 }}
+          path: dist-manylinux-x86_64/
+          run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // List all artifacts from wheels-docker workflow
-            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId,
-            });
-
-            console.log(`Found ${artifacts.length} artifacts from wheels-docker workflow`);
-
-            // Download each artifact
-            for (const artifact of artifacts) {
-              console.log(`Downloading artifact: ${artifact.name}`);
-              const download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-                archive_format: 'zip',
-              });
-
-              // Save and extract the zip
-              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
-              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
-              fs.unlinkSync(`${artifact.name}.zip`);
-            }
-
-      - name: Download manylinux ARM64 wheels (from wheels-arm64)
-        uses: actions/github-script@v7
+      - name: Download and verify ARM64 CPython 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          script: |
-            const fs = require('fs');
-            const runId = '${{ needs.check-workflows.outputs.wheels_arm64_run_id }}';
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp311 }}
+          path: dist-arm64-cp311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // List all artifacts from wheels-arm64 workflow
-            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId,
-            });
+      - name: Download and verify ARM64 CPython 3.12 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp312 }}
+          path: dist-arm64-cp312/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            console.log(`Found ${artifacts.length} artifacts from wheels-arm64 workflow`);
+      - name: Download and verify ARM64 CPython 3.13 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp313 }}
+          path: dist-arm64-cp313/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // Download each artifact
-            for (const artifact of artifacts) {
-              console.log(`Downloading artifact: ${artifact.name}`);
-              const download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-                archive_format: 'zip',
-              });
+      - name: Download and verify ARM64 CPython 3.14 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp314 }}
+          path: dist-arm64-cp314/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-              // Save and extract the zip
-              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
-              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
-              fs.unlinkSync(`${artifact.name}.zip`);
-            }
+      - name: Download and verify ARM64 PyPy 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
+          path: dist-arm64-pypy311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Flush file system buffers
+        run: |
+          echo "======================================================================"
+          echo "Flushing all file system buffers after artifact downloads."
+          echo "Ensures all downloaded files are on disk before checksum verification."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+
+      - name: Re-verify wheel checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Wheel Checksum Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+          echo "Re-verifying wheel integrity after artifact download."
+          echo "Detecting corruption during GitHub Actions artifact transfer."
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          # Function to verify checksums in a directory
+          verify_directory() {
+            local DIR=$1
+            local DESC=$2
+
+            if [ ! -d "$DIR" ]; then
+              echo "⚠️  Directory not found: $DIR"
+              return
+            fi
+
+            if [ ! -f "$DIR/CHECKSUMS.sha256" ]; then
+              echo "⚠️  No CHECKSUMS.sha256 found in $DIR"
+              return
+            fi
+
+            echo "==> Re-verifying $DESC..."
+            cd "$DIR"
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd - > /dev/null
+            echo ""
+          }
+
+          # Verify all downloaded artifacts
+          verify_directory "dist-manylinux-x86_64" "manylinux x86_64 wheels"
+          verify_directory "dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
+          verify_directory "dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
+          verify_directory "dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
+          verify_directory "dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
+          verify_directory "dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed checksum verification."
+            echo "This indicates CORRUPTION during GitHub Actions artifact transfer:"
+            echo "  1. Build workflow created valid wheel + checksum"
+            echo "  2. GitHub Actions corrupted wheel during upload/storage/download"
+            echo "  3. Downloaded wheel checksum doesn't match original"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          elif [ $WHEELS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED - NO WHEELS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero wheels were verified. This means:"
+            echo "  1. No CHECKSUMS.sha256 files were found, OR"
+            echo "  2. All wheels referenced in checksums were missing"
+            echo ""
+            echo "This is a critical failure - we cannot confirm wheel integrity."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheel checksums verified successfully ($WHEELS_VERIFIED wheels)"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: build workflows → release workflow"
+            echo "No corruption detected during artifact transfer."
+          fi
+
+      - name: Consolidate all artifacts
+        run: |
+          echo "======================================================================"
+          echo "==> Consolidating all artifacts to dist/"
+          echo "======================================================================"
+          mkdir -p dist/
+
+          # Copy wheels from all directories
+          for dir in dist-manylinux-x86_64 dist-arm64-*; do
+            if [ -d "$dir" ]; then
+              echo "Copying wheels from $dir/"
+              cp -v "$dir"/*.whl dist/ 2>/dev/null || echo "No wheels in $dir/"
+            fi
+          done
+
+          echo ""
 
       - name: List all downloaded artifacts
         run: |
@@ -318,69 +514,202 @@ jobs:
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download manylinux x86_64 wheels (from wheels-docker)
-        uses: actions/github-script@v7
+      - name: Download and verify manylinux x86_64 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          script: |
-            const fs = require('fs');
-            const runId = '${{ needs.check-workflows.outputs.wheels_docker_run_id }}';
+          name: ${{ needs.check-workflows.outputs.artifact_manylinux_x86_64 }}
+          path: dist-manylinux-x86_64/
+          run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // List all artifacts from wheels-docker workflow
-            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId,
-            });
-
-            console.log(`Found ${artifacts.length} artifacts from wheels-docker workflow`);
-
-            // Download each artifact
-            for (const artifact of artifacts) {
-              console.log(`Downloading artifact: ${artifact.name}`);
-              const download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-                archive_format: 'zip',
-              });
-
-              // Save and extract the zip
-              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
-              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
-              fs.unlinkSync(`${artifact.name}.zip`);
-            }
-
-      - name: Download manylinux ARM64 wheels (from wheels-arm64)
-        uses: actions/github-script@v7
+      - name: Download and verify ARM64 CPython 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          script: |
-            const fs = require('fs');
-            const runId = '${{ needs.check-workflows.outputs.wheels_arm64_run_id }}';
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp311 }}
+          path: dist-arm64-cp311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // List all artifacts from wheels-arm64 workflow
-            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: runId,
-            });
+      - name: Download and verify ARM64 CPython 3.12 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp312 }}
+          path: dist-arm64-cp312/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            console.log(`Found ${artifacts.length} artifacts from wheels-arm64 workflow`);
+      - name: Download and verify ARM64 CPython 3.13 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp313 }}
+          path: dist-arm64-cp313/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-            // Download each artifact
-            for (const artifact of artifacts) {
-              console.log(`Downloading artifact: ${artifact.name}`);
-              const download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-                archive_format: 'zip',
-              });
+      - name: Download and verify ARM64 CPython 3.14 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_cp314 }}
+          path: dist-arm64-cp314/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-              // Save and extract the zip
-              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
-              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
-              fs.unlinkSync(`${artifact.name}.zip`);
-            }
+      - name: Download and verify ARM64 PyPy 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
+          path: dist-arm64-pypy311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Flush file system buffers
+        run: |
+          echo "======================================================================"
+          echo "Flushing all file system buffers after artifact downloads."
+          echo "Ensures all downloaded files are on disk before checksum verification."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+
+      - name: Re-verify wheel checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Wheel Checksum Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+          echo "Re-verifying wheel integrity after artifact download."
+          echo "Detecting corruption during GitHub Actions artifact transfer."
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          # Function to verify checksums in a directory
+          verify_directory() {
+            local DIR=$1
+            local DESC=$2
+
+            if [ ! -d "$DIR" ]; then
+              echo "⚠️  Directory not found: $DIR"
+              return
+            fi
+
+            if [ ! -f "$DIR/CHECKSUMS.sha256" ]; then
+              echo "⚠️  No CHECKSUMS.sha256 found in $DIR"
+              return
+            fi
+
+            echo "==> Re-verifying $DESC..."
+            cd "$DIR"
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd - > /dev/null
+            echo ""
+          }
+
+          # Verify all downloaded artifacts
+          verify_directory "dist-manylinux-x86_64" "manylinux x86_64 wheels"
+          verify_directory "dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
+          verify_directory "dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
+          verify_directory "dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
+          verify_directory "dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
+          verify_directory "dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed checksum verification."
+            echo "This indicates CORRUPTION during GitHub Actions artifact transfer:"
+            echo "  1. Build workflow created valid wheel + checksum"
+            echo "  2. GitHub Actions corrupted wheel during upload/storage/download"
+            echo "  3. Downloaded wheel checksum doesn't match original"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          elif [ $WHEELS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED - NO WHEELS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero wheels were verified. This means:"
+            echo "  1. No CHECKSUMS.sha256 files were found, OR"
+            echo "  2. All wheels referenced in checksums were missing"
+            echo ""
+            echo "This is a critical failure - we cannot confirm wheel integrity."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheel checksums verified successfully ($WHEELS_VERIFIED wheels)"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: build workflows → release workflow"
+            echo "No corruption detected during artifact transfer."
+          fi
+
+      - name: Consolidate all artifacts
+        run: |
+          echo "======================================================================"
+          echo "==> Consolidating all artifacts to dist/"
+          echo "======================================================================"
+          mkdir -p dist/
+
+          # Copy wheels from all directories
+          for dir in dist-manylinux-x86_64 dist-arm64-*; do
+            if [ -d "$dir" ]; then
+              echo "Copying wheels from $dir/"
+              cp -v "$dir"/*.whl dist/ 2>/dev/null || echo "No wheels in $dir/"
+            fi
+          done
+
+          echo ""
 
       - name: List all downloaded artifacts
         run: |

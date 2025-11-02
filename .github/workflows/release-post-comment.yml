@@ -1,0 +1,238 @@
+name: release-post-comment
+
+on:
+  # Trigger after release workflow completes
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
+
+  # Manual dispatch for debugging
+  workflow_dispatch:
+    inputs:
+      discussion_category_id:
+        description: "GitHub Discussions category ID for announcements"
+        required: false
+        type: string
+        default: "DIC_kwDOBXAFKs4CmFDd"  # Announcements category in zlmdb repo
+
+permissions:
+  contents: read        # Required for reading artifacts
+  discussions: write    # Required for posting to discussions
+
+jobs:
+  check-release-exists:
+    name: Check if release created (Early Exit Pattern)
+    runs-on: ubuntu-latest
+    outputs:
+      should_process: ${{ steps.check.outputs.should_process }}
+      release_exists: ${{ steps.check.outputs.release_exists }}
+      release_name: ${{ steps.check.outputs.release_name }}
+      release_url: ${{ steps.check.outputs.release_url }}
+      is_tag_release: ${{ steps.check.outputs.is_tag_release }}
+
+    steps:
+      - name: Check if GitHub Release exists for this commit
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo '─────────────────────────────────────────────────'
+          echo '🔍 Checking if GitHub Release exists (Early Exit Pattern)'
+          echo '─────────────────────────────────────────────────'
+
+          COMMIT_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "Commit SHA: $COMMIT_SHA"
+
+          # Get all releases (sorted by created date, newest first)
+          RELEASES_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases --paginate 2>/dev/null || echo "[]")
+
+          # Find most recent release (created within last hour)
+          FOUND_RELEASE_NAME=""
+          FOUND_RELEASE_URL=""
+          IS_TAG_RELEASE="false"
+
+          # Check for tag-based releases (vX.Y.Z)
+          TAG_RELEASE=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"v\")) | .tag_name" | head -1)
+          if [ -n "$TAG_RELEASE" ]; then
+            RELEASE_CREATED=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$TAG_RELEASE\") | .created_at")
+            CURRENT_TIME=$(date -u +%s)
+            RELEASE_TIME=$(date -u -d "$RELEASE_CREATED" +%s 2>/dev/null || echo "0")
+            TIME_DIFF=$((CURRENT_TIME - RELEASE_TIME))
+
+            echo "Found tag release: $TAG_RELEASE"
+            echo "Created: $RELEASE_CREATED"
+            echo "Age: ${TIME_DIFF}s"
+
+            if [ $TIME_DIFF -lt 3600 ]; then
+              echo "✓ Tag release created within last hour - proceeding"
+              FOUND_RELEASE_NAME="$TAG_RELEASE"
+              FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$TAG_RELEASE\") | .html_url")
+              IS_TAG_RELEASE="true"
+            else
+              echo "✗ Tag release is too old (${TIME_DIFF}s > 3600s) - skipping"
+            fi
+          fi
+
+          # Check for development releases (dev-*)
+          if [ -z "$FOUND_RELEASE_NAME" ]; then
+            DEV_RELEASE=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"dev-\")) | .tag_name" | head -1)
+            if [ -n "$DEV_RELEASE" ]; then
+              RELEASE_CREATED=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$DEV_RELEASE\") | .created_at")
+              CURRENT_TIME=$(date -u +%s)
+              RELEASE_TIME=$(date -u -d "$RELEASE_CREATED" +%s 2>/dev/null || echo "0")
+              TIME_DIFF=$((CURRENT_TIME - RELEASE_TIME))
+
+              echo "Found development release: $DEV_RELEASE"
+              echo "Created: $RELEASE_CREATED"
+              echo "Age: ${TIME_DIFF}s"
+
+              if [ $TIME_DIFF -lt 3600 ]; then
+                echo "✓ Development release created within last hour - proceeding"
+                FOUND_RELEASE_NAME="$DEV_RELEASE"
+                FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$DEV_RELEASE\") | .html_url")
+                IS_TAG_RELEASE="false"
+              else
+                echo "✗ Development release is too old (${TIME_DIFF}s > 3600s) - skipping"
+              fi
+            fi
+          fi
+
+          if [ -z "$FOUND_RELEASE_NAME" ]; then
+            echo "⏳ GitHub Release not found for commit $COMMIT_SHA"
+            echo "   This is normal! Will post once release workflow creates the release."
+            echo "   (This is an early exit - release.yml probably hasn't created the release yet)"
+            {
+              echo "should_process=false"
+              echo "release_exists=false"
+              echo "release_name="
+              echo "release_url="
+              echo "is_tag_release=false"
+            } >> $GITHUB_OUTPUT
+          else
+            echo "✅ GitHub Release found: $FOUND_RELEASE_NAME"
+            echo "   Release URL: $FOUND_RELEASE_URL"
+            {
+              echo "should_process=true"
+              echo "release_exists=true"
+              echo "release_name=$FOUND_RELEASE_NAME"
+              echo "release_url=$FOUND_RELEASE_URL"
+              echo "is_tag_release=$IS_TAG_RELEASE"
+            } >> $GITHUB_OUTPUT
+          fi
+
+          echo '─────────────────────────────────────────────────'
+
+  post-discussion:
+    name: Post to GitHub Discussions
+    needs: [check-release-exists]
+    runs-on: ubuntu-latest
+
+    # Only post for tag-based releases (not development builds)
+    if: |
+      needs.check-release-exists.outputs.should_process == 'true' &&
+      needs.check-release-exists.outputs.is_tag_release == 'true'
+
+    env:
+      RELEASE_NAME: ${{ needs.check-release-exists.outputs.release_name }}
+      RELEASE_URL: ${{ needs.check-release-exists.outputs.release_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Get release notes from GitHub Release
+        id: release-details
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "==> Fetching release notes for: $RELEASE_NAME"
+          echo "   Release URL: $RELEASE_URL"
+
+          # Get release body via GitHub API
+          RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
+
+          if [ "$RELEASE_JSON" = "{}" ]; then
+            echo "⚠️  Release not found: $RELEASE_NAME"
+            echo "This should not happen - check-release-exists should have prevented this!"
+            exit 1
+          fi
+
+          # Save release body (release notes)
+          echo "$RELEASE_JSON" | jq -r '.body' > release-notes.md
+          echo "✅ Release notes retrieved"
+
+      - name: Install jinja2-cli for template rendering
+        run: |
+          pip install jinja2-cli
+
+      - name: Render discussion post from Jinja2 template
+        id: render
+        run: |
+          echo "==> Preparing GitHub Discussion post..."
+          echo "Release name: $RELEASE_NAME"
+
+          # Read release notes (already fetched)
+          RELEASE_NOTES=$(cat release-notes.md)
+
+          # Render template using jinja2
+          jinja2 .github/templates/discussion-post.md.j2 \
+            -D release_name="$RELEASE_NAME" \
+            -D release_url="$RELEASE_URL" \
+            -D release_notes="$RELEASE_NOTES" \
+            -o discussion-post.md
+
+          echo ""
+          echo "==> Generated discussion post:"
+          cat discussion-post.md
+
+      - name: Post to GitHub Discussions
+        uses: actions/github-script@v7
+        env:
+          DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOBXAFKs4CmFDd' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const discussionBody = fs.readFileSync('discussion-post.md', 'utf8');
+
+            const releaseName = '${{ env.RELEASE_NAME }}';
+            const title = `Release ${releaseName}`;
+
+            console.log(`Creating discussion: ${title}`);
+            console.log(`Category ID: ${process.env.DISCUSSION_CATEGORY_ID}`);
+
+            // Create discussion using GraphQL API
+            const mutation = `
+              mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+                createDiscussion(input: {
+                  repositoryId: $repositoryId
+                  categoryId: $categoryId
+                  title: $title
+                  body: $body
+                }) {
+                  discussion {
+                    url
+                  }
+                }
+              }
+            `;
+
+            // Get repository ID
+            const { data: repo } = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const repositoryId = repo.node_id;
+
+            // Create the discussion
+            const result = await github.graphql(mutation, {
+              repositoryId: repositoryId,
+              categoryId: process.env.DISCUSSION_CATEGORY_ID,
+              title: title,
+              body: discussionBody
+            });
+
+            const discussionUrl = result.createDiscussion.discussion.url;
+            console.log(`✅ Discussion created: ${discussionUrl}`);
+            core.setOutput('discussion_url', discussionUrl);
