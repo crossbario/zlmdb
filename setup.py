@@ -45,7 +45,7 @@ result = subprocess.run([sys.executable, 'build_cffi_lmdb.py'], capture_output=F
 if result.returncode != 0:
     print("\nERROR: build_cffi_lmdb.py failed!")
     sys.exit(1)
-print("✓ CFFI extension compiled successfully")
+print("OK: CFFI extension compiled successfully")
 
 # Clean up old .so files from other Python versions to prevent cross-contamination
 import sysconfig
@@ -78,7 +78,7 @@ class BuildPyWithCFFI(_build_py):
         if os.path.exists(expected_file):
             dest_dir = os.path.join(self.build_lib, 'zlmdb', 'lmdb')
             dest_file = os.path.join(dest_dir, os.path.basename(expected_file))
-            print(f"✓ Copying: {os.path.basename(expected_file)} -> {dest_file}")
+            print(f"OK: Copying: {os.path.basename(expected_file)} -> {dest_file}")
             shutil.copy2(expected_file, dest_file)
         else:
             print(f"WARNING: Expected CFFI extension not found: {expected_file}")

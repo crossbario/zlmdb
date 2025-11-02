@@ -455,6 +455,7 @@ build venv="": (install-build-tools venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building wheel package with ${VENV_NAME}..."
+    mkdir -p dist/
     ${VENV_PYTHON} -m build --wheel
     ls -lh dist/
 
@@ -468,16 +469,23 @@ build-sourcedist venv="": (install-build-tools venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building source distribution with ${VENV_NAME}..."
+    mkdir -p dist/
     ${VENV_PYTHON} -m build --sdist
     ls -lh dist/
 
 # Build wheels for all environments
 build-all:
     #!/usr/bin/env bash
+    set -e
     for venv in {{ENVS}}; do
         just build ${venv}
     done
-    ls -lh dist/
+    if [ -d dist/ ]; then
+        ls -lh dist/
+    else
+        echo "WARNING: dist/ directory not found"
+        mkdir -p dist/
+    fi
 
 # Verify wheels using auditwheel and other checks
 verify-wheels venv="": (install-tools venv)
