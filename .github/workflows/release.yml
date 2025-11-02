@@ -16,6 +16,8 @@ jobs:
     outputs:
       all_complete: ${{ steps.check.outputs.all_complete }}
       wheels_run_id: ${{ steps.check.outputs.wheels_run_id }}
+      wheels_docker_run_id: ${{ steps.check.outputs.wheels_docker_run_id }}
+      wheels_arm64_run_id: ${{ steps.check.outputs.wheels_arm64_run_id }}
       main_run_id: ${{ steps.check.outputs.main_run_id }}
       is_tag: ${{ steps.check.outputs.is_tag }}
       tag_name: ${{ steps.check.outputs.tag_name }}
@@ -26,7 +28,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const requiredWorkflows = ['wheels', 'main'];
+            const requiredWorkflows = ['wheels', 'wheels-docker', 'wheels-arm64', 'main'];
 
             // Handle both workflow_run and workflow_dispatch triggers
             const commitSha = context.payload.workflow_run?.head_sha || context.sha;
@@ -82,6 +84,8 @@ jobs:
 
             // Output run IDs for artifact downloads
             core.setOutput('wheels_run_id', latestRuns['wheels']?.id || '');
+            core.setOutput('wheels_docker_run_id', latestRuns['wheels-docker']?.id || '');
+            core.setOutput('wheels_arm64_run_id', latestRuns['wheels-arm64']?.id || '');
             core.setOutput('main_run_id', latestRuns['main']?.id || '');
 
             // Check if this is a tag push
@@ -115,7 +119,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download Linux wheels
+      - name: Download Linux wheels (native builds)
         uses: actions/download-artifact@v4
         with:
           name: wheels-linux-x86_64
@@ -146,6 +150,70 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download manylinux x86_64 wheels (from wheels-docker)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runId = '${{ needs.check-workflows.outputs.wheels_docker_run_id }}';
+
+            // List all artifacts from wheels-docker workflow
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            console.log(`Found ${artifacts.length} artifacts from wheels-docker workflow`);
+
+            // Download each artifact
+            for (const artifact of artifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              // Save and extract the zip
+              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
+              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
+              fs.unlinkSync(`${artifact.name}.zip`);
+            }
+
+      - name: Download manylinux ARM64 wheels (from wheels-arm64)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runId = '${{ needs.check-workflows.outputs.wheels_arm64_run_id }}';
+
+            // List all artifacts from wheels-arm64 workflow
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            console.log(`Found ${artifacts.length} artifacts from wheels-arm64 workflow`);
+
+            // Download each artifact
+            for (const artifact of artifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              // Save and extract the zip
+              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
+              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
+              fs.unlinkSync(`${artifact.name}.zip`);
+            }
 
       - name: List all downloaded artifacts
         run: |
@@ -183,7 +251,8 @@ jobs:
             **⚠️ This is a development build and should not be used in production!**
 
             Built wheels for:
-            - Linux x86_64
+            - Linux x86_64 (native + manylinux_2_34)
+            - Linux ARM64 (manylinux_2_28 + manylinux_2_36 for PyPy)
             - macOS ARM64
             - Windows x86_64
 
@@ -217,7 +286,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download Linux wheels
+      - name: Download Linux wheels (native builds)
         uses: actions/download-artifact@v4
         with:
           name: wheels-linux-x86_64
@@ -248,6 +317,70 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download manylinux x86_64 wheels (from wheels-docker)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runId = '${{ needs.check-workflows.outputs.wheels_docker_run_id }}';
+
+            // List all artifacts from wheels-docker workflow
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            console.log(`Found ${artifacts.length} artifacts from wheels-docker workflow`);
+
+            // Download each artifact
+            for (const artifact of artifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              // Save and extract the zip
+              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
+              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
+              fs.unlinkSync(`${artifact.name}.zip`);
+            }
+
+      - name: Download manylinux ARM64 wheels (from wheels-arm64)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runId = '${{ needs.check-workflows.outputs.wheels_arm64_run_id }}';
+
+            // List all artifacts from wheels-arm64 workflow
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            console.log(`Found ${artifacts.length} artifacts from wheels-arm64 workflow`);
+
+            // Download each artifact
+            for (const artifact of artifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              // Save and extract the zip
+              fs.writeFileSync(`${artifact.name}.zip`, Buffer.from(download.data));
+              await exec.exec('unzip', ['-o', `${artifact.name}.zip`, '-d', 'dist/']);
+              fs.unlinkSync(`${artifact.name}.zip`);
+            }
 
       - name: List all downloaded artifacts
         run: |
@@ -283,7 +416,8 @@ jobs:
             Official release build
 
             Built wheels for:
-            - Linux x86_64
+            - Linux x86_64 (native + manylinux_2_34)
+            - Linux ARM64 (manylinux_2_28 + manylinux_2_36 for PyPy)
             - macOS ARM64
             - Windows x86_64
 
