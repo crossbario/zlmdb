@@ -34,10 +34,18 @@ fi
 echo "==> Build environment:"
 echo "Platform: $(uname -m)"
 echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')"
-echo "Python: $(python3 --version)"
+echo "Python: $(python3 --version 2>/dev/null || echo 'not available')"
 echo "Just: $(just --version)"
 echo "uv: $(uv --version)"
 echo "auditwheel: $(auditwheel --version || echo 'not available')"
+
+# Clean up any stale venvs from previous runs (Docker volume persistence issue)
+# This is especially important for PyPy where the venv directory might exist but be broken
+if [ -d "/io/.venvs" ]; then
+  echo "==> Cleaning up stale virtual environments..."
+  rm -rf /io/.venvs
+  echo "[OK] Cleaned up /io/.venvs"
+fi
 
 # Build binary wheels with LMDB CFFI extensions
 # Uses install-build-tools (not install-tools) to avoid problematic dependencies under QEMU
