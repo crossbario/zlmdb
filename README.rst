@@ -198,17 +198,3 @@ Quick Start
 
     # Build wheel
     just build
-
-Documentation
-=============
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents
-
-   intro
-   installation
-   lmdb/index
-   orm/index
-   performance
-   reference
