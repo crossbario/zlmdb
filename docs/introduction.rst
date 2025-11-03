@@ -20,6 +20,7 @@ zlmdb combines the raw performance of LMDB (Lightning Memory-Mapped Database) wi
    - Memory-mapped I/O for fast access
    - Both CPython and PyPy deployment
 
+
 Key Features
 ------------
 
@@ -41,6 +42,7 @@ zlmdb offers **two ways to work with LMDB**, depending on your needs:
    - Automatic index management
    - Support for composite keys and foreign keys
    - See :doc:`orm/index` for details
+
 
 Performance Characteristics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,6 +68,7 @@ zlmdb delivers exceptional performance through LMDB's architecture:
    - Minimal memory overhead (metadata only)
    - No deserialization needed for memory-mapped data
    - Efficient storage with no internal fragmentation
+
 
 Flexible Serialization
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -102,6 +105,7 @@ The ORM API supports multiple serialization formats:
    - Mix serialization strategies per table
    - See :doc:`orm/serialization` for details
 
+
 Easy Installation and Deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -118,7 +122,7 @@ zlmdb is designed to be **batteries included** with **zero system dependencies**
    - Uses CFFI (C Foreign Function Interface), not CPyExt
    - Excellent PyPy performance (JIT-friendly)
    - No compilation needed during installation
-   - See :doc:`installation` for platform compatibility table
+   - See :doc:`gettingstarted` for platform compatibility table
 
 **Vendored Dependencies**
    - LMDB library bundled (no external installation required)
@@ -131,6 +135,7 @@ zlmdb is designed to be **batteries included** with **zero system dependencies**
    pip install zlmdb
 
 That's it! No C compiler, no system libraries, no configuration.
+
 
 Architecture Overview
 ---------------------
@@ -176,6 +181,7 @@ zlmdb is built on several key technologies:
 5. **CFFI Layer** - Python ↔ C bridge
 6. **LMDB C Library** - Core database engine (memory-mapped B+trees)
 
+
 Use Cases
 ---------
 
@@ -210,6 +216,7 @@ zlmdb is ideal for:
    - Benchmark results (see crossbar-examples)
    - Integration with Jupyter notebooks
 
+
 Real-World Projects Using zlmdb
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -232,6 +239,7 @@ zlmdb powers production systems:
    - Exchange and market metadata
    - Blockchain block and transaction data
    - Time-series storage with composite keys
+
 
 Quick Comparison
 ----------------
@@ -290,44 +298,9 @@ How zlmdb compares to alternatives:
 
 See :doc:`performance` for detailed benchmark comparisons.
 
-Getting Started
----------------
 
-Choose your starting point based on your needs:
-
-**New to zlmdb?**
-   Start with the :doc:`installation` guide, then:
-
-   - **Want simple key-value storage?** → :doc:`lmdb/quickstart`
-   - **Want object persistence with schemas?** → :doc:`orm/quickstart`
-
-**Coming from py-lmdb?**
-   zlmdb's low-level API is a drop-in replacement:
-
-   - See :doc:`lmdb/index` for the compatibility layer
-   - Your existing py-lmdb code should work unchanged
-
-**Building a production application?**
-   Study the ORM patterns from real projects:
-
-   - :doc:`orm/schema-design` - Schema architecture patterns
-   - :doc:`orm/indexes` - Efficient lookups and queries
-   - :doc:`orm/time-series` - Time-series data modeling
-   - :doc:`orm/best-practices` - Production-proven patterns
-
-Next Steps
-----------
-
-.. toctree::
-   :maxdepth: 1
-
-   installation
-   lmdb/index
-   orm/index
-   performance
-   reference
-
-**Additional Resources:**
+Additional Resources
+--------------------
 
 - `GitHub Repository <https://github.com/crossbario/zlmdb>`_
 - `Issue Tracker <https://github.com/crossbario/zlmdb/issues>`_

@@ -8,8 +8,8 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   intro
-   installation
+   introduction
+   gettingstarted
    lmdb/index
    orm/index
    performance

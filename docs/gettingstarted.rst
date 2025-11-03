@@ -1,10 +1,33 @@
+Getting Started
+===============
+
+Choose your starting point based on your needs:
+
+**New to zlmdb?**
+   Start with the :doc:`gettingstarted` guide, then:
+
+   - **Want simple key-value storage?** → :doc:`lmdb/quickstart`
+   - **Want object persistence with schemas?** → :doc:`orm/quickstart`
+
+**Coming from py-lmdb?**
+   zlmdb's low-level API is a drop-in replacement:
+
+   - See :doc:`lmdb/index` for the compatibility layer
+   - Your existing py-lmdb code should work unchanged
+
+**Building a production application?**
+   Study the ORM patterns from real projects:
+
+   - :doc:`orm/schema-design` - Schema architecture patterns
+   - :doc:`orm/indexes` - Efficient lookups and queries
+   - :doc:`orm/time-series` - Time-series data modeling
+   - :doc:`orm/best-practices` - Production-proven patterns
+
+
 Installation
-============
+-------------
 
 zlmdb provides pre-built binary wheels for all major platforms, making installation simple and dependency-free.
-
-Quick Install
--------------
 
 Install zlmdb using pip::
 
@@ -17,6 +40,26 @@ That's it! The wheel includes:
 - CFFI bindings (pre-compiled)
 
 No C compiler or external libraries required.
+
+To make sure `pip` installs the correct **binary wheel** and not the source distribution, please try the following:
+
+.. code-block:: console
+
+    python -m pip install --upgrade pip setuptools wheel
+    python -m pip install --only-binary=:all: zlmdb
+
+If that still doesn’t work, please run this to help us see what tags your Python installation supports:
+
+.. code-block:: console
+
+    python -m pip debug --verbose
+
+and then retry with verbose output to confirm what `pip` is doing:
+
+.. code-block:: console
+
+    pip install -v zlmdb
+
 
 Wheel Compatibility
 -------------------
@@ -115,6 +158,7 @@ zlmdb provides native binary wheels for the following combinations:
    - ``manylinux_2_34``: Compatible with glibc 2.34+ (RHEL 9+, Ubuntu 22.04+, Debian 12+)
    - ``manylinux_2_36``: Compatible with glibc 2.36+ (for PyPy ARM64 builds)
 
+
 Platform-Specific Notes
 -----------------------
 
@@ -174,6 +218,7 @@ zlmdb provides wheels for 64-bit Windows (Windows 10+, Windows Server 2016+):
 - Includes all required DLLs
 - No Visual C++ Runtime installation needed
 
+
 Verifying Installation
 ----------------------
 
@@ -222,6 +267,7 @@ Expected output::
 
    print("✅ zlmdb is working correctly!")
 
+
 Installing from Source
 ----------------------
 
@@ -257,6 +303,7 @@ If binary wheels are not available for your platform, you can build from source.
 
 See the main `README.rst <https://github.com/crossbario/zlmdb/blob/master/README.rst>`_ for the complete development workflow.
 
+
 PyPy Installation
 -----------------
 
@@ -281,6 +328,7 @@ zlmdb is optimized for PyPy through CFFI-based bindings:
 
 See :doc:`performance` for PyPy vs CPython benchmarks.
 
+
 Upgrading
 ---------
 
@@ -292,6 +340,7 @@ Upgrade to the latest version::
 
 See the `CHANGELOG <https://github.com/crossbario/zlmdb/blob/master/CHANGELOG.md>`_ for release notes.
 
+
 Uninstalling
 ------------
 
@@ -300,6 +349,7 @@ Remove zlmdb::
    pip uninstall zlmdb
 
 zlmdb has no global state or system-wide configuration, so uninstallation is clean.
+
 
 Troubleshooting
 ---------------
@@ -335,6 +385,7 @@ This shouldn't happen with pip-installed wheels. If it does::
 
    xattr -d com.apple.quarantine /path/to/zlmdb/*.so
 
+
 Getting Help
 ------------
 
@@ -353,7 +404,7 @@ Next Steps
 After installation:
 
 - **New to zlmdb?** → Start with :doc:`lmdb/quickstart` or :doc:`orm/quickstart`
-- **Exploring features?** → See :doc:`intro` for an overview
+- **Exploring features?** → See :doc:`introduction` for an overview
 - **Performance testing?** → See :doc:`performance` for benchmarks
 
 .. seealso::
