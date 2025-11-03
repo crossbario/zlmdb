@@ -1,5 +1,4 @@
-:tocdepth: 0
-:orphan:
+:tocdepth: 2
 
 .. _site_contents:
 
@@ -7,9 +6,12 @@ Site Contents
 =============
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    index
+   intro
+   installation
+   lmdb/index
+   orm/index
    performance
    reference
-
