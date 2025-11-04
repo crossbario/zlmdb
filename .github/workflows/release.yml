@@ -477,8 +477,8 @@ jobs:
     environment: pypi
 
     permissions:
-      id-token: write  # Required for PyPI trusted publishing (OIDC)
-      contents: read   # Required for checkout action
+      id-token: write    # Required for PyPI trusted publishing (OIDC)
+      contents: write    # Required for creating GitHub releases
 
     steps:
       - name: Checkout code
