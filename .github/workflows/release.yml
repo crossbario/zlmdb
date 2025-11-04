@@ -476,6 +476,10 @@ jobs:
 
     environment: pypi
 
+    permissions:
+      id-token: write  # Required for PyPI trusted publishing (OIDC)
+      contents: read   # Required for checkout action
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
