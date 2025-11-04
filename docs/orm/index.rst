@@ -118,6 +118,7 @@ API Documentation
    :maxdepth: 2
 
    quickstart
+   examples
    schema-design
    indexes
    serialization
@@ -180,6 +181,7 @@ Next Steps
 ----------
 
 - :doc:`quickstart` - Build your first ORM application
+- :doc:`examples` - Real-world patterns from Crossbar.io and pydefi
 - :doc:`schema-design` - Learn schema patterns from real projects
 - :doc:`serialization` - Choose the right serialization format
 - :doc:`indexes` - Efficient lookups and queries
