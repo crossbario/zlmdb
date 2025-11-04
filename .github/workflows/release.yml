@@ -151,9 +151,9 @@ jobs:
               console.log('─────────────────────────────────────────────────');
             }
 
-            // Check if this is a tag push
+            // Check if this is a tag push (handles both "refs/tags/vX.Y.Z" and "vX.Y.Z" formats)
             const ref = context.payload.workflow_run?.head_branch || context.ref;
-            const isTag = ref && ref.startsWith('refs/tags/v');
+            const isTag = ref && (ref.startsWith('refs/tags/v') || ref.match(/^v\d+\.\d+\.\d+/));
             const tagName = isTag ? ref.replace('refs/tags/', '') : '';
 
             console.log('');
