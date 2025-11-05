@@ -765,13 +765,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Remove non-wheel files before PyPI upload
+      - name: Remove non-PyPI files before upload
         run: |
           echo "======================================================================"
-          echo "Removing non-wheel files from dist/ (PyPI only accepts .whl and .tar.gz)"
+          echo "Removing files that PyPI doesn't accept"
           echo "======================================================================"
+          # Remove checksum and validation files
           rm -f dist/CHECKSUMS*.sha256
           rm -f dist/VALIDATION.txt
+
+          # Remove linux_x86_64 wheels (PyPI requires manylinux tags)
+          # These are for local development only, not for PyPI
+          rm -f dist/*-linux_x86_64.whl
+
+          echo ""
           echo "Files to upload to PyPI:"
           ls -lh dist/
           echo "======================================================================"
