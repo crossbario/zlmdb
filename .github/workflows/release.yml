@@ -774,9 +774,10 @@ jobs:
           rm -f dist/CHECKSUMS*.sha256
           rm -f dist/VALIDATION.txt
 
-          # Remove linux_x86_64 wheels (PyPI requires manylinux tags)
-          # These are for local development only, not for PyPI
+          # Remove linux_* wheels (PyPI requires manylinux_* tags)
+          # These are for local development/testing only, not for PyPI
           rm -f dist/*-linux_x86_64.whl
+          rm -f dist/*-linux_aarch64.whl
 
           echo ""
           echo "Files to upload to PyPI:"
