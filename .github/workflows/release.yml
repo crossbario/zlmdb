@@ -765,12 +765,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Remove checksum files before PyPI upload
+      - name: Remove non-wheel files before PyPI upload
         run: |
           echo "======================================================================"
-          echo "Removing checksum files from dist/ (PyPI doesn't accept them)"
+          echo "Removing non-wheel files from dist/ (PyPI only accepts .whl and .tar.gz)"
           echo "======================================================================"
           rm -f dist/CHECKSUMS*.sha256
+          rm -f dist/VALIDATION.txt
           echo "Files to upload to PyPI:"
           ls -lh dist/
           echo "======================================================================"
