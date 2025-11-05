@@ -3,19 +3,43 @@ Introduction to zLMDB
 
 .. image:: https://img.shields.io/pypi/v/zlmdb.svg
     :target: https://pypi.python.org/pypi/zlmdb
-    :alt: PyPI
+    :alt: PyPI Version
 
-.. image:: https://github.com/crossbario/zlmdb/workflows/main/badge.svg
-   :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Amain
-   :alt: Build
+.. image:: https://img.shields.io/github/v/release/crossbario/zlmdb
+    :target: https://github.com/crossbario/zlmdb/releases
+    :alt: GitHub Release
+
+.. image:: https://img.shields.io/pypi/pyversions/zlmdb.svg
+    :target: https://pypi.python.org/pypi/zlmdb
+    :alt: Python Versions
+
+.. image:: https://img.shields.io/pypi/l/zlmdb.svg
+    :target: https://github.com/crossbario/zlmdb/blob/master/LICENSE
+    :alt: License
 
 .. image:: https://readthedocs.org/projects/zlmdb/badge/?version=latest
-    :target: https://zlmdb.readthedocs.io/en/latest/?badge=latest
+    :target: https://zlmdb.readthedocs.io/en/latest/
     :alt: Documentation
 
-.. image:: https://github.com/crossbario/zlmdb/workflows/deploy/badge.svg
-   :target: https://github.com/crossbario/zlmdb/actions?query=workflow%3Adeploy
-   :alt: Deploy
+.. image:: https://img.shields.io/pypi/dm/zlmdb.svg
+    :target: https://pypi.python.org/pypi/zlmdb
+    :alt: Downloads
+
+.. image:: https://github.com/crossbario/zlmdb/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/crossbario/zlmdb/actions/workflows/main.yml
+   :alt: Main
+
+.. image:: https://github.com/crossbario/zlmdb/actions/workflows/wheels.yml/badge.svg
+   :target: https://github.com/crossbario/zlmdb/actions/workflows/wheels.yml
+   :alt: Wheels
+
+.. image:: https://github.com/crossbario/zlmdb/actions/workflows/wheels-docker.yml/badge.svg
+   :target: https://github.com/crossbario/zlmdb/actions/workflows/wheels-docker.yml
+   :alt: Wheels Linux
+
+.. image:: https://github.com/crossbario/zlmdb/actions/workflows/wheels-arm64.yml/badge.svg
+   :target: https://github.com/crossbario/zlmdb/actions/workflows/wheels-arm64.yml
+   :alt: Wheels ARM64
 
 zlmdb is a complete LMDB solution for Python providing **two APIs in one package**:
 
