@@ -5,6 +5,10 @@ build:
   tools:
     python: "3.12"
 
+submodules:
+  include: all
+  recursive: true
+
 python:
   install:
     - method: pip
