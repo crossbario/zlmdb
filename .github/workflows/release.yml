@@ -765,6 +765,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Remove checksum files before PyPI upload
+        run: |
+          echo "======================================================================"
+          echo "Removing checksum files from dist/ (PyPI doesn't accept them)"
+          echo "======================================================================"
+          rm -f dist/CHECKSUMS*.sha256
+          echo "Files to upload to PyPI:"
+          ls -lh dist/
+          echo "======================================================================"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
