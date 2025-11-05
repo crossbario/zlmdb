@@ -368,7 +368,7 @@ test-examples-lmdb-dirtybench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    ${VENV_PYTHON} examples/lmdb/dirtybench.py
+    timeout 120 ${VENV_PYTHON} examples/lmdb/dirtybench.py
 
 # Test example LMDB nastybench
 test-examples-lmdb-nastybench venv="": (install venv)
@@ -382,7 +382,7 @@ test-examples-lmdb-nastybench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    ${VENV_PYTHON} examples/lmdb/nastybench.py
+    timeout 60 ${VENV_PYTHON} examples/lmdb/nastybench.py
 
 # Test example LMDB parabench
 test-examples-lmdb-parabench venv="": (install venv)
@@ -396,7 +396,8 @@ test-examples-lmdb-parabench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    ${VENV_PYTHON} examples/lmdb/parabench.py
+    # Run with 2 processes for 10 seconds (quick CI test)
+    timeout 30 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
 
 # Run test suite for ORM.
 test-orm venv="": (install-tools venv) (install venv)
