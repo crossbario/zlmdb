@@ -765,70 +765,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Remove non-PyPI files before upload
-        run: |
-          echo "======================================================================"
-          echo "Removing files that PyPI doesn't accept"
-          echo "======================================================================"
-          # Remove checksum and validation files
-          rm -f dist/CHECKSUMS*.sha256
-          rm -f dist/VALIDATION.txt
-
-          # Remove ALL linux_* wheels - both CPython AND PyPy (PyPI requires manylinux_* tags)
-          # These are for local development/testing only, not for PyPI
-          # CPython examples: cp311-cp311-linux_x86_64.whl
-          # PyPy examples: pp311-pypy311_pp73-linux_x86_64.whl
-          # Both must be removed, keeping only manylinux_* tagged wheels
-          rm -f dist/*-linux_x86_64.whl
-          rm -f dist/*-linux_aarch64.whl
-
-          echo ""
-          echo "Files to upload to PyPI:"
-          ls -lh dist/
-          echo "======================================================================"
-
-      - name: Verify PyPI upload requirements
-        run: |
-          echo "======================================================================"
-          echo "Verifying PyPI upload requirements"
-          echo "======================================================================"
-
-          # Count source distributions
-          SDIST_COUNT=$(ls dist/*.tar.gz 2>/dev/null | wc -l)
-          echo "Source distributions: $SDIST_COUNT"
-
-          # Count wheels
-          WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
-          echo "Wheels: $WHEEL_COUNT"
-          echo ""
-
-          # CRITICAL: Verify source distribution exists
-          if [ "$SDIST_COUNT" -eq 0 ]; then
-            echo "❌ FATAL ERROR: No source distribution (.tar.gz) found in dist/"
-            echo "   PyPI requires a source distribution for pure Python packages!"
-            echo ""
-            echo "Files in dist/:"
-            ls -la dist/
-            echo ""
-            echo "DO NOT PROCEED WITH PYPI UPLOAD!"
-            exit 1
-          fi
-
-          # Verify we have wheels
-          if [ "$WHEEL_COUNT" -eq 0 ]; then
-            echo "❌ FATAL ERROR: No wheels (.whl) found in dist/"
-            echo ""
-            echo "Files in dist/:"
-            ls -la dist/
-            echo ""
-            echo "DO NOT PROCEED WITH PYPI UPLOAD!"
-            exit 1
-          fi
-
-          echo "✅ PyPI upload requirements verified:"
-          echo "   - $SDIST_COUNT source distribution(s)"
-          echo "   - $WHEEL_COUNT wheel(s)"
-          echo "======================================================================"
+      - name: Validate and clean release fileset for PyPI
+        uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
+        with:
+          distdir: dist
+          mode: strict
+          targets: |
+            cpy311-linux-x86_64-manylinux_2_34
+            cpy312-linux-x86_64-manylinux_2_34
+            cpy313-linux-x86_64-manylinux_2_34
+            cpy314-linux-x86_64-manylinux_2_34
+            pypy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-aarch64-manylinux_2_28
+            cpy312-linux-aarch64-manylinux_2_28
+            cpy313-linux-aarch64-manylinux_2_28
+            cpy314-linux-aarch64-manylinux_2_28
+            pypy311-linux-aarch64-manylinux_2_36
+            cpy311-macos-arm64
+            cpy312-macos-arm64
+            cpy313-macos-arm64
+            cpy314-macos-arm64
+            pypy311-macos-arm64
+            cpy311-win-amd64
+            cpy312-win-amd64
+            cpy313-win-amd64
+            cpy314-win-amd64
+            source
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
