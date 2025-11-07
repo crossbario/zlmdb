@@ -774,14 +774,58 @@ jobs:
           rm -f dist/CHECKSUMS*.sha256
           rm -f dist/VALIDATION.txt
 
-          # Remove linux_* wheels (PyPI requires manylinux_* tags)
+          # Remove ONLY CPython linux_* wheels (PyPI requires manylinux_* tags)
           # These are for local development/testing only, not for PyPI
-          rm -f dist/*-linux_x86_64.whl
-          rm -f dist/*-linux_aarch64.whl
+          # IMPORTANT: Use cp* pattern to match only CPython, NOT PyPy (pp*)
+          rm -f dist/*-cp*-linux_x86_64.whl
+          rm -f dist/*-cp*-linux_aarch64.whl
 
           echo ""
           echo "Files to upload to PyPI:"
           ls -lh dist/
+          echo "======================================================================"
+
+      - name: Verify PyPI upload requirements
+        run: |
+          echo "======================================================================"
+          echo "Verifying PyPI upload requirements"
+          echo "======================================================================"
+
+          # Count source distributions
+          SDIST_COUNT=$(ls dist/*.tar.gz 2>/dev/null | wc -l)
+          echo "Source distributions: $SDIST_COUNT"
+
+          # Count wheels
+          WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
+          echo "Wheels: $WHEEL_COUNT"
+          echo ""
+
+          # CRITICAL: Verify source distribution exists
+          if [ "$SDIST_COUNT" -eq 0 ]; then
+            echo "❌ FATAL ERROR: No source distribution (.tar.gz) found in dist/"
+            echo "   PyPI requires a source distribution for pure Python packages!"
+            echo ""
+            echo "Files in dist/:"
+            ls -la dist/
+            echo ""
+            echo "DO NOT PROCEED WITH PYPI UPLOAD!"
+            exit 1
+          fi
+
+          # Verify we have wheels
+          if [ "$WHEEL_COUNT" -eq 0 ]; then
+            echo "❌ FATAL ERROR: No wheels (.whl) found in dist/"
+            echo ""
+            echo "Files in dist/:"
+            ls -la dist/
+            echo ""
+            echo "DO NOT PROCEED WITH PYPI UPLOAD!"
+            exit 1
+          fi
+
+          echo "✅ PyPI upload requirements verified:"
+          echo "   - $SDIST_COUNT source distribution(s)"
+          echo "   - $WHEEL_COUNT wheel(s)"
           echo "======================================================================"
 
       - name: Publish to PyPI
