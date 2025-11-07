@@ -774,11 +774,13 @@ jobs:
           rm -f dist/CHECKSUMS*.sha256
           rm -f dist/VALIDATION.txt
 
-          # Remove ONLY CPython linux_* wheels (PyPI requires manylinux_* tags)
+          # Remove ALL linux_* wheels - both CPython AND PyPy (PyPI requires manylinux_* tags)
           # These are for local development/testing only, not for PyPI
-          # IMPORTANT: Use cp* pattern to match only CPython, NOT PyPy (pp*)
-          rm -f dist/*-cp*-linux_x86_64.whl
-          rm -f dist/*-cp*-linux_aarch64.whl
+          # CPython examples: cp311-cp311-linux_x86_64.whl
+          # PyPy examples: pp311-pypy311_pp73-linux_x86_64.whl
+          # Both must be removed, keeping only manylinux_* tagged wheels
+          rm -f dist/*-linux_x86_64.whl
+          rm -f dist/*-linux_aarch64.whl
 
           echo ""
           echo "Files to upload to PyPI:"

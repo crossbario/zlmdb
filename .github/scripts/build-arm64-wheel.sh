@@ -6,14 +6,17 @@ set -ex
 # Install required tools and build dependencies if not present
 if ! command -v curl &> /dev/null || ! command -v gcc &> /dev/null; then
   if command -v yum &> /dev/null; then
-    # RHEL/CentOS based manylinux images
+    # RHEL/CentOS based manylinux images (CPython)
     yum install -y curl git gcc gcc-c++ make libffi-devel
   elif command -v apt-get &> /dev/null; then
-    # Debian based images (used for PyPy)
+    # Debian based images (PyPy)
     apt-get update
     apt-get install -y curl git build-essential libssl-dev libffi-dev \
       libunwind-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev \
-      libncurses5-dev libsnappy-dev
+      libncurses5-dev libsnappy-dev \
+      python3-pip python3-dev patchelf
+    # Install auditwheel for converting wheels to manylinux format
+    python3 -m pip install --break-system-packages auditwheel
   fi
 fi
 
