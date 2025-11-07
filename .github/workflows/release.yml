@@ -411,6 +411,34 @@ jobs:
 
           echo ""
 
+      - name: Validate and clean release fileset for GitHub
+        uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
+        with:
+          distdir: dist
+          mode: strict
+          keep-metadata: true  # Keep CHECKSUMS for user verification
+          targets: |
+            cpy311-linux-x86_64-manylinux_2_34
+            cpy312-linux-x86_64-manylinux_2_34
+            cpy313-linux-x86_64-manylinux_2_34
+            cpy314-linux-x86_64-manylinux_2_34
+            pypy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-aarch64-manylinux_2_28
+            cpy312-linux-aarch64-manylinux_2_28
+            cpy313-linux-aarch64-manylinux_2_28
+            cpy314-linux-aarch64-manylinux_2_28
+            pypy311-linux-aarch64-manylinux_2_36
+            cpy311-macos-arm64
+            cpy312-macos-arm64
+            cpy313-macos-arm64
+            cpy314-macos-arm64
+            pypy311-macos-arm64
+            cpy311-win-amd64
+            cpy312-win-amd64
+            cpy313-win-amd64
+            cpy314-win-amd64
+            source
+
       - name: List all downloaded artifacts
         run: |
           echo "======================================================================"
