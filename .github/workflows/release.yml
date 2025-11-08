@@ -427,7 +427,7 @@ jobs:
             cpy312-linux-aarch64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
-            pypy311-linux-aarch64-manylinux_2_36
+            pypy311-linux-aarch64-manylinux_2_34
             cpy311-macos-arm64
             cpy312-macos-arm64
             cpy313-macos-arm64
@@ -808,7 +808,7 @@ jobs:
             cpy312-linux-aarch64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
-            pypy311-linux-aarch64-manylinux_2_36
+            pypy311-linux-aarch64-manylinux_2_34
             cpy311-macos-arm64
             cpy312-macos-arm64
             cpy313-macos-arm64
