@@ -22,11 +22,34 @@ VENV_DIR := './.venvs'
 # Define supported Python environments
 ENVS := 'cpy314 cpy313 cpy312 cpy311 pypy311'
 
-# Default recipe: list all recipes
+# Default recipe: show project header and list all recipes
 default:
-    @echo ""
-    @just --list
-    @echo ""
+    #!/usr/bin/env bash
+    set -e
+    VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    GIT_REV=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    echo ""
+    echo "==============================================================================="
+    echo "                                   zLMDB                                       "
+    echo ""
+    echo "          Object-relational in-memory database layer based on LMDB            "
+    echo ""
+    echo "   Python Package:         zlmdb                                              "
+    echo "   Python Package Version: ${VERSION}                                         "
+    echo "   Git Version:            ${GIT_REV}                                         "
+    echo "   Protocol Specification: https://wamp-proto.org/                            "
+    echo "   Documentation:          https://zlmdb.readthedocs.io                       "
+    echo "   Package Releases:       https://pypi.org/project/zlmdb/                    "
+    echo "   Nightly/Dev Releases:   https://github.com/crossbario/zlmdb/releases       "
+    echo "   Source Code:            https://github.com/crossbario/zlmdb                "
+    echo "   Copyright:              typedef int GmbH (Germany/EU)                      "
+    echo "   License:                MIT License                                        "
+    echo ""
+    echo "       >>>   Created by The WAMP/Autobahn/Crossbar.io OSS Project   <<<       "
+    echo "==============================================================================="
+    echo ""
+    just --list
+    echo ""
 
 # Internal helper to map Python version short name to full uv version
 _get-spec short_name:
@@ -509,6 +532,13 @@ verify-wheels venv="": (install-tools venv)
     fi
 
     echo "Found $WHEEL_COUNT wheel(s) in dist/"
+    echo ""
+
+    # Run twine check on all packages first
+    echo "========================================================================"
+    echo "Running twine check (package metadata validation)"
+    echo "========================================================================"
+    "${VENV_PATH}/bin/twine" check "{{PROJECT_DIR}}/dist/"*
     echo ""
 
     PURE_PYTHON_WHEELS=0
