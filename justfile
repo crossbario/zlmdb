@@ -259,6 +259,35 @@ install-all:
         just install ${venv}
     done
 
+# Meta-recipe to run `install-dev` on all environments
+install-dev-all:
+    #!/usr/bin/env bash
+    for venv in {{ENVS}}; do
+        just install-dev ${venv}
+    done
+
+# Upgrade dependencies in a single environment (usage: `just upgrade cpy314`)
+upgrade venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Upgrading dependencies in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install --upgrade pip
+    ${VENV_PYTHON} -m pip install --upgrade -e .[dev]
+    echo "==> Dependencies upgraded in ${VENV_NAME}."
+
+# Meta-recipe to run `upgrade` on all environments
+upgrade-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just upgrade ${venv}
+    done
+
 # Install development tools (ruff, mypy, sphinx, etc.)
 install-tools venv="": (create venv)
     #!/usr/bin/env bash
@@ -270,6 +299,14 @@ install-tools venv="": (create venv)
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing development tools in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pip install -e .[dev]
+
+# Meta-recipe to run `install-tools` on all environments
+install-tools-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just install-tools ${venv}
+    done
 
 # Install minimal build tools for building wheels
 install-build-tools venv="": (create venv)
@@ -817,7 +854,7 @@ test-tox-all:
     tox
 
 # Generate code coverage report
-coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+check-coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -832,12 +869,15 @@ coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources ven
     echo "==> Opening coverage report..."
     xdg-open htmlcov/index.html 2>/dev/null || open htmlcov/index.html 2>/dev/null || echo "Please open htmlcov/index.html manually"
 
+# Alias for check-coverage (backward compatibility)
+coverage venv="": (check-coverage venv)
+
 # -----------------------------------------------------------------------------
 # -- Code Quality
 # -----------------------------------------------------------------------------
 
 # Auto-format code with Ruff (modifies files in-place!)
-autoformat venv="": (install-tools venv)
+fix-format venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -854,6 +894,9 @@ autoformat venv="": (install-tools venv)
     #    removing unused imports, sorting __all__, etc.
     "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./zlmdb
     echo "--> Formatting complete."
+
+# Alias for fix-format (backward compatibility)
+autoformat venv="": (fix-format venv)
 
 # Check code formatting with Ruff (dry run)
 check-format venv="": (install-tools venv)
@@ -884,6 +927,9 @@ check-typing venv="": (install-tools venv) (install venv)
         --exclude '/flatbuffers/' \
         zlmdb/
 
+# Run all checks in single environment (usage: `just check cpy314`)
+check venv="": (check-format venv) (check-typing venv)
+
 # -----------------------------------------------------------------------------
 # -- Publishing
 # -----------------------------------------------------------------------------
@@ -897,8 +943,28 @@ dist venv="": clean-build (build venv) (build-sourcedist venv)
     echo "==> Contents of wheel:"
     unzip -l dist/zlmdb-*-py*.whl || echo "Wheel not found"
 
-# Publish to PyPI using twine
-publish venv="": (dist venv)
+# Publish package to PyPI (requires twine setup) - meta-recipe
+publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
+
+# Download GitHub release artifacts (usage: `just download-github-release` for nightly, or `just download-github-release stable`)
+download-github-release release_type="nightly":
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Downloading GitHub release artifacts (${release_type})..."
+    mkdir -p dist/
+    if [ "{{ release_type }}" = "stable" ]; then
+        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/
+    else
+        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/ nightly || echo "No nightly release found, trying latest..."
+        if [ ! -f dist/*.whl ]; then
+            gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/
+        fi
+    fi
+    echo "==> Downloaded artifacts:"
+    ls -la dist/
+
+# Download release artifacts from GitHub and publish to PyPI
+publish-pypi venv="" tag="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -906,8 +972,36 @@ publish venv="": (dist venv)
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Publishing to PyPI with twine..."
+
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        echo "==> No tag specified, using local build..."
+        just dist ${VENV_NAME}
+    else
+        echo "==> Downloading release artifacts for tag ${TAG}..."
+        mkdir -p dist/
+        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/ "${TAG}"
+    fi
+
+    echo "==> Verifying artifacts..."
+    ${VENV_PYTHON} -m twine check dist/*
+
+    echo "==> Publishing to PyPI..."
     ${VENV_PYTHON} -m twine upload dist/*
+
+# Trigger Read the Docs build for a specific tag
+publish-rtd tag="":
+    #!/usr/bin/env bash
+    set -e
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        echo "==> No tag specified. RTD will build from webhook on push."
+        echo "    To manually trigger: https://readthedocs.org/projects/zlmdb/builds/"
+    else
+        echo "==> RTD build triggered by GitHub webhook on tag push."
+        echo "    Monitor build at: https://readthedocs.org/projects/zlmdb/builds/"
+        echo "    Documentation will be available at: https://zlmdb.readthedocs.io/en/${TAG}/"
+    fi
 
 # -----------------------------------------------------------------------------
 # -- Utilities
