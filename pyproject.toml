@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zlmdb"
-version = "25.10.2"
+version = "25.12.1"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -88,12 +88,13 @@ zip-safe = false
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["zlmdb*", "flatbuffers*"]
+where = ["src"]
+include = ["zlmdb*"]
 exclude = ["tests*", "lmdb-upstream*", "lmdb-patches*", "deps*", ".ai*", ".cicd*"]
 
 [tool.setuptools.package-data]
-"zlmdb.lmdb" = ["*.py", "*.so", "*.pyd", "*.dll"]
+# Vendored LMDB CFFI extension
+"zlmdb._lmdb_vendor" = ["*.py", "*.so", "*.pyd", "*.dll"]
 zlmdb = ["py.typed"]
 
 # Configure build to run our custom LMDB patch/build script
@@ -120,10 +121,10 @@ exclude = [
     ".tox",
     ".git",
     "__pycache__",
-    "flatbuffers/*",
-    "zlmdb/lmdb/*",  # Vendored LMDB bindings
-    "zlmdb/flatbuffers/*",  # Auto-generated flatbuffers code
-    "zlmdb/tests/orm/MNodeLog.py",  # Auto-generated test file
+    "src/zlmdb/_flatbuffers_vendor/*",  # Vendored flatbuffers runtime
+    "src/zlmdb/_lmdb_vendor/*",  # Vendored LMDB bindings
+    "src/zlmdb/flatbuffers/*",  # Auto-generated flatbuffers reflection code
+    "src/zlmdb/tests/orm/MNodeLog.py",  # Auto-generated test file
 ]
 
 # --- Violations to Ignore ---
@@ -174,7 +175,7 @@ docstring-code-format = false
 # Only search for tests in these directories (non-recursive into subdirs outside these)
 testpaths = [
     "tests",
-    "zlmdb/tests",
+    "src/zlmdb/tests",
 ]
 
 # Exclude patterns - these override testpaths if files match
@@ -182,14 +183,13 @@ norecursedirs = [
     ".*",           # Hidden directories (.git, .ai, .venvs, .uv-cache, etc.)
     "build",        # Build artifacts
     "dist",         # Distribution artifacts
-    "zlmdb/lmdb",   # Vendored LMDB bindings (now subpackage of zlmdb)
+    "src/zlmdb/_lmdb_vendor",   # Vendored LMDB bindings
+    "src/zlmdb/_flatbuffers_vendor",  # Vendored flatbuffers runtime
     "lmdb-upstream", # LMDB upstream submodule
     "lmdb-patches", # LMDB patches
-    "flatbuffers",  # Vendored flatbuffers
     "deps",         # Dependencies
     "docs",         # Documentation
     "*.egg-info",   # Egg info directories
-    "_*",           # Private/internal directories
 ]
 
 # Additional ignores for specific problematic paths

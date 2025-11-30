@@ -25,9 +25,39 @@
 ###############################################################################
 """ZLMDB - Object-relational zero-copy in-memory database layer for LMDB."""
 
+import sys
 import uuid
 
 from typing import Dict  # noqa
+
+# =============================================================================
+# Vendored library aliasing
+# =============================================================================
+# Register vendored flatbuffers runtime in sys.modules so that code doing
+# `import flatbuffers` resolves to our vendored copy. This ensures:
+# 1. No conflicts with separately installed flatbuffers packages
+# 2. Generated code in zlmdb.flatbuffers.reflection can import flatbuffers
+# 3. Consistent behavior across all zlmdb modules
+#
+# Note: This aliasing only affects imports that happen AFTER zlmdb is imported.
+# =============================================================================
+from zlmdb import _flatbuffers_vendor
+sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
+# Also register submodules that might be imported directly
+sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
+sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
+sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
+sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
+sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
+sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
+sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
+
+# Re-export vendored LMDB for backwards compatibility
+# Users can do: `from zlmdb import lmdb` or `import zlmdb.lmdb as lmdb`
+from zlmdb import _lmdb_vendor as lmdb  # noqa: F401
+# Also register zlmdb.lmdb in sys.modules for backward compatibility
+# This allows `import zlmdb.lmdb as lmdb` to work
+sys.modules.setdefault('zlmdb.lmdb', _lmdb_vendor)
 
 from ._version import __version__
 
@@ -126,6 +156,7 @@ from ._schema import Schema
 
 __all__ = (
     "__version__",
+    "lmdb",  # Re-exported vendored LMDB (zlmdb._lmdb_vendor)
     "Schema",
     "Database",
     "Transaction",

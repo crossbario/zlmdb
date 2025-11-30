@@ -15,9 +15,9 @@ import sys
 # Avoid circular import by importing _config directly
 _config_vars = None
 try:
-    # Try importing _config module directly without triggering zlmdb/lmdb/__init__.py
+    # Try importing _config module directly without triggering zlmdb/_lmdb_vendor/__init__.py
     import importlib.util
-    spec = importlib.util.spec_from_file_location("_config", "zlmdb/lmdb/_config.py")
+    spec = importlib.util.spec_from_file_location("_config", "src/zlmdb/_lmdb_vendor/_config.py")
     if spec and spec.loader:
         _config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(_config)
@@ -27,7 +27,7 @@ except (FileNotFoundError, ImportError, AttributeError):
 
 if _config_vars is None:
     # Fallback if _config.py doesn't exist yet
-    print("WARNING: zlmdb/lmdb/_config.py not found, using minimal config")
+    print("WARNING: src/zlmdb/_lmdb_vendor/_config.py not found, using minimal config")
     _config_vars = {
         'extra_compile_args': ['-UNDEBUG', '-DHAVE_PATCHED_LMDB=1', '-w'],
         'extra_sources': ['build/lmdb-src/mdb.c', 'build/lmdb-src/midl.c'],
@@ -346,7 +346,7 @@ ffi.cdef(_CFFI_CDEF)
 
 # Set source using modern CFFI API
 ffi.set_source(
-    "zlmdb.lmdb._lmdb_cffi",
+    "zlmdb._lmdb_vendor._lmdb_cffi",
     _CFFI_VERIFY,
     sources=_config_vars['extra_sources'],
     include_dirs=_config_vars['extra_include_dirs'],

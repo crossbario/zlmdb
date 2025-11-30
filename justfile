@@ -132,7 +132,7 @@ distclean: clean-build clean-pyc clean-test
     echo "--> Searching for and removing setuptools egg-info directories..."
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
     echo "--> Removing CFFI build artifacts..."
-    rm -f zlmdb/lmdb/_lmdb_cffi.c zlmdb/lmdb/_lmdb_cffi.o zlmdb/lmdb/_lmdb_cffi*.so zlmdb/lmdb/_lmdb_cffi*.pyd
+    rm -f src/zlmdb/_lmdb_vendor/_lmdb_cffi.c src/zlmdb/_lmdb_vendor/_lmdb_cffi.o src/zlmdb/_lmdb_vendor/_lmdb_cffi*.so src/zlmdb/_lmdb_vendor/_lmdb_cffi*.pyd
     echo "==> Distclean complete. The project is now pristine."
 
 # -----------------------------------------------------------------------------
@@ -460,7 +460,7 @@ test-examples-lmdb-parabench venv="": (install venv)
     timeout 30 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
 
 # Run test suite for ORM.
-test-orm venv="": (install-tools venv) (install venv)
+test-orm venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -469,10 +469,10 @@ test-orm venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    QUICK=1 ${VENV_PYTHON} -m pytest --log-cli-level=INFO -v zlmdb/tests/orm/
+    QUICK=1 ${VENV_PYTHON} -m pytest --log-cli-level=INFO -v src/zlmdb/tests/orm/
 
 # Run LMDB low-level API tests
-test-lmdb venv="": (install-tools venv) (install venv)
+test-lmdb venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -481,10 +481,10 @@ test-lmdb venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running LMDB tests in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v zlmdb/tests/lmdb/
+    ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/lmdb/
 
 # Run the test suite (both zlmdb/tests and tests directories)
-test venv="": (install-tools venv) (install venv)
+test venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -493,7 +493,7 @@ test venv="": (install-tools venv) (install venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v zlmdb/tests/ tests/
+    ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/ tests/
 
 # Run tests in all environments
 test-all:
@@ -698,7 +698,7 @@ clean-build:
     find . -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
     find . -name '*.egg' -delete 2>/dev/null || true
     echo "==> Removing CFFI build artifacts..."
-    rm -f zlmdb/lmdb/_lmdb_cffi.c zlmdb/lmdb/_lmdb_cffi.o zlmdb/lmdb/_lmdb_cffi*.so zlmdb/lmdb/_lmdb_cffi*.pyd
+    rm -f src/zlmdb/_lmdb_vendor/_lmdb_cffi.c src/zlmdb/_lmdb_vendor/_lmdb_cffi.o src/zlmdb/_lmdb_vendor/_lmdb_cffi*.so src/zlmdb/_lmdb_vendor/_lmdb_cffi*.pyd
 
 # Clean test and coverage artifacts
 clean-test:
@@ -728,7 +728,7 @@ _prepare-lmdb-sources venv="":
     fi
 
 # Run quick tests with pytest (no tox)
-test-quick venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+test-quick venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -738,10 +738,10 @@ test-quick venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources v
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running quick tests with pytest in ${VENV_NAME}..."
     # Explicitly specify test directories to avoid pytest searching .uv-cache/, .venvs/, etc.
-    ${VENV_PYTHON} -m pytest -v tests/ zlmdb/tests/
+    ${VENV_PYTHON} -m pytest -v tests/ src/zlmdb/tests/
 
 # Run single test file
-test-single venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+test-single venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -751,10 +751,10 @@ test-single venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources 
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     clear
     echo "==> Running test_basic.py in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_basic.py
+    ${VENV_PYTHON} -m pytest -v -s src/zlmdb/tests/test_basic.py
 
 # Run pmap tests
-test-pmaps venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+test-pmaps venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -764,10 +764,10 @@ test-pmaps venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources v
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     clear
     echo "==> Running test_pmaps.py in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmaps.py
+    ${VENV_PYTHON} -m pytest -v -s src/zlmdb/tests/test_pmaps.py
 
 # Run index tests
-test-indexes venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+test-indexes venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -777,10 +777,10 @@ test-indexes venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     clear
     echo "==> Running test_pmap_indexes.py in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_pmap_indexes.py
+    ${VENV_PYTHON} -m pytest -v -s src/zlmdb/tests/test_pmap_indexes.py
 
 # Run select tests
-test-select venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+test-select venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -790,7 +790,7 @@ test-select venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources 
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     clear
     echo "==> Running test_select.py in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v -s zlmdb/tests/test_select.py
+    ${VENV_PYTHON} -m pytest -v -s src/zlmdb/tests/test_select.py
 
 # Run zdb etcd tests
 test-zdb-etcd venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
@@ -854,7 +854,7 @@ test-tox-all:
     tox
 
 # Generate code coverage report
-check-coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources venv)
+check-coverage venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -863,7 +863,7 @@ check-coverage venv="": (install-tools venv) (install venv) (_prepare-lmdb-sourc
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Generating coverage report in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m coverage run --source zlmdb --omit="zlmdb/flatbuffers/reflection/*,zlmdb/tests/*" -m pytest -v -s zlmdb
+    ${VENV_PYTHON} -m coverage run --source src/zlmdb --omit="src/zlmdb/flatbuffers/reflection/*,src/zlmdb/tests/*,src/zlmdb/_flatbuffers_vendor/*,src/zlmdb/_lmdb_vendor/*" -m pytest -v -s src/zlmdb
     ${VENV_PYTHON} -m coverage report -m
     ${VENV_PYTHON} -m coverage html
     echo "==> Opening coverage report..."
@@ -888,11 +888,11 @@ fix-format venv="": (install-tools venv)
     echo "==> Auto-formatting code with ${VENV_NAME}..."
 
     # 1. Run the FORMATTER first. This will handle line lengths, quotes, etc.
-    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./zlmdb
+    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./src/zlmdb
 
     # 2. Run the LINTER'S FIXER second. This will handle things like
     #    removing unused imports, sorting __all__, etc.
-    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./zlmdb
+    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./src/zlmdb
     echo "--> Formatting complete."
 
 # Alias for fix-format (backward compatibility)
@@ -911,7 +911,7 @@ check-format venv="": (install-tools venv)
     "${VENV_PATH}/bin/ruff" check --exclude ./deps/flatbuffers .
 
 # Run static type checking with mypy
-check-typing venv="": (install-tools venv) (install venv)
+check-typing venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -920,12 +920,13 @@ check-typing venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
-    # Only check core zlmdb package, exclude tests and vendored flatbuffers
-    # Note: lmdb module is skipped via mypy.ini [mypy-lmdb.*] configuration
+    # Only check core zlmdb package, exclude tests and vendored packages
     "${VENV_PATH}/bin/mypy" \
         --exclude '/tests/' \
+        --exclude '/_flatbuffers_vendor/' \
+        --exclude '/_lmdb_vendor/' \
         --exclude '/flatbuffers/' \
-        zlmdb/
+        src/zlmdb/
 
 # Run all checks in single environment (usage: `just check cpy314`)
 check venv="": (check-format venv) (check-typing venv)
@@ -1007,12 +1008,12 @@ publish-rtd tag="":
 # -- Utilities
 # -----------------------------------------------------------------------------
 
-# Update flatbuffers from deps/flatbuffers submodule
+# Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
-    echo "==> Updating flatbuffers from submodule..."
-    rm -rf ./flatbuffers
-    cp -R deps/flatbuffers/python/flatbuffers .
-    echo "✓ Flatbuffers updated"
+    echo "==> Updating vendored flatbuffers from submodule..."
+    rm -rf ./src/zlmdb/_flatbuffers_vendor
+    cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/_flatbuffers_vendor
+    echo "✓ Flatbuffers vendor updated in src/zlmdb/_flatbuffers_vendor"
 
 # Generate flatbuffers reflection Python code
 generate-flatbuffers-reflection:
@@ -1024,7 +1025,7 @@ generate-flatbuffers-reflection:
         exit 1
     fi
     echo "==> Generating flatbuffers reflection code..."
-    ${FLATC} --python -o zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
+    ${FLATC} --python -o src/zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
     echo "✓ Flatbuffers reflection code generated"
 
 # Fix copyright headers (typedef int GmbH)

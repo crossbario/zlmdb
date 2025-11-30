@@ -155,8 +155,8 @@ def apply_patches():
 
 
 def generate_config(build_dir):
-    """Generate zlmdb/lmdb/_config.py with build configuration."""
-    print("\nGenerating zlmdb/lmdb/_config.py")
+    """Generate src/zlmdb/_lmdb_vendor/_config.py with build configuration."""
+    print("\nGenerating src/zlmdb/_lmdb_vendor/_config.py")
 
     # Source files to compile
     extra_sources = [
@@ -203,7 +203,7 @@ def generate_config(build_dir):
         'libraries': libraries,
     }
 
-    config_file = os.path.join('zlmdb', 'lmdb', '_config.py')
+    config_file = os.path.join('src', 'zlmdb', '_lmdb_vendor', '_config.py')
     print(f"  Writing to {config_file}")
 
     with open(config_file, 'w') as f:
