@@ -493,7 +493,7 @@ test venv="": (install-tools venv) (install-dev venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/ tests/
+    ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/
 
 # Run tests in all environments
 test-all:

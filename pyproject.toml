@@ -174,7 +174,6 @@ docstring-code-format = false
 [tool.pytest.ini_options]
 # Only search for tests in these directories (non-recursive into subdirs outside these)
 testpaths = [
-    "tests",
     "src/zlmdb/tests",
 ]
 

@@ -6,9 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
-# CFFI build artifacts
+# CFFI build artifacts (old location)
 zlmdb/lmdb/_lmdb_cffi.c
 zlmdb/lmdb/_lmdb_cffi.o
+
+# CFFI build artifacts (new src layout - created at project root during build)
+/zlmdb/
 
 # Distribution / packaging
 .Python
