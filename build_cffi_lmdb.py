@@ -357,4 +357,20 @@ ffi.set_source(
 
 # This script exports 'ffi' for setuptools cffi_modules
 if __name__ == '__main__':
+    import os
+    import shutil
+    import sysconfig
+
+    # Compile in project root (where LMDB sources are available)
     ffi.compile(verbose=True)
+
+    # Move the compiled extension to src layout for wheel packaging
+    ext_suffix = sysconfig.get_config_var('EXT_SUFFIX') or '.so'
+    src_file = f'zlmdb/_lmdb_vendor/_lmdb_cffi{ext_suffix}'
+    dst_dir = 'src/zlmdb/_lmdb_vendor'
+    dst_file = os.path.join(dst_dir, f'_lmdb_cffi{ext_suffix}')
+
+    if os.path.exists(src_file):
+        os.makedirs(dst_dir, exist_ok=True)
+        shutil.copy2(src_file, dst_file)
+        print(f"Copied {src_file} -> {dst_file}")
