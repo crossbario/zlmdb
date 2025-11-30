@@ -26,10 +26,10 @@
 """Transactions"""
 
 import struct
+from time import time_ns as walltime
+
 import zlmdb.lmdb as lmdb
 from typing import Optional
-
-from txaio import time_ns as walltime
 
 
 class TransactionStats(object):

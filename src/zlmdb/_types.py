@@ -34,7 +34,7 @@ import json
 
 import cbor2
 import flatbuffers
-from txaio import time_ns
+from time import time_ns
 
 try:
     import numpy as np
