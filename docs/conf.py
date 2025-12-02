@@ -28,7 +28,7 @@ try:
 except ImportError:
     spelling = None
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
 # at least at import time -- this is so the autodoc stuff can
@@ -68,7 +68,7 @@ else:
     copyright = "2018, Crossbar.io Technologies GmbH"
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-with open(os.path.join(base_dir, "zlmdb", "_version.py")) as f:
+with open(os.path.join(base_dir, "src", "zlmdb", "_version.py")) as f:
     # defines __version__
     exec(f.read())
 
@@ -83,7 +83,7 @@ autodoc_member_order = "bysource"
 
 autoapi_keep_files = True
 autoapi_type = "python"
-autoapi_dirs = [base_dir, os.path.join(base_dir, "zlmdb")]
+autoapi_dirs = [os.path.join(base_dir, "src"), os.path.join(base_dir, "src", "zlmdb")]
 
 # 'members',
 # 'undoc-members',

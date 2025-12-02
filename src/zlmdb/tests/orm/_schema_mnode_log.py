@@ -31,8 +31,9 @@ import numpy as np
 
 import flatbuffers
 
+from time import time_ns
+
 from zlmdb import table, MapTimestampUuidFlatBuffers
-from txaio import time_ns
 
 import MNodeLog as MNodeLogGen
 

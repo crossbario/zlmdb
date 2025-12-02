@@ -51,7 +51,7 @@ def _reading_docs():
 
 
 try:
-    from zlmdb.lmdb import _config
+    from zlmdb._lmdb_vendor import _config
 except ImportError:
     _config = None  # type: ignore
 
@@ -380,7 +380,7 @@ if not _reading_docs():
     _lib = None
     _ffi = None
     try:
-        from zlmdb.lmdb import _lmdb_cffi  # type: ignore[attr-defined]
+        from zlmdb._lmdb_vendor import _lmdb_cffi  # type: ignore[attr-defined]
 
         _lib = _lmdb_cffi.lib
         _ffi = _lmdb_cffi.ffi

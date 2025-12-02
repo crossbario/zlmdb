@@ -1,4 +1,4 @@
-# Copyright 2013-2024 The py-lmdb authors, all rights reserved.
+# Copyright 2013-2025 The py-lmdb authors, all rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted only as authorized by the OpenLDAP
@@ -18,8 +18,20 @@
 # Additional information about OpenLDAP can be obtained at
 # <http://www.openldap.org/>.
 
-# Hack to support Python >=v2.6 'python -m zlmdb.lmdb'
-from __future__ import absolute_import
-from . import tool  # type: ignore[import-not-found]
+"""
+Python wrapper for OpenLDAP's "Lightning" MDB database.
 
-tool.main()
+Please see https://lmdb.readthedocs.io/
+"""
+
+
+def _reading_docs():
+    """Return True if Sphinx is currently parsing this file."""
+    return "sphinx" in __import__("sys").modules
+
+
+# CFFI-only mode (bundled with zlmdb)
+from zlmdb._lmdb_vendor.cffi import *
+from zlmdb._lmdb_vendor.cffi import open
+from zlmdb._lmdb_vendor.cffi import __all__
+from zlmdb._lmdb_vendor.cffi import __doc__
