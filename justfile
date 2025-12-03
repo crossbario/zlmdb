@@ -318,7 +318,7 @@ install-build-tools venv="": (create venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing minimal build tools in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pip install build wheel cffi
+    ${VENV_PYTHON} -m pip install build wheel cffi auditwheel
 
 # -----------------------------------------------------------------------------
 # -- Testing
@@ -515,9 +515,28 @@ build venv="": (install-build-tools venv)
         VENV_NAME=$(just --quiet _get-system-venv-name)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Building wheel package with ${VENV_NAME}..."
     mkdir -p dist/
+
+    # Build the wheel
     ${VENV_PYTHON} -m build --wheel
+
+    # Convert linux wheels to manylinux format using auditwheel
+    if [ -x "${VENV_PATH}/bin/auditwheel" ]; then
+        for wheel in dist/*-linux_*.whl; do
+            if [ -f "$wheel" ]; then
+                echo "==> Converting $(basename $wheel) to manylinux format..."
+                "${VENV_PATH}/bin/auditwheel" show "$wheel"
+                "${VENV_PATH}/bin/auditwheel" repair "$wheel" -w dist/
+                # Remove the original linux wheel after successful repair
+                rm "$wheel"
+            fi
+        done
+    else
+        echo "WARNING: auditwheel not available, skipping manylinux conversion"
+    fi
+
     ls -lh dist/
 
 # Build source distribution
