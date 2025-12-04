@@ -76,10 +76,13 @@ jobs:
           just create cpy312
           just install-tools cpy312
 
+      - name: Install ty (Astral type checker)
+        run: uv tool install ty
+
       - name: Code formatting / linting (via ruff)
         run: just check-format cpy312
 
-      - name: Code static typing (via mypy)
+      - name: Code static typing (via ty)
         run: just check-typing cpy312
 
   test:

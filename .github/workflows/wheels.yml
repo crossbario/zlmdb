@@ -83,7 +83,9 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           version: "0.7.19"
-          enable-cache: true
+          # Disable built-in cache on Windows to avoid symlink issues (EPERM on docs/ai/audit)
+          # We use a separate actions/cache step below instead
+          enable-cache: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify toolchain installation (Linux/macOS)
