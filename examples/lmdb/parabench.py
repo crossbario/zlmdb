@@ -102,20 +102,13 @@ def make_keys():
     print("insert %d keys in %.2fsec (%d/sec)" % (len(keys), d, len(keys) / d))
 
 
-if "drop" in sys.argv and os.path.exists(DB_PATH):
-    shutil.rmtree(DB_PATH)
-
-if not os.path.exists(DB_PATH):
-    make_keys()
-
-
-env = open_env()
-with env.begin() as txn:
-    keys = list(txn.cursor().iternext(values=False))
-env.close()
+# Global variables that will be initialized in main and shared with workers
+keys = None
+arr = None
 
 
 def run(idx):
+    """Worker function that runs in child processes."""
     if affinity:
         affinity.set_process_affinity_mask(os.getpid(), 1 << idx)
 
@@ -135,41 +128,71 @@ def run(idx):
             arr[idx] += len(k)
 
 
-nproc = int(sys.argv[1]) if len(sys.argv) > 1 else min(4, multiprocessing.cpu_count())
-duration = int(sys.argv[2]) if len(sys.argv) > 2 else 30  # Default 30 seconds
-print(f"Using {nproc} parallel processes for {duration} seconds")
-arr = multiprocessing.Array("L", range(nproc))
-for x in range(nproc):
-    arr[x] = 0
-procs = [multiprocessing.Process(target=run, args=(x,)) for x in range(nproc)]
-[p.start() for p in procs]
+def main():
+    """Main function - must be called from if __name__ == '__main__' block."""
+    global keys, arr
 
+    # Handle drop argument
+    if "drop" in sys.argv and os.path.exists(DB_PATH):
+        shutil.rmtree(DB_PATH)
 
-t0 = time.time()
-try:
-    while True:
-        time.sleep(2)
+    # Create database if it doesn't exist
+    if not os.path.exists(DB_PATH):
+        make_keys()
+
+    # Load keys from database
+    env = open_env()
+    with env.begin() as txn:
+        keys = list(txn.cursor().iternext(values=False))
+    env.close()
+
+    # Parse arguments
+    nproc = int(sys.argv[1]) if len(sys.argv) > 1 else min(4, multiprocessing.cpu_count())
+    duration = int(sys.argv[2]) if len(sys.argv) > 2 else 30  # Default 30 seconds
+    print(f"Using {nproc} parallel processes for {duration} seconds")
+
+    # Create shared array for results
+    arr = multiprocessing.Array("L", range(nproc))
+    for x in range(nproc):
+        arr[x] = 0
+
+    # Start worker processes
+    procs = [multiprocessing.Process(target=run, args=(x,)) for x in range(nproc)]
+    [p.start() for p in procs]
+
+    t0 = time.time()
+    try:
+        while True:
+            time.sleep(2)
+            d = time.time() - t0
+            if d >= duration:
+                break
+            lk = sum(arr)
+            print("lookup %d keys in %.2fsec (%d/sec)" % (lk, d, lk / d))
+    finally:
+        # Cleanup: terminate all processes
+        print("\nStopping benchmark...")
+        for p in procs:
+            p.terminate()
+        for p in procs:
+            p.join(timeout=1)
+
+        # Print final statistics
         d = time.time() - t0
-        if d >= duration:
-            break
         lk = sum(arr)
-        print("lookup %d keys in %.2fsec (%d/sec)" % (lk, d, lk / d))
-finally:
-    # Cleanup: terminate all processes
-    print("\nStopping benchmark...")
-    for p in procs:
-        p.terminate()
-    for p in procs:
-        p.join(timeout=1)
+        print("\n" + "=" * 70)
+        print("FINAL RESULTS")
+        print("=" * 70)
+        print("Duration:       %.2f seconds" % d)
+        print("Total lookups:  %d" % lk)
+        print("Throughput:     %d lookups/sec" % (lk / d))
+        print("Per process:    %d lookups/sec" % ((lk / d) / nproc))
+        print("=" * 70)
 
-    # Print final statistics
-    d = time.time() - t0
-    lk = sum(arr)
-    print("\n" + "=" * 70)
-    print("FINAL RESULTS")
-    print("=" * 70)
-    print("Duration:       %.2f seconds" % d)
-    print("Total lookups:  %d" % lk)
-    print("Throughput:     %d lookups/sec" % (lk / d))
-    print("Per process:    %d lookups/sec" % ((lk / d) / nproc))
-    print("=" * 70)
+
+if __name__ == "__main__":
+    # Use 'fork' start method for this benchmark as it relies on shared memory
+    # and global variable inheritance. Python 3.14+ defaults to 'forkserver' on Linux.
+    # See: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+    multiprocessing.set_start_method("fork")
+    main()
