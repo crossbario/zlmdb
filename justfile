@@ -416,7 +416,7 @@ test-examples-lmdb-dirtybench-gdbm venv="": (install venv)
     echo ""
     ${VENV_PYTHON} examples/lmdb/dirtybench-gdbm.py
 
-# Test example LMDB dirtybench
+# Test example LMDB dirtybench (comprehensive benchmark, takes ~3-5 minutes)
 test-examples-lmdb-dirtybench venv="": (install venv)
     #!/usr/bin/env bash
     set -e
@@ -428,7 +428,8 @@ test-examples-lmdb-dirtybench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    timeout 120 ${VENV_PYTHON} examples/lmdb/dirtybench.py
+    # This benchmark takes ~3 minutes on fast hardware, allow 5 minutes for CI
+    timeout 300 ${VENV_PYTHON} examples/lmdb/dirtybench.py
 
 # Test example LMDB nastybench
 test-examples-lmdb-nastybench venv="": (install venv)
@@ -444,7 +445,7 @@ test-examples-lmdb-nastybench venv="": (install venv)
     echo ""
     timeout 60 ${VENV_PYTHON} examples/lmdb/nastybench.py
 
-# Test example LMDB parabench
+# Test example LMDB parabench (parallel benchmark, generates 4M keys then runs benchmark)
 test-examples-lmdb-parabench venv="": (install venv)
     #!/usr/bin/env bash
     set -e
@@ -456,8 +457,10 @@ test-examples-lmdb-parabench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    # Run with 2 processes for 10 seconds (quick CI test)
-    timeout 30 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
+    # Run with 2 processes for 10 seconds
+    # Key generation takes ~15-20 seconds, benchmark runs for 10 seconds
+    # Allow 90 seconds total for CI
+    timeout 90 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
 
 # Run test suite for ORM.
 test-orm venv="": (install-tools venv) (install-dev venv)
