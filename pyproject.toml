@@ -46,7 +46,7 @@ dependencies = [
     # flatbuffers is now vendored - no external dependency needed
     "pynacl>=1.5.0",
     "pyyaml>=6.0",
-    "txaio>=23.1.1",
+    "txaio>=25.12.2",
     "numpy>=1.24.1",
 ]
 
@@ -58,7 +58,7 @@ dev = [
     "pytest>=3.4.2",
     "pytest-runner>=2.11.1",
     "twisted>=20.3.0",  # Required for running tests that use txaio with Twisted
-    "autobahn[twisted]>=25.10.2",  # Required for zdb tests and advanced features
+    "autobahn[twisted]>=25.12.1",  # Required for zdb tests and advanced features
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "sphinxcontrib-spelling>=7.0.0",  # Spell checking for documentation
