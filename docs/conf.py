@@ -1,40 +1,14 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# docs/conf.py
+# zlmdb documentation configuration - modernized for 2025
+import os
+import sys
+from datetime import datetime
 
 # -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
-import sys
-import os
-import time
-
-try:
-    import sphinx_rtd_theme
-except ImportError:
-    sphinx_rtd_theme = None
-
-try:
-    from sphinxcontrib import spelling
-except ImportError:
-    spelling = None
-
 sys.path.insert(0, os.path.abspath("../src"))
 
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
-# at least at import time -- this is so the autodoc stuff can
-# successfully import autobahn.twisted.* as well as autobahn.asyncio.*
-# (usually, you can only import one or the other in a single Python
-# interpreter)
+# at least at import time
 import txaio
 
 
@@ -56,126 +30,137 @@ txaio.use_twisted = use_tx
 txaio.use_asyncio = use_aio
 
 # -- Project information -----------------------------------------------------
-
-project = "zLMDB"
-author = "Crossbar.io Project"
+project = "zlmdb"
+author = "The WAMP/Autobahn/Crossbar.io OSS Project"
+copyright = f"2018-{datetime.now():%Y}, typedef int GmbH (Germany)"
 language = "en"
 
-this_year = "{0}".format(time.strftime("%Y"))
-if this_year != "2018":
-    copyright = "2018-{0}, Crossbar.io Technologies GmbH".format(this_year)
-else:
-    copyright = "2018, Crossbar.io Technologies GmbH"
-
+# Get version from the package
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 with open(os.path.join(base_dir, "src", "zlmdb", "_version.py")) as f:
-    # defines __version__
-    exec(f.read())
+    exec(f.read())  # defines __version__
 
 version = release = __version__  # noqa
 
 # -- General configuration ---------------------------------------------------
+extensions = [
+    # MyST Markdown support
+    "myst_parser",
 
-# https://sphinx-autoapi.readthedocs.io/
-# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+    # Core Sphinx extensions
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.typehints",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.doctest",
+    "sphinx.ext.inheritance_diagram",
+
+    # Modern UX extensions
+    "sphinx_design",
+    "sphinx_copybutton",
+    "sphinxext.opengraph",
+    "sphinxcontrib.images",
+    "sphinxcontrib.spelling",
+
+    # API documentation
+    "autoapi.extension",
+]
+
+# Source file suffixes (both RST and MyST Markdown)
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
+
+# The master toctree document
+master_doc = "index"
+
+# Exclude patterns
+exclude_patterns = ["_build", "README.md"]
+
+# -- MyST Configuration ------------------------------------------------------
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "tasklist",
+    "attrs_block",
+    "attrs_inline",
+    "smartquotes",
+    "linkify",
+]
+myst_heading_anchors = 3
+
+# -- AutoAPI Configuration ---------------------------------------------------
 autoclass_content = "both"
 autodoc_member_order = "bysource"
 
 autoapi_keep_files = True
 autoapi_type = "python"
 autoapi_dirs = [os.path.join(base_dir, "src"), os.path.join(base_dir, "src", "zlmdb")]
-
-# 'members',
-# 'undoc-members',
-# 'private-members',
-# 'show-inheritance',
-# 'show-inheritance-diagram',
-# 'show-module-summary',
-# 'special-members',
-# 'imported-members',
 autoapi_options = ["members", "show-inheritance"]
 
-# Check if we are building on readthedocs
-RTD_BUILD = os.environ.get("READTHEDOCS", None) == "True"
+# -- Intersphinx Configuration -----------------------------------------------
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "twisted": ("https://docs.twisted.org/en/stable/", None),
+    "txaio": ("https://txaio.readthedocs.io/en/latest/", None),
+    "autobahn": ("https://autobahn.readthedocs.io/en/latest/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+}
+intersphinx_cache_limit = 5
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-extensions = [
-    "sphinx.ext.viewcode",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.todo",
-    "sphinx.ext.doctest",
-    "sphinx.ext.inheritance_diagram",
-    # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autodoc.typehints",
-    # https://sphinx-autoapi.readthedocs.io
-    # 'autoapi.extension',
-    # Usage:            .. thumbnail:: picture.png
-    # Installation:     pip install sphinxcontrib-images
-    # Source:           https://github.com/sphinx-contrib/images
-    # 'sphinxcontrib.images',
-]
+# -- HTML Output (Furo Theme) ------------------------------------------------
+html_theme = "furo"
+html_title = f"{project} {release}"
 
-# The language for content autogenerated by Sphinx. Refer to documentation
-# for a list of supported languages.
-language = "en"
+# Furo theme options with Noto fonts
+html_theme_options = {
+    # Source repository links
+    "source_repository": "https://github.com/crossbario/zlmdb/",
+    "source_branch": "master",
+    "source_directory": "docs/",
 
-# extensions not available on RTD (spell checking requires pyenchant)
-if spelling is not None:
-    extensions.append("sphinxcontrib.spelling")
-
-spelling_lang = "en_US"
-spelling_show_suggestions = False
-spelling_word_list_filename = "spelling_wordlist.txt"
-
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# The suffix of source filenames.
-source_suffix = ".rst"
-
-# The encoding of source files.
-# source_encoding = 'utf-8-sig'
-
-# The master toctree document.
-master_doc = "index"
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
-
-
-# -- Options for HTML output -------------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-if sphinx_rtd_theme:
-    html_theme = "sphinx_rtd_theme"
-else:
-    html_theme = "default"
-
-pygments_style = "sphinx"
+    # Noto fonts from Google Fonts
+    "light_css_variables": {
+        "font-stack": "'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "font-stack--monospace": "'Noto Sans Mono', SFMono-Regular, Menlo, Consolas, monospace",
+    },
+    "dark_css_variables": {
+        "font-stack": "'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "font-stack--monospace": "'Noto Sans Mono', SFMono-Regular, Menlo, Consolas, monospace",
+    },
+}
 
 # Logo (optimized SVG generated from docs/_graphics/ by `just _build-images`)
 html_logo = "_static/img/autobahn_logo_blue.svg"
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+# Static files
 html_static_path = ["_static"]
+html_css_files = [
+    # Load Noto fonts from Google Fonts
+    "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap",
+]
 
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "rtd": ("https://docs.readthedocs.io/en/latest/", None),
-    "txaio": ("https://txaio.readthedocs.io/en/latest/", None),
-    "autobahn": ("https://autobahn.readthedocs.io/en/latest/", None),
-    "zlmdb": ("https://zlmdb.readthedocs.io/en/latest/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/stable/", None),
+# -- sphinxcontrib-images Configuration --------------------------------------
+images_config = {
+    "override_image_directive": True,
+    "default_image_width": "80%",
 }
+
+# -- Spelling Configuration --------------------------------------------------
+spelling_lang = "en_US"
+spelling_word_list_filename = "spelling_wordlist.txt"
+spelling_show_suggestions = True
+
+# -- OpenGraph (Social Media Meta Tags) -------------------------------------
+ogp_site_url = "https://zlmdb.readthedocs.io/en/latest/"
+
+# -- Miscellaneous -----------------------------------------------------------
+todo_include_todos = True
+add_module_names = False
+autosectionlabel_prefix_document = True
+pygments_style = "sphinx"
