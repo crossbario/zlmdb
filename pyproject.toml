@@ -68,6 +68,7 @@ dev = [
     "twine>=3.3.0",
     "auditwheel>=5.0.0",  # Wheel verification and manylinux compliance checking
     "ruff>=0.1.0",  # Fast Python linter and formatter (replaces flake8/black/yapf)
+    "scour>=0.38",  # SVG optimizer for documentation logos
     # Note: ty (Astral type checker) is installed via `uv tool install ty`
     # It's a standalone Rust binary, not a Python package dependency
     "coverage>=5.0.0",
