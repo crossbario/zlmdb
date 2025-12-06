@@ -74,6 +74,14 @@ dev = [
     "coverage>=5.0.0",
 ]
 
+# For testing with unreleased WAMP packages from GitHub master branches
+# Usage: pip install -e .[dev,dev-latest]
+# This installs the latest development versions from GitHub instead of PyPI
+dev-latest = [
+    "txaio @ git+https://github.com/crossbario/txaio.git@master",
+    "autobahn[twisted] @ git+https://github.com/crossbario/autobahn-python.git@master",
+]
+
 [project.scripts]
 zlmdb = "zlmdb.cli:main"
 
@@ -84,6 +92,10 @@ Repository = "https://github.com/crossbario/zlmdb"
 Changelog = "https://github.com/crossbario/zlmdb/blob/master/docs/changelog.rst"
 
 # Hatchling build configuration
+[tool.hatch.metadata]
+# Allow git+https:// dependencies in dev-latest for cross-repo development
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/zlmdb"]
 
