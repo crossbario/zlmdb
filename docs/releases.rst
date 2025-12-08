@@ -1,5 +1,5 @@
-Releases
-========
+Release Notes
+=============
 
 This page lists releases of **zLMDB** with links to release artifacts
 and detailed release notes.
