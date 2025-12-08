@@ -103,6 +103,8 @@ autoapi_generate_api_docs = True
 autoapi_options = [
     "members",
     "undoc-members",
+    "private-members",
+    "special-members",
     "show-inheritance",
     "show-module-summary",
     "imported-members",
