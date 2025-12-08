@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "zlmdb"
 version = "25.12.1"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 # Twine 6.2 validator (via pkginfo) still flags license-files as "unrecognized or malformed",
