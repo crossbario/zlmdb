@@ -18,11 +18,12 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   introduction
-   gettingstarted
-   lmdb/index
-   orm/index
-   performance
-   reference
+   overview
+   installation
+   getting-started
+   programming-guide/index
+   releases
+   changelog
+   contributing
    OVERVIEW.md
    ai/index
