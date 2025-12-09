@@ -185,6 +185,10 @@ spelling_show_suggestions = True
 # -- OpenGraph (Social Media Meta Tags) -------------------------------------
 ogp_site_url = "https://zlmdb.readthedocs.io/en/latest/"
 
+# -- Auto Section Anchors Configuration --------------------------------------
+# Force overwrite of auto-generated ids (id1, id2, etc.) with slug-based anchors
+auto_section_anchor_force = True
+
 # -- Miscellaneous -----------------------------------------------------------
 todo_include_todos = True
 add_module_names = False
