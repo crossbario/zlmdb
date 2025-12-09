@@ -1,24 +1,16 @@
-# Introduction to zLMDB
+# zLMDB
 
-[![PyPI Version](https://img.shields.io/pypi/v/zlmdb.svg)](https://pypi.python.org/pypi/zlmdb)
-
-[![GitHub Release](https://img.shields.io/github/v/release/crossbario/zlmdb)](https://github.com/crossbario/zlmdb/releases)
-
-[![Python Versions](https://img.shields.io/pypi/pyversions/zlmdb.svg)](https://pypi.python.org/pypi/zlmdb)
-
+[![PyPI](https://img.shields.io/pypi/v/zlmdb.svg)](https://pypi.python.org/pypi/zlmdb)
+[![Python](https://img.shields.io/pypi/pyversions/zlmdb.svg)](https://pypi.python.org/pypi/zlmdb)
+[![CI](https://github.com/crossbario/zlmdb/workflows/main/badge.svg)](https://github.com/crossbario/zlmdb/actions?query=workflow%3Amain)
+[![CD (wheels)](https://github.com/crossbario/zlmdb/workflows/wheels/badge.svg)](https://github.com/crossbario/zlmdb/actions?query=workflow%3Awheels)
+[![CD (wheels-arm64)](https://github.com/crossbario/zlmdb/workflows/wheels-arm64/badge.svg)](https://github.com/crossbario/zlmdb/actions?query=workflow%3Awheels-arm64)
+[![CD (wheels-docker)](https://github.com/crossbario/zlmdb/workflows/wheels-docker/badge.svg)](https://github.com/crossbario/zlmdb/actions?query=workflow%3Awheels-docker)
+[![Docs](https://readthedocs.org/projects/zlmdb/badge/?version=latest)](https://zlmdb.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/pypi/l/zlmdb.svg)](https://github.com/crossbario/zlmdb/blob/master/LICENSE)
-
-[![Documentation](https://readthedocs.org/projects/zlmdb/badge/?version=latest)](https://zlmdb.readthedocs.io/en/latest/)
-
 [![Downloads](https://img.shields.io/pypi/dm/zlmdb.svg)](https://pypi.python.org/pypi/zlmdb)
 
-[![Main](https://github.com/crossbario/zlmdb/actions/workflows/main.yml/badge.svg)](https://github.com/crossbario/zlmdb/actions/workflows/main.yml)
-
-[![Wheels](https://github.com/crossbario/zlmdb/actions/workflows/wheels.yml/badge.svg)](https://github.com/crossbario/zlmdb/actions/workflows/wheels.yml)
-
-[![Wheels Linux](https://github.com/crossbario/zlmdb/actions/workflows/wheels-docker.yml/badge.svg)](https://github.com/crossbario/zlmdb/actions/workflows/wheels-docker.yml)
-
-[![Wheels ARM64](https://github.com/crossbario/zlmdb/actions/workflows/wheels-arm64.yml/badge.svg)](https://github.com/crossbario/zlmdb/actions/workflows/wheels-arm64.yml)
+---
 
 zlmdb is a complete LMDB solution for Python providing **two APIs in one
 package**:
