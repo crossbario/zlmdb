@@ -71,6 +71,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_static/img/
+docs/autoapi/
 
 # PyBuilder
 target/
@@ -112,3 +114,4 @@ ENV/
 testdb
 __pycache__/*
 *.pyc
+.build/

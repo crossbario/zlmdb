@@ -252,6 +252,45 @@ install-dev venv="": (create venv)
         ${VENV_PYTHON} build_lmdb.py
     fi
 
+# Install with locally editable WAMP packages for cross-repo development (usage: `just install-dev-local cpy312`)
+install-dev-local venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Installing WAMP packages in editable mode from local repos..."
+    echo "==> Looking for sibling repos (../txaio, ../autobahn-python)..."
+
+    # Install local WAMP packages in editable mode
+    # txaio - no extras needed
+    if [ -d "../txaio" ]; then
+        echo "  ✓ Installing txaio from ../txaio"
+        ${VENV_PYTHON} -m pip install -e "../txaio"
+    else
+        echo "  ⚠ Warning: ../txaio not found, skipping"
+    fi
+
+    # autobahn-python - install with twisted extra
+    if [ -d "../autobahn-python" ]; then
+        echo "  ✓ Installing autobahn-python with [twisted] from ../autobahn-python"
+        ${VENV_PYTHON} -m pip install -e "../autobahn-python[twisted]"
+    else
+        echo "  ⚠ Warning: ../autobahn-python not found, skipping"
+    fi
+
+    echo "==> Installing zlmdb in editable mode with [dev] extras..."
+    ${VENV_PYTHON} -m pip install -e .[dev] --upgrade --upgrade-strategy only-if-needed
+
+    # Prepare LMDB sources for editable installs
+    if [ ! -d "build/lmdb-src" ]; then
+        echo "==> Preparing LMDB sources for editable install..."
+        ${VENV_PYTHON} build_lmdb.py
+    fi
+
 # Install all environments
 install-all:
     #!/usr/bin/env bash
@@ -679,8 +718,54 @@ verify-wheels venv="": (install-tools venv)
 # -- Documentation
 # -----------------------------------------------------------------------------
 
+# Install documentation dependencies
+install-docs venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing documentation tools in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install -e .[docs]
+
+# Sync images (logo and favicon) from autobahn-python (Autobahn subarea source)
+sync-images:
+    #!/usr/bin/env bash
+    set -e
+
+    SOURCEDIR="{{ PROJECT_DIR }}/../autobahn-python/docs/_static"
+    TARGETDIR="{{ PROJECT_DIR }}/docs/_static"
+    IMGDIR="${TARGETDIR}/img"
+
+    echo "==> Syncing images from autobahn-python..."
+    mkdir -p "${IMGDIR}"
+
+    # Copy optimized logo SVG
+    if [ -f "${SOURCEDIR}/img/autobahn_logo_blue.svg" ]; then
+        cp "${SOURCEDIR}/img/autobahn_logo_blue.svg" "${IMGDIR}/"
+        echo "  Copied: autobahn_logo_blue.svg"
+    else
+        echo "  Warning: autobahn_logo_blue.svg not found in autobahn-python"
+        echo "  Run 'just optimize-images' in autobahn-python first"
+    fi
+
+    # Copy favicon
+    if [ -f "${SOURCEDIR}/favicon.ico" ]; then
+        cp "${SOURCEDIR}/favicon.ico" "${TARGETDIR}/"
+        echo "  Copied: favicon.ico"
+    else
+        echo "  Warning: favicon.ico not found in autobahn-python"
+        echo "  Run 'just optimize-images' in autobahn-python first"
+    fi
+
+    echo "==> Image sync complete."
+
 # Build HTML documentation using Sphinx
-docs venv="": (install-tools venv)
+docs venv="": (install-docs venv) (sync-images)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -700,6 +785,22 @@ docs-view venv="": (docs venv)
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
     rm -rf docs/_build
+
+# Run spelling check on documentation
+docs-spelling venv="": (install-docs venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    TMPBUILDDIR="./.build"
+    mkdir -p "${TMPBUILDDIR}"
+    echo "==> Running spell check on documentation..."
+    "${VENV_PATH}/bin/sphinx-build" -b spelling -d "${TMPBUILDDIR}/docs/doctrees" docs "${TMPBUILDDIR}/docs/spelling"
 
 # -----------------------------------------------------------------------------
 # -- Cleaning (granular targets from Makefile)
@@ -1075,3 +1176,143 @@ fix-copyright:
     echo "==> Fixing copyright headers..."
     find . -type f -exec sed -i 's/Copyright (c) Crossbar.io Technologies GmbH/Copyright (c) typedef int GmbH/g' {} \;
     echo "✓ Copyright headers updated"
+
+
+# -----------------------------------------------------------------------------
+# -- Release workflow recipes
+# -----------------------------------------------------------------------------
+
+# Generate changelog entry from git history for a given version
+prepare-changelog version:
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Generating changelog for version ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    # Find the previous tag
+    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    if [ -z "${PREV_TAG}" ]; then
+        echo "No previous tag found. Showing all commits..."
+        git log --oneline --no-decorate | head -50
+    else
+        echo "Commits since ${PREV_TAG}:"
+        echo ""
+        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo " Suggested changelog format:"
+    echo "=========================================="
+    echo ""
+    echo "${VERSION}"
+    echo "------"
+    echo ""
+    echo "**New**"
+    echo ""
+    echo "* new: <feature description>"
+    echo ""
+    echo "**Fix**"
+    echo ""
+    echo "* fix: <fix description>"
+    echo ""
+    echo "**Other**"
+    echo ""
+    echo "* other: <other changes>"
+    echo ""
+
+# Validate release is ready: checks changelog, releases, version
+draft-release version:
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Validating release ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    ERRORS=0
+
+    # Check pyproject.toml version
+    PYPROJECT_VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    if [ "${PYPROJECT_VERSION}" = "${VERSION}" ]; then
+        echo "✅ pyproject.toml version matches: ${VERSION}"
+    else
+        echo "❌ pyproject.toml version mismatch: ${PYPROJECT_VERSION} != ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check changelog entry
+    if grep -q "^${VERSION}$" docs/changelog.rst; then
+        echo "✅ Changelog entry exists for ${VERSION}"
+    else
+        echo "❌ Changelog entry missing for ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check releases entry
+    if grep -q "^${VERSION}$" docs/releases.rst; then
+        echo "✅ Releases entry exists for ${VERSION}"
+    else
+        echo "❌ Releases entry missing for ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    echo ""
+    if [ ${ERRORS} -gt 0 ]; then
+        echo "=========================================="
+        echo " ❌ Validation failed with ${ERRORS} error(s)"
+        echo "=========================================="
+        exit 1
+    else
+        echo "=========================================="
+        echo " ✅ All checks passed for ${VERSION}"
+        echo "=========================================="
+    fi
+
+# Full release preparation: validate + test + build docs
+prepare-release version venv="":
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+    VENV="{{ venv }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Preparing release ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    # Run draft-release validation first
+    just draft-release "${VERSION}"
+
+    echo ""
+    echo "==> Running tests..."
+    if [ -n "${VENV}" ]; then
+        just test "${VENV}"
+    else
+        just test
+    fi
+
+    echo ""
+    echo "==> Building documentation..."
+    just docs
+
+    echo ""
+    echo "=========================================="
+    echo " ✅ Release ${VERSION} is ready"
+    echo "=========================================="
+    echo ""
+    echo "Next steps:"
+    echo "  1. git add docs/changelog.rst docs/releases.rst pyproject.toml"
+    echo "  2. git commit -m \"Release ${VERSION}\""
+    echo "  3. git tag v${VERSION}"
+    echo "  4. git push && git push --tags"
+    echo ""

@@ -218,8 +218,8 @@ jobs:
         run: just docs cpy312
 
       - name: Upload documentation artifacts
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: documentation
-          path: docs/_build/html/
+          path: ${{ github.workspace }}/docs/_build/html/
           retention-days: 14

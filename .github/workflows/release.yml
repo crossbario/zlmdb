@@ -182,37 +182,45 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download Linux wheels (native builds)
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels (native builds)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-linux-x86_64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_linux_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-macos-arm64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_macos_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-windows-x86_64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_windows_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: source-distribution
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_source_dist }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
       - name: Download and verify manylinux x86_64 wheels
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
@@ -514,37 +522,45 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download Linux wheels (native builds)
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels (native builds)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-linux-x86_64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_linux_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-macos-arm64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_macos_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-windows-x86_64
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_windows_wheels }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: source-distribution
-          path: dist/
+          name: ${{ needs.check-workflows.outputs.artifact_source_dist }}
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
 
       - name: Download and verify manylinux x86_64 wheels
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main

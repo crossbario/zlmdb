@@ -301,7 +301,7 @@ If binary wheels are not available for your platform, you can build from source.
    # Install the built wheel
    pip install dist/zlmdb-*.whl
 
-See the main `README.rst <https://github.com/crossbario/zlmdb/blob/master/README.rst>`_ for the complete development workflow.
+See the main `README.md <https://github.com/crossbario/zlmdb/blob/master/README.md>`_ for the complete development workflow.
 
 
 PyPy Installation

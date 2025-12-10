@@ -518,10 +518,10 @@ jobs:
         shell: pwsh
 
       - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 30
 
       - name: Verify source distribution integrity (Linux x86_64 only)
@@ -583,8 +583,8 @@ jobs:
 
       - name: Upload source distribution (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: source-distribution
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 30
