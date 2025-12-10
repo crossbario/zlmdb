@@ -1,9 +1,10 @@
 name: release
 
 on:
-  # Auto-trigger after wheels and main workflows complete
+  # Auto-trigger after any required workflow completes
+  # Release job checks if ALL required workflows are done before proceeding
   workflow_run:
-    workflows: ["wheels", "main"]
+    workflows: ["wheels", "wheels-docker", "wheels-arm64", "main"]
     types: [completed]
 
   # Manual dispatch for debugging
