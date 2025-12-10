@@ -58,7 +58,6 @@ dev = [
     "pytest>=3.4.2",
     "pytest-runner>=2.11.1",
     "twisted>=20.3.0",  # Required for running tests that use txaio with Twisted
-    "autobahn[twisted]>=25.12.1",  # Required for zdb tests and advanced features
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
     "sphinxcontrib-spelling>=7.0.0",  # Spell checking for documentation
@@ -72,14 +71,6 @@ dev = [
     # Note: ty (Astral type checker) is installed via `uv tool install ty`
     # It's a standalone Rust binary, not a Python package dependency
     "coverage>=5.0.0",
-]
-
-# For testing with unreleased WAMP packages from GitHub master branches
-# Usage: pip install -e .[dev,dev-latest]
-# This installs the latest development versions from GitHub instead of PyPI
-dev-latest = [
-    "txaio @ git+https://github.com/crossbario/txaio.git@master",
-    "autobahn[twisted] @ git+https://github.com/crossbario/autobahn-python.git@master",
 ]
 
 # Documentation tools (used by RTD via .readthedocs.yaml)
@@ -123,10 +114,6 @@ Repository = "https://github.com/crossbario/zlmdb"
 Changelog = "https://github.com/crossbario/zlmdb/blob/master/docs/changelog.rst"
 
 # Hatchling build configuration
-[tool.hatch.metadata]
-# Allow git+https:// dependencies in dev-latest for cross-repo development
-allow-direct-references = true
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/zlmdb"]
 
