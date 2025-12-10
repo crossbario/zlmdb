@@ -16,9 +16,13 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.11"
-  # Install system packages for spell checking
+  # Install system packages for spell checking and LMDB/CFFI build
   apt_packages:
     - libenchant-2-2
+    - build-essential
+    - libffi-dev
+    - libbz2-dev
+    - libsnappy-dev
 
 sphinx:
   configuration: docs/conf.py
