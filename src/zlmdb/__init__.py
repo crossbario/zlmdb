@@ -33,25 +33,43 @@ from typing import Dict  # noqa
 # =============================================================================
 # Vendored library aliasing
 # =============================================================================
-# Register vendored flatbuffers runtime in sys.modules so that code doing
-# `import flatbuffers` resolves to our vendored copy. This ensures:
-# 1. No conflicts with separately installed flatbuffers packages
-# 2. Generated code in zlmdb.flatbuffers.reflection can import flatbuffers
-# 3. Consistent behavior across all zlmdb modules
-#
-# Note: This aliasing only affects imports that happen AFTER zlmdb is imported.
+# Vendored flatbuffers runtime
 # =============================================================================
 from zlmdb import _flatbuffers_vendor
-sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
-# Also register submodules that might be imported directly
-sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
-sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
-sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
-sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
-sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
-sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
-sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
 
+# Re-export vendored flatbuffers for explicit use by downstream packages (e.g. cfxdb)
+# Preferred usage: `from zlmdb import flatbuffers`
+flatbuffers = _flatbuffers_vendor  # noqa: F401
+sys.modules.setdefault('zlmdb.flatbuffers', _flatbuffers_vendor)
+
+
+def setup_flatbuffers_import():
+    """
+    Register vendored flatbuffers in sys.modules so `import flatbuffers` works.
+
+    This function should be called by downstream packages (e.g. cfxdb) that have
+    generated flatbuffers code which does `import flatbuffers`. Call this BEFORE
+    importing any generated flatbuffers code.
+
+    For hand-written code, prefer explicit import: `from zlmdb import flatbuffers`
+
+    Example usage in cfxdb/gen/__init__.py:
+        from zlmdb import setup_flatbuffers_import
+        setup_flatbuffers_import()
+    """
+    sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
+    sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
+    sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
+    sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
+    sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
+    sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
+    sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
+    sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
+
+
+# =============================================================================
+# Vendored LMDB
+# =============================================================================
 # Re-export vendored LMDB for backwards compatibility
 # Users can do: `from zlmdb import lmdb` or `import zlmdb.lmdb as lmdb`
 from zlmdb import _lmdb_vendor as lmdb  # noqa: F401
