@@ -357,13 +357,13 @@ jobs:
             echo ""
           }
 
-          # Verify all downloaded artifacts
-          verify_directory "dist-manylinux-x86_64" "manylinux x86_64 wheels"
-          verify_directory "dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
-          verify_directory "dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
-          verify_directory "dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
-          verify_directory "dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
-          verify_directory "dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+          # Verify all downloaded artifacts (use absolute paths for Docker-built artifacts)
+          verify_directory "${{ github.workspace }}/dist-manylinux-x86_64" "manylinux x86_64 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
 
           if [ $HAS_ERRORS -eq 1 ]; then
             echo "======================================================================"
@@ -407,13 +407,13 @@ jobs:
           echo "======================================================================"
           echo "==> Consolidating all artifacts to dist/"
           echo "======================================================================"
-          mkdir -p dist/
+          mkdir -p ${{ github.workspace }}/dist/
 
-          # Copy wheels from all directories
-          for dir in dist-manylinux-x86_64 dist-arm64-*; do
+          # Copy wheels from all directories (use absolute paths for Docker-built artifacts)
+          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
             if [ -d "$dir" ]; then
               echo "Copying wheels from $dir/"
-              cp -v "$dir"/*.whl dist/ 2>/dev/null || echo "No wheels in $dir/"
+              cp -v "$dir"/*.whl ${{ github.workspace }}/dist/ 2>/dev/null || echo "No wheels in $dir/"
             fi
           done
 
@@ -697,13 +697,13 @@ jobs:
             echo ""
           }
 
-          # Verify all downloaded artifacts
-          verify_directory "dist-manylinux-x86_64" "manylinux x86_64 wheels"
-          verify_directory "dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
-          verify_directory "dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
-          verify_directory "dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
-          verify_directory "dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
-          verify_directory "dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+          # Verify all downloaded artifacts (use absolute paths for Docker-built artifacts)
+          verify_directory "${{ github.workspace }}/dist-manylinux-x86_64" "manylinux x86_64 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp311" "ARM64 CPython 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp312" "ARM64 CPython 3.12 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
 
           if [ $HAS_ERRORS -eq 1 ]; then
             echo "======================================================================"
@@ -747,13 +747,13 @@ jobs:
           echo "======================================================================"
           echo "==> Consolidating all artifacts to dist/"
           echo "======================================================================"
-          mkdir -p dist/
+          mkdir -p ${{ github.workspace }}/dist/
 
-          # Copy wheels from all directories
-          for dir in dist-manylinux-x86_64 dist-arm64-*; do
+          # Copy wheels from all directories (use absolute paths for Docker-built artifacts)
+          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
             if [ -d "$dir" ]; then
               echo "Copying wheels from $dir/"
-              cp -v "$dir"/*.whl dist/ 2>/dev/null || echo "No wheels in $dir/"
+              cp -v "$dir"/*.whl ${{ github.workspace }}/dist/ 2>/dev/null || echo "No wheels in $dir/"
             fi
           done
 
