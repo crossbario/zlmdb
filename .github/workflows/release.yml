@@ -226,7 +226,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_manylinux_x86_64 }}
-          path: dist-manylinux-x86_64/
+          path: ${{ github.workspace }}/dist-manylinux-x86_64/
           run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -236,7 +236,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp311 }}
-          path: dist-arm64-cp311/
+          path: ${{ github.workspace }}/dist-arm64-cp311/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -246,7 +246,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp312 }}
-          path: dist-arm64-cp312/
+          path: ${{ github.workspace }}/dist-arm64-cp312/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -256,7 +256,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp313 }}
-          path: dist-arm64-cp313/
+          path: ${{ github.workspace }}/dist-arm64-cp313/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -266,7 +266,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp314 }}
-          path: dist-arm64-cp314/
+          path: ${{ github.workspace }}/dist-arm64-cp314/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -276,7 +276,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
-          path: dist-arm64-pypy311/
+          path: ${{ github.workspace }}/dist-arm64-pypy311/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -566,7 +566,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_manylinux_x86_64 }}
-          path: dist-manylinux-x86_64/
+          path: ${{ github.workspace }}/dist-manylinux-x86_64/
           run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -576,7 +576,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp311 }}
-          path: dist-arm64-cp311/
+          path: ${{ github.workspace }}/dist-arm64-cp311/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -586,7 +586,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp312 }}
-          path: dist-arm64-cp312/
+          path: ${{ github.workspace }}/dist-arm64-cp312/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -596,7 +596,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp313 }}
-          path: dist-arm64-cp313/
+          path: ${{ github.workspace }}/dist-arm64-cp313/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -606,7 +606,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_cp314 }}
-          path: dist-arm64-cp314/
+          path: ${{ github.workspace }}/dist-arm64-cp314/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -616,7 +616,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
-          path: dist-arm64-pypy311/
+          path: ${{ github.workspace }}/dist-arm64-pypy311/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
