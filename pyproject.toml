@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zlmdb"
-version = "25.12.1"
+version = "25.12.2"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = "MIT"
 # Twine 6.2 validator (via pkginfo) still flags license-files as "unrecognized or malformed",
 # because it only understands the old-style License: field (Core Metadata 2.3).
@@ -20,12 +20,11 @@ keywords = ["zlmdb", "lmdb", "database", "key-value", "embedded", "zero-copy", "
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -151,7 +150,7 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-target-version = "py39"  # Minimum supported Python version
+target-version = "py311"  # Minimum supported Python version
 
 [tool.ruff.lint]
 

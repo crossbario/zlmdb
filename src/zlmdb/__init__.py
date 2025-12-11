@@ -94,6 +94,42 @@ def setup_flatbuffers_import():
     sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
     sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
 
+
+def check_autobahn_flatbuffers_version_in_sync() -> str:
+    """
+    Check that zlmdb and autobahn have the same vendored flatbuffers version.
+
+    This is important for applications like Crossbar.io that use both zlmdb
+    (for data-at-rest) and autobahn (for data-in-transit) with FlatBuffers
+    serialization. When sending a FlatBuffers database record as a WAMP
+    application payload, both libraries must use compatible FlatBuffers
+    runtimes to avoid subtle serialization issues.
+
+    :returns: The flatbuffers version if both are in sync.
+    :raises RuntimeError: If the versions differ.
+    :raises ImportError: If autobahn is not installed.
+
+    Example::
+
+        import zlmdb
+        version = zlmdb.check_autobahn_flatbuffers_version_in_sync()
+        print(f"FlatBuffers version: {version}")
+    """
+    import autobahn.flatbuffers
+
+    zlmdb_version = _flatbuffers_vendor.__version__
+    autobahn_version = autobahn.flatbuffers.__version__
+
+    if zlmdb_version != autobahn_version:
+        raise RuntimeError(
+            f"FlatBuffers version mismatch: zlmdb has {zlmdb_version!r}, "
+            f"autobahn has {autobahn_version!r}. Both should be the same for "
+            f"reliable data-at-rest/data-in-transit interoperability."
+        )
+
+    return zlmdb_version
+
+
 from ._version import __version__
 
 from ._errors import NullValueConstraint
@@ -193,6 +229,7 @@ __all__ = (
     "__version__",
     "flatbuffers",  # Re-exported vendored flatbuffers (zlmdb._flatbuffers_vendor)
     "setup_flatbuffers_import",  # Helper for downstream packages
+    "check_autobahn_flatbuffers_version_in_sync",  # Version sync check with autobahn
     "lmdb",  # Re-exported vendored LMDB (zlmdb._lmdb_vendor)
     "Schema",
     "Database",
