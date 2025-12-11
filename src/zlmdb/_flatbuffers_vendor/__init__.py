@@ -12,22 +12,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .builder import Builder
-from .table import Table
-from .compat import range_func as compat_range
-from ._version import __version__
-from ._git_version import __git_version__
+import re
+
 from . import util
+from ._git_version import __git_version__
+from ._version import __version__
+from .builder import Builder
+from .compat import range_func as compat_range
+from .table import Table
 
 
-def version() -> str:
+def version() -> tuple[int, int, int, int | None, str | None]:
     """
     Return the exact git version of the vendored FlatBuffers runtime.
 
-    This returns the output of ``git describe --tags`` from the
-    deps/flatbuffers submodule at build time, e.g. "v25.9.23" for
-    a tagged release or "v25.9.23-2-g95053e6a" for a post-tag commit.
+    Handles:
 
-    :returns: Git describe version string of the FlatBuffers runtime.
+    1. "v25.9.23"              -> (25, 9, 23, None, None)       # Release (Named Tag, CalVer Year.Month.Day)
+    2. "v25.9.23-71"           -> (25, 9, 23, 71, None)         # 71 commits ahead of the Release v25.9.23
+    3. "v25.9.23-71-g19b2300f" -> (25, 9, 23, 71, "19b2300f")   # dito, with Git commit hash
     """
-    return __git_version__
+
+    # Pattern explanation:
+    # ^v                : Start of string, literal 'v'
+    # (\d+)\.(\d+)\.(\d+) : Groups 1,2,3 - Major.Minor.Patch (Required)
+    #
+    # (?: ... )?        : Non-capturing group (grouping only, not saved), optional '?'
+    # -(\d+)            : Literal hyphen, Group 4 (Commits)
+    #
+    # (?: ... )?        : Non-capturing group, optional '?'
+    # -g                : Literal hyphen and 'g' (separator)
+    # ([0-9a-f]+)       : Group 5 (Hash)
+
+    pattern = r"^v(\d+)\.(\d+)\.(\d+)(?:-(\d+))?(?:-g([0-9a-f]+))?$"
+
+    match = re.match(pattern, __git_version__)
+
+    if match:
+        major, minor, patch, commits, commit_hash = match.groups()
+
+        # Convert commits to int if present, else None
+        commits_int = int(commits) if commits else None
+
+        return (int(major), int(minor), int(patch), commits_int, commit_hash)
+
+    # Fallback if regex fails entirely (returns 0.0.0 to satisfy type hint)
+    return (0, 0, 0, None, None)
