@@ -420,6 +420,14 @@ test-import venv="": (install venv)
     fi
     echo ""
 
+    echo "Test 5: Verifying zlmdb.lmdb.version()..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.lmdb.version(): {zlmdb.lmdb.version()}')"
+    echo ""
+
+    echo "Test 6: Verifying zlmdb.flatbuffers.version()..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.version(): {zlmdb.flatbuffers.version()}')"
+    echo ""
+
     echo "========================================================================"
     echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
     echo "========================================================================"
