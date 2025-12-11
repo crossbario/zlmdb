@@ -409,6 +409,23 @@ test-import venv="": (install venv)
     echo "Test 4: Verifying version attributes..."
     ${VENV_PYTHON} -c "import zlmdb; print('  zlmdb.__version__:', zlmdb.__version__)"
 
+    # LMDB 0.9.33 Release (2024/05/21)
+    #
+    #   - Development happens on mdb.master (version 0.9.70).
+    #   - Releases are backported/committed to mdb.RE/0.9.
+    #   - Tagging happens on mdb.RE/0.9.
+    #
+    # Thus we want to track the tip of the mdb.RE/0.9 branch.
+    #
+    # See:
+    #   - https://github.com/LMDB/lmdb/blob/mdb.RE/0.9/libraries/liblmdb/CHANGES
+    #   - https://github.com/LMDB/lmdb/blob/mdb.master/libraries/liblmdb/lmdb.h
+    #   - https://github.com/LMDB/lmdb/commit/3a29a24777c82a0165de813ae696a5068b5add30
+    #
+    # MDB_VERSION_MAJOR   0     // Library major version
+    # MDB_VERSION_MINOR   9     // Library minor version
+    # MDB_VERSION_PATCH   33    // Library patch version
+
     # Test 4b: Verify zlmdb.lmdb does NOT have __version__
     echo ""
     echo "Test 4b: Verifying zlmdb.lmdb has NO __version__ (only zlmdb has version)..."
@@ -424,7 +441,20 @@ test-import venv="": (install venv)
     ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.lmdb.version(): {zlmdb.lmdb.version()}')"
     echo ""
 
-    echo "Test 6: Verifying zlmdb.flatbuffers.version()..."
+    # For a production or stable project (like zlmdb), the recommended approach is to strictly
+    # use and track the Latest Named Tag, not Development:
+    #
+    # cd deps/flatbuffers && git checkout $(git describe --tags --abbrev=0) && git describe --tags
+
+    echo "Test 6: Verifying zlmdb.flatbuffers.__version__..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.__version__: {zlmdb.flatbuffers.__version__}')"
+    echo ""
+
+    echo "Test 7: Verifying zlmdb.flatbuffers._git_version__..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.__git_version__: {zlmdb.flatbuffers.__git_version__}')"
+    echo ""
+
+    echo "Test 8: Verifying zlmdb.flatbuffers.version()..."
     ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.version(): {zlmdb.flatbuffers.version()}')"
     echo ""
 
