@@ -2,9 +2,9 @@
 # DO NOT EDIT - regenerated on each build
 
 CONFIG = {
-    "extra_compile_args": ["-UNDEBUG", "-DHAVE_PATCHED_LMDB=1", "-w"],
-    "extra_sources": ["build/lmdb-src/mdb.c", "build/lmdb-src/midl.c"],
-    "extra_library_dirs": [],
-    "extra_include_dirs": ["build/lmdb-src", "lmdb-patches"],
-    "libraries": [],
+    'extra_compile_args': ['-UNDEBUG', '-DHAVE_PATCHED_LMDB=1', '-w'],
+    'extra_sources': ['build/lmdb-src/mdb.c', 'build/lmdb-src/midl.c'],
+    'extra_library_dirs': [],
+    'extra_include_dirs': ['build/lmdb-src', 'lmdb-patches'],
+    'libraries': [],
 }
