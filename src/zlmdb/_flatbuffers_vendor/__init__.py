@@ -16,4 +16,18 @@ from .builder import Builder
 from .table import Table
 from .compat import range_func as compat_range
 from ._version import __version__
+from ._git_version import __git_version__
 from . import util
+
+
+def version() -> str:
+    """
+    Return the exact git version of the vendored FlatBuffers runtime.
+
+    This returns the output of ``git describe --tags`` from the
+    deps/flatbuffers submodule at build time, e.g. "v25.9.23" for
+    a tagged release or "v25.9.23-2-g95053e6a" for a post-tag commit.
+
+    :returns: Git describe version string of the FlatBuffers runtime.
+    """
+    return __git_version__

@@ -105,7 +105,7 @@ def check_autobahn_flatbuffers_version_in_sync() -> str:
     application payload, both libraries must use compatible FlatBuffers
     runtimes to avoid subtle serialization issues.
 
-    :returns: The flatbuffers version if both are in sync.
+    :returns: The flatbuffers git version (e.g. "v25.9.23-2-g95053e6a") if both are in sync.
     :raises RuntimeError: If the versions differ.
     :raises ImportError: If autobahn is not installed.
 
@@ -117,8 +117,8 @@ def check_autobahn_flatbuffers_version_in_sync() -> str:
     """
     import autobahn.flatbuffers
 
-    zlmdb_version = _flatbuffers_vendor.__version__
-    autobahn_version = autobahn.flatbuffers.__version__
+    zlmdb_version = _flatbuffers_vendor.version()
+    autobahn_version = autobahn.flatbuffers.version()
 
     if zlmdb_version != autobahn_version:
         raise RuntimeError(
