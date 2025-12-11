@@ -21,4 +21,4 @@
 # If building from sdist without git, this will retain the version
 # from when the sdist was created.
 
-__git_version__ = "v25.9.23-2-g95053e6a"
+__git_version__ = "v25.9.23"
