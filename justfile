@@ -1192,9 +1192,9 @@ publish-rtd tag="":
 # Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
     echo "==> Updating vendored flatbuffers from submodule..."
-    rm -rf ./src/zlmdb/_flatbuffers_vendor
-    cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/_flatbuffers_vendor
-    echo "✓ Flatbuffers vendor updated in src/zlmdb/_flatbuffers_vendor"
+    rm -rf ./src/zlmdb/flatbuffers
+    cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/flatbuffers
+    echo "✓ Flatbuffers vendor updated in src/zlmdb/flatbuffers"
 
 # Generate flatbuffers reflection Python code
 generate-flatbuffers-reflection:
