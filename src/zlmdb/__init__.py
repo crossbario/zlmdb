@@ -52,12 +52,47 @@ sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_ty
 sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
 sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
 
+# Re-export vendored flatbuffers for explicit use by downstream packages
+# Users can do: `from zlmdb import flatbuffers` or `import zlmdb.flatbuffers`
+flatbuffers = _flatbuffers_vendor  # noqa: F401
+sys.modules.setdefault('zlmdb.flatbuffers', _flatbuffers_vendor)
+
 # Re-export vendored LMDB for backwards compatibility
 # Users can do: `from zlmdb import lmdb` or `import zlmdb.lmdb as lmdb`
 from zlmdb import _lmdb_vendor as lmdb  # noqa: F401
 # Also register zlmdb.lmdb in sys.modules for backward compatibility
 # This allows `import zlmdb.lmdb as lmdb` to work
 sys.modules.setdefault('zlmdb.lmdb', _lmdb_vendor)
+
+
+def setup_flatbuffers_import():
+    """
+    Register vendored flatbuffers in sys.modules so `import flatbuffers` works.
+
+    This function should be called by downstream packages (e.g. cfxdb) that have
+    generated flatbuffers code which does `import flatbuffers`. By calling this
+    function early in their initialization, they ensure that:
+
+    1. `import flatbuffers` resolves to zlmdb's vendored copy
+    2. No conflicts with separately installed flatbuffers packages
+    3. Consistent behavior across all modules
+
+    Example usage in downstream package __init__.py::
+
+        import zlmdb
+        zlmdb.setup_flatbuffers_import()
+
+        # Now generated code can do `import flatbuffers`
+        from .gen import MyTable
+    """
+    sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
+    sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
+    sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
+    sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
+    sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
+    sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
+    sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
+    sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
 
 from ._version import __version__
 
@@ -156,6 +191,8 @@ from ._schema import Schema
 
 __all__ = (
     "__version__",
+    "flatbuffers",  # Re-exported vendored flatbuffers (zlmdb._flatbuffers_vendor)
+    "setup_flatbuffers_import",  # Helper for downstream packages
     "lmdb",  # Re-exported vendored LMDB (zlmdb._lmdb_vendor)
     "Schema",
     "Database",
