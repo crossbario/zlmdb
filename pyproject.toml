@@ -123,7 +123,8 @@ packages = ["src/zlmdb"]
 
 [tool.hatch.build.targets.sdist]
 # By default, hatchling includes all git-tracked files
-# Exclude build artifacts and large submodules from sdist
+# We only use exclude to remove build artifacts and large submodule directories
+# Note: Do NOT use `include` - it overrides default git-tracked behavior
 exclude = [
     "/.github",
     "/docs/_build",
@@ -134,9 +135,8 @@ exclude = [
     "/.mypy_cache",
     "/.ruff_cache",
     "/build",
-    # Exclude git submodule - LMDB sources are copied during build
-    "/lmdb-upstream",
-    # Exclude large test files from flatbuffers submodule
+    # Exclude large test/sample/doc files from flatbuffers submodule
+    # Keep: CMakeLists.txt, cmake/, src/, include/, reflection/, python/
     "/deps/flatbuffers/tests",
     "/deps/flatbuffers/samples",
     "/deps/flatbuffers/docs",
@@ -153,15 +153,6 @@ exclude = [
     "/deps/flatbuffers/ts",
     "/deps/flatbuffers/go",
     "/deps/flatbuffers/grpc",
-]
-# Include flatbuffers source for building flatc from sdist
-include = [
-    "/deps/flatbuffers/CMakeLists.txt",
-    "/deps/flatbuffers/cmake/**",
-    "/deps/flatbuffers/src/**",
-    "/deps/flatbuffers/include/**",
-    "/deps/flatbuffers/reflection/**",
-    "/deps/flatbuffers/python/**",
 ]
 
 # Custom build hook for CFFI extension modules (LMDB)
