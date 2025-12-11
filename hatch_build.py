@@ -166,6 +166,16 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
         ]
 
+        # For Linux x86_64, use baseline ISA to ensure manylinux compatibility
+        # Without this, the compiler may use x86_64_v2+ instructions (SSE4.2, etc.)
+        # which auditwheel will reject as incompatible with manylinux
+        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
+            print("  -> Using baseline x86-64 flags for manylinux compatibility")
+            cmake_args.extend([
+                "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
+                "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
+            ])
+
         result = subprocess.run(
             cmake_args,
             cwd=build_dir,
