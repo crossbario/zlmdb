@@ -10,8 +10,8 @@ See: https://hatch.pypa.io/latest/plugins/build-hook/custom/
 """
 
 import os
-import sys
 import subprocess
+import sys
 import sysconfig
 from pathlib import Path
 
@@ -126,7 +126,11 @@ class LmdbCffiBuildHook(BuildHookInterface):
 
         flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
         git_version_file = (
-            Path(self.root) / "src" / "zlmdb" / "_flatbuffers_vendor" / "_git_version.py"
+            Path(self.root)
+            / "src"
+            / "zlmdb"
+            / "_flatbuffers_vendor"
+            / "_git_version.py"
         )
 
         # Default version if git is not available or submodule not initialized
@@ -157,12 +161,12 @@ class LmdbCffiBuildHook(BuildHookInterface):
                 print(f"  -> Error getting git version: {e}")
                 return
         else:
-            print(f"  -> deps/flatbuffers not found or not a git repo")
+            print("  -> deps/flatbuffers not found or not a git repo")
             print(f"  -> Using existing version in {git_version_file.name}")
             return
 
         # Write the version file
-        content = '''\
+        content = """\
 # Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -187,7 +191,7 @@ class LmdbCffiBuildHook(BuildHookInterface):
 # from when the sdist was created.
 
 __git_version__ = "{version}"
-'''.format(version=git_version)
+""".format(version=git_version)
 
         git_version_file.write_text(content)
         print(f"  -> Updated {git_version_file.name}")
