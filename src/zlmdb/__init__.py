@@ -42,27 +42,29 @@ from typing import Dict  # noqa
 # Note: This aliasing only affects imports that happen AFTER zlmdb is imported.
 # =============================================================================
 from zlmdb import _flatbuffers_vendor
-sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
+
+sys.modules.setdefault("flatbuffers", _flatbuffers_vendor)
 # Also register submodules that might be imported directly
-sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
-sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
-sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
-sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
-sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
-sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
-sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
+sys.modules.setdefault("flatbuffers.compat", _flatbuffers_vendor.compat)
+sys.modules.setdefault("flatbuffers.builder", _flatbuffers_vendor.builder)
+sys.modules.setdefault("flatbuffers.table", _flatbuffers_vendor.table)
+sys.modules.setdefault("flatbuffers.util", _flatbuffers_vendor.util)
+sys.modules.setdefault("flatbuffers.number_types", _flatbuffers_vendor.number_types)
+sys.modules.setdefault("flatbuffers.packer", _flatbuffers_vendor.packer)
+sys.modules.setdefault("flatbuffers.encode", _flatbuffers_vendor.encode)
 
 # Re-export vendored flatbuffers for explicit use by downstream packages
 # Users can do: `from zlmdb import flatbuffers` or `import zlmdb.flatbuffers`
 flatbuffers = _flatbuffers_vendor  # noqa: F401
-sys.modules.setdefault('zlmdb.flatbuffers', _flatbuffers_vendor)
+sys.modules.setdefault("zlmdb.flatbuffers", _flatbuffers_vendor)
 
 # Re-export vendored LMDB for backwards compatibility
 # Users can do: `from zlmdb import lmdb` or `import zlmdb.lmdb as lmdb`
 from zlmdb import _lmdb_vendor as lmdb  # noqa: F401
+
 # Also register zlmdb.lmdb in sys.modules for backward compatibility
 # This allows `import zlmdb.lmdb as lmdb` to work
-sys.modules.setdefault('zlmdb.lmdb', _lmdb_vendor)
+sys.modules.setdefault("zlmdb.lmdb", _lmdb_vendor)
 
 
 def setup_flatbuffers_import():
@@ -85,14 +87,14 @@ def setup_flatbuffers_import():
         # Now generated code can do `import flatbuffers`
         from .gen import MyTable
     """
-    sys.modules.setdefault('flatbuffers', _flatbuffers_vendor)
-    sys.modules.setdefault('flatbuffers.compat', _flatbuffers_vendor.compat)
-    sys.modules.setdefault('flatbuffers.builder', _flatbuffers_vendor.builder)
-    sys.modules.setdefault('flatbuffers.table', _flatbuffers_vendor.table)
-    sys.modules.setdefault('flatbuffers.util', _flatbuffers_vendor.util)
-    sys.modules.setdefault('flatbuffers.number_types', _flatbuffers_vendor.number_types)
-    sys.modules.setdefault('flatbuffers.packer', _flatbuffers_vendor.packer)
-    sys.modules.setdefault('flatbuffers.encode', _flatbuffers_vendor.encode)
+    sys.modules.setdefault("flatbuffers", _flatbuffers_vendor)
+    sys.modules.setdefault("flatbuffers.compat", _flatbuffers_vendor.compat)
+    sys.modules.setdefault("flatbuffers.builder", _flatbuffers_vendor.builder)
+    sys.modules.setdefault("flatbuffers.table", _flatbuffers_vendor.table)
+    sys.modules.setdefault("flatbuffers.util", _flatbuffers_vendor.util)
+    sys.modules.setdefault("flatbuffers.number_types", _flatbuffers_vendor.number_types)
+    sys.modules.setdefault("flatbuffers.packer", _flatbuffers_vendor.packer)
+    sys.modules.setdefault("flatbuffers.encode", _flatbuffers_vendor.encode)
 
 
 def check_autobahn_flatbuffers_version_in_sync() -> str:

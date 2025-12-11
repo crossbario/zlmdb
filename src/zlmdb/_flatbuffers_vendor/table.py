@@ -51,11 +51,11 @@ class Table(object):
         off += encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
         start = off + N.UOffsetTFlags.bytewidth
         length = encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
-        return bytes(self.Bytes[start:start+length])
+        return bytes(self.Bytes[start : start + length])
 
     def VectorLen(self, off):
         """VectorLen retrieves the length of the vector whose offset is stored
-           at "off" in this object."""
+        at "off" in this object."""
         N.enforce_number(off, N.UOffsetTFlags)
 
         off += self.Pos
@@ -65,7 +65,7 @@ class Table(object):
 
     def Vector(self, off):
         """Vector retrieves the start of data of the vector whose offset is
-           stored at "off" in this object."""
+        stored at "off" in this object."""
         N.enforce_number(off, N.UOffsetTFlags)
 
         off += self.Pos
@@ -76,7 +76,7 @@ class Table(object):
 
     def Union(self, t2, off):
         """Union initializes any Table-derived type to point to the union at
-           the given offset."""
+        the given offset."""
         assert type(t2) is Table
         N.enforce_number(off, N.UOffsetTFlags)
 
@@ -109,7 +109,7 @@ class Table(object):
         modify Bytes in place.
         """
         offset = self.Vector(off)
-        length = self.VectorLen(off) # TODO: length accounts for bytewidth, right?
+        length = self.VectorLen(off)  # TODO: length accounts for bytewidth, right?
         numpy_dtype = N.to_numpy_type(flags)
         return encode.GetVectorAsNumpy(numpy_dtype, self.Bytes, length, offset)
 
@@ -125,5 +125,5 @@ class Table(object):
 
         off = self.Offset(slot)
         if off == 0:
-                return d
+            return d
         return off

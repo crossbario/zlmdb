@@ -5,4 +5,5 @@
 # which is required because zlmdb uses txaio for logging internally.
 
 import txaio
+
 txaio.use_twisted()
