@@ -104,6 +104,7 @@ docs = [
 
 [project.scripts]
 zlmdb = "zlmdb.cli:main"
+flatc = "zlmdb._flatc:main"
 
 [project.urls]
 Homepage = "https://github.com/crossbario/zlmdb"
@@ -135,6 +136,32 @@ exclude = [
     "/build",
     # Exclude git submodule - LMDB sources are copied during build
     "/lmdb-upstream",
+    # Exclude large test files from flatbuffers submodule
+    "/deps/flatbuffers/tests",
+    "/deps/flatbuffers/samples",
+    "/deps/flatbuffers/docs",
+    "/deps/flatbuffers/android",
+    "/deps/flatbuffers/swift",
+    "/deps/flatbuffers/kotlin",
+    "/deps/flatbuffers/java",
+    "/deps/flatbuffers/dart",
+    "/deps/flatbuffers/lua",
+    "/deps/flatbuffers/lobster",
+    "/deps/flatbuffers/net",
+    "/deps/flatbuffers/php",
+    "/deps/flatbuffers/rust",
+    "/deps/flatbuffers/ts",
+    "/deps/flatbuffers/go",
+    "/deps/flatbuffers/grpc",
+]
+# Include flatbuffers source for building flatc from sdist
+include = [
+    "/deps/flatbuffers/CMakeLists.txt",
+    "/deps/flatbuffers/cmake/**",
+    "/deps/flatbuffers/src/**",
+    "/deps/flatbuffers/include/**",
+    "/deps/flatbuffers/reflection/**",
+    "/deps/flatbuffers/python/**",
 ]
 
 # Custom build hook for CFFI extension modules (LMDB)
@@ -161,7 +188,7 @@ exclude = [
     ".tox",
     ".git",
     "__pycache__",
-    "src/zlmdb/_flatbuffers_vendor/*",  # Vendored flatbuffers runtime
+    "src/zlmdb/flatbuffers/*",  # Vendored flatbuffers runtime
     "src/zlmdb/_lmdb_vendor/*",  # Vendored LMDB bindings
     "src/zlmdb/flatbuffers/*",  # Auto-generated flatbuffers reflection code
     "src/zlmdb/tests/orm/MNodeLog.py",  # Auto-generated test file
@@ -223,7 +250,7 @@ norecursedirs = [
     "build",        # Build artifacts
     "dist",         # Distribution artifacts
     "src/zlmdb/_lmdb_vendor",   # Vendored LMDB bindings
-    "src/zlmdb/_flatbuffers_vendor",  # Vendored flatbuffers runtime
+    "src/zlmdb/flatbuffers",  # Vendored flatbuffers runtime
     "lmdb-upstream", # LMDB upstream submodule
     "lmdb-patches", # LMDB patches
     "deps",         # Dependencies

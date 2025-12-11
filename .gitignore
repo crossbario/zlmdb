@@ -115,3 +115,14 @@ testdb
 __pycache__/*
 *.pyc
 .build/
+
+# Built flatc binary (generated during wheel build)
+src/zlmdb/_flatc/bin/flatc
+src/zlmdb/_flatc/bin/flatc.exe
+
+# FlatBuffers cmake build directory
+deps/flatbuffers/build/
+
+# Generated reflection binary schema (built from reflection.fbs during wheel build)
+src/zlmdb/flatbuffers/reflection.bfbs
+

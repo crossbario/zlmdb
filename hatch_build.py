@@ -1,15 +1,16 @@
 """
-Hatchling custom build hook for CFFI extension modules.
+Hatchling custom build hook for CFFI extension modules and flatc compiler.
 
-This builds the vendored LMDB CFFI extension by:
-1. Capturing git version of deps/flatbuffers submodule
-2. Running build_lmdb.py to prepare LMDB sources (patches from git submodule)
-3. Running build_cffi_lmdb.py to compile the CFFI extension
+This builds:
+1. The vendored LMDB CFFI extension (patches from git submodule)
+2. The FlatBuffers compiler (flatc) from deps/flatbuffers
+3. The reflection.bfbs binary schema for runtime introspection
 
 See: https://hatch.pypa.io/latest/plugins/build-hook/custom/
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import sysconfig
@@ -19,7 +20,7 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class LmdbCffiBuildHook(BuildHookInterface):
-    """Build hook for compiling LMDB CFFI extension module."""
+    """Build hook for compiling LMDB CFFI extension and flatc compiler."""
 
     PLUGIN_NAME = "lmdb-cffi"
 
@@ -27,7 +28,7 @@ class LmdbCffiBuildHook(BuildHookInterface):
         """
         Called before each build.
 
-        For wheel builds, compile the CFFI modules.
+        For wheel builds, compile the CFFI modules and flatc.
         For sdist builds, just ensure source files are included.
         """
         # Always capture flatbuffers git version (for both wheel and sdist)
@@ -37,11 +38,18 @@ class LmdbCffiBuildHook(BuildHookInterface):
             # Only compile for wheel builds, sdist just includes source
             return
 
-        # Build CFFI module
-        built_extension = self._build_lmdb_cffi(build_data)
+        # Build LMDB CFFI module
+        built_lmdb = self._build_lmdb_cffi(build_data)
 
-        # If we built extension, mark this as a platform-specific wheel
-        if built_extension:
+        # Build flatc compiler
+        built_flatc = self._build_flatc(build_data)
+
+        # Generate reflection.bfbs using the built flatc
+        if built_flatc:
+            self._generate_reflection_bfbs(build_data)
+
+        # If we built any extensions, mark this as a platform-specific wheel
+        if built_lmdb or built_flatc:
             build_data["infer_tag"] = True
             build_data["pure_python"] = False
 
@@ -113,11 +121,177 @@ class LmdbCffiBuildHook(BuildHookInterface):
                 print(f"  Found: {so_file.name}")
             return False
 
+    def _build_flatc(self, build_data):
+        """Build the FlatBuffers compiler (flatc) from deps/flatbuffers.
+
+        Returns True if flatc was successfully built.
+        """
+        print("\n" + "=" * 70)
+        print("Building FlatBuffers compiler (flatc)")
+        print("=" * 70)
+
+        flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
+        build_dir = flatbuffers_dir / "build"
+        flatc_bin_dir = Path(self.root) / "src" / "zlmdb" / "_flatc" / "bin"
+
+        # Determine executable name based on platform
+        exe_name = "flatc.exe" if os.name == "nt" else "flatc"
+
+        # Check if cmake is available
+        cmake_path = shutil.which("cmake")
+        if not cmake_path:
+            print("WARNING: cmake not found, skipping flatc build")
+            print("  -> Install cmake to enable flatc bundling")
+            return False
+
+        # Check if flatbuffers source exists
+        if not flatbuffers_dir.exists():
+            print(f"WARNING: {flatbuffers_dir} not found")
+            print("  -> Initialize git submodule: git submodule update --init")
+            return False
+
+        # Create build directory
+        build_dir.mkdir(parents=True, exist_ok=True)
+
+        # Step 1: Configure with cmake
+        print("  -> Configuring with cmake...")
+        cmake_args = [
+            cmake_path,
+            "..",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DFLATBUFFERS_BUILD_TESTS=OFF",
+            "-DFLATBUFFERS_BUILD_FLATLIB=OFF",
+            "-DFLATBUFFERS_BUILD_FLATHASH=OFF",
+            "-DFLATBUFFERS_BUILD_GRPCTEST=OFF",
+            "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
+        ]
+
+        result = subprocess.run(
+            cmake_args,
+            cwd=build_dir,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"ERROR: cmake configure failed:\n{result.stderr}")
+            return False
+
+        # Step 2: Build flatc
+        print("  -> Building flatc...")
+        build_args = [cmake_path, "--build", ".", "--config", "Release", "--target", "flatc"]
+
+        result = subprocess.run(
+            build_args,
+            cwd=build_dir,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"ERROR: cmake build failed:\n{result.stderr}")
+            return False
+
+        # Step 3: Find and copy the built flatc
+        # flatc might be in different locations depending on platform/generator
+        possible_locations = [
+            build_dir / exe_name,
+            build_dir / "Release" / exe_name,  # Windows/MSVC
+            build_dir / "Debug" / exe_name,
+        ]
+
+        flatc_src = None
+        for loc in possible_locations:
+            if loc.exists():
+                flatc_src = loc
+                break
+
+        if not flatc_src:
+            print(f"ERROR: Built flatc not found in {build_dir}")
+            for loc in possible_locations:
+                print(f"  Checked: {loc}")
+            return False
+
+        # Copy flatc to package bin directory
+        flatc_bin_dir.mkdir(parents=True, exist_ok=True)
+        flatc_dest = flatc_bin_dir / exe_name
+        shutil.copy2(flatc_src, flatc_dest)
+
+        # Make executable on Unix
+        if os.name != "nt":
+            flatc_dest.chmod(0o755)
+
+        print(f"  -> Built flatc: {flatc_dest}")
+
+        # Add flatc to wheel
+        src_file = str(flatc_dest)
+        dest_path = f"zlmdb/_flatc/bin/{exe_name}"
+        build_data["force_include"][src_file] = dest_path
+        print(f"  -> Added to wheel: {dest_path}")
+
+        # Store flatc path for later use (reflection.bfbs generation)
+        self._flatc_path = flatc_dest
+        return True
+
+    def _generate_reflection_bfbs(self, build_data):
+        """Generate reflection.bfbs using the built flatc.
+
+        This creates the binary FlatBuffers schema that allows runtime
+        schema introspection.
+        """
+        print("\n" + "=" * 70)
+        print("Generating reflection.bfbs")
+        print("=" * 70)
+
+        if not hasattr(self, "_flatc_path") or not self._flatc_path.exists():
+            print("WARNING: flatc not available, skipping reflection.bfbs generation")
+            return False
+
+        flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
+        reflection_fbs = flatbuffers_dir / "reflection" / "reflection.fbs"
+        output_dir = Path(self.root) / "src" / "zlmdb" / "flatbuffers"
+
+        if not reflection_fbs.exists():
+            print(f"WARNING: {reflection_fbs} not found")
+            return False
+
+        # Generate reflection.bfbs
+        result = subprocess.run(
+            [
+                str(self._flatc_path),
+                "--binary",
+                "--schema",
+                "--bfbs-comments",
+                "--bfbs-builtins",
+                "-o",
+                str(output_dir),
+                str(reflection_fbs),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            print(f"ERROR: flatc failed:\n{result.stderr}")
+            return False
+
+        reflection_bfbs = output_dir / "reflection.bfbs"
+        if reflection_bfbs.exists():
+            print(f"  -> Generated: {reflection_bfbs}")
+
+            # Add to wheel
+            src_file = str(reflection_bfbs)
+            dest_path = "zlmdb/flatbuffers/reflection.bfbs"
+            build_data["force_include"][src_file] = dest_path
+            print(f"  -> Added to wheel: {dest_path}")
+            return True
+        else:
+            print("WARNING: reflection.bfbs not generated")
+            return False
+
     def _update_flatbuffers_git_version(self):
         """
         Capture the git describe version of deps/flatbuffers submodule.
 
-        This writes the version to _flatbuffers_vendor/_git_version.py so that
+        This writes the version to flatbuffers/_git_version.py so that
         zlmdb.flatbuffers.version() returns the exact git version at runtime.
         """
         print("=" * 70)
@@ -129,7 +303,7 @@ class LmdbCffiBuildHook(BuildHookInterface):
             Path(self.root)
             / "src"
             / "zlmdb"
-            / "_flatbuffers_vendor"
+            / "flatbuffers"
             / "_git_version.py"
         )
 
