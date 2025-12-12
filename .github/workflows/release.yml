@@ -804,6 +804,7 @@ jobs:
         with:
           distdir: dist
           mode: strict
+          # keep-metadata: false (default - removes CHECKSUMS, build-info.txt etc for PyPI)
           targets: |
             cpy311-linux-x86_64-manylinux_2_28
             cpy312-linux-x86_64-manylinux_2_28
@@ -826,13 +827,148 @@ jobs:
             cpy314-win-amd64
             source
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # Use OIDC trusted publishing (no password needed)
-          # Automatically generates and uploads attestations
-          packages-dir: dist/
-          verify-metadata: true
-          skip-existing: false
-          print-hash: true
-          attestations: true
+      - name: Check if version already exists on PyPI
+        id: pypi_check
+        run: |
+          # Extract version from tag name (v25.12.2 -> 25.12.2)
+          VERSION="${{ needs.check-workflows.outputs.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "Checking if zlmdb version ${VERSION} exists on PyPI..."
+
+          # Query PyPI JSON API
+          HTTP_CODE=$(curl -s -o /tmp/pypi_response.json -w "%{http_code}" "https://pypi.org/pypi/zlmdb/${VERSION}/json")
+
+          if [ "${HTTP_CODE}" = "200" ]; then
+            echo "⚠️  WARNING: Version ${VERSION} already exists on PyPI!"
+            echo "⚠️  PyPI does not allow re-uploading the same version."
+            echo "⚠️  Skipping PyPI upload to avoid error."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          elif [ "${HTTP_CODE}" = "404" ]; then
+            echo "✅ Version ${VERSION} does not exist on PyPI yet - proceeding with upload"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  Unexpected HTTP code ${HTTP_CODE} from PyPI API"
+            echo "⚠️  Response:"
+            cat /tmp/pypi_response.json || echo "(no response)"
+            echo "⚠️  Proceeding with upload anyway (will fail if version exists)"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+          rm -f /tmp/pypi_response.json
+
+      - name: Final validation before PyPI upload
+        if: steps.pypi_check.outputs.exists == 'false'
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> FINAL PYPI VALIDATION: All Packages"
+          echo "======================================================================"
+          echo ""
+          echo "Last chance to catch corrupted packages before PyPI upload."
+          echo ""
+          # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+          echo ""
+
+          echo "==> Validation environment:"
+          echo "Python: $(python3 --version)"
+          echo "setuptools: $(python3 -m pip show setuptools | grep '^Version:' || echo 'not installed')"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:' || echo 'not installed')"
+          echo "twine: $(twine --version)"
+          echo ""
+
+          HAS_ERRORS=0
+
+          for pkg in dist/*.whl dist/*.tar.gz; do
+            if [ ! -f "$pkg" ]; then
+              continue
+            fi
+
+            PKG_NAME=$(basename "$pkg")
+            echo "==> Validating: $PKG_NAME"
+
+            # For wheels: full integrity check
+            if [[ "$pkg" == *.whl ]]; then
+              if ! unzip -t "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ ZIP test FAIL - CORRUPTED WHEEL!"
+                HAS_ERRORS=1
+              elif ! python3 -m zipfile -t "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ Python zipfile test FAIL - CORRUPTED WHEEL!"
+                HAS_ERRORS=1
+              else
+                # Run twine check and capture output
+                twine check "$pkg" 2>&1 | tee /tmp/twine_pypi_output.txt
+                TWINE_EXIT=${PIPESTATUS[0]}
+
+                # Fail on nonzero exit or any error-like output
+                if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_pypi_output.txt; then
+                  echo "  ✅ All checks PASS"
+                else
+                  echo "  ❌ Twine check FAIL"
+                  cat /tmp/twine_pypi_output.txt
+                  HAS_ERRORS=1
+                fi
+                rm -f /tmp/twine_pypi_output.txt
+              fi
+            # For source dists: gzip + tar integrity
+            elif [[ "$pkg" == *.tar.gz ]]; then
+              if ! gzip -t "$pkg" 2>/dev/null; then
+                echo "  ❌ Gzip test FAIL - CORRUPTED TARBALL!"
+                HAS_ERRORS=1
+              elif ! tar -tzf "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ Tar test FAIL - CORRUPTED TARBALL!"
+                HAS_ERRORS=1
+              else
+                # Run twine check and capture output
+                twine check "$pkg" 2>&1 | tee /tmp/twine_pypi_output.txt
+                TWINE_EXIT=${PIPESTATUS[0]}
+
+                # Fail on nonzero exit or any error-like output
+                if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_pypi_output.txt; then
+                  echo "  ✅ All checks PASS"
+                else
+                  echo "  ❌ Twine check FAIL"
+                  cat /tmp/twine_pypi_output.txt
+                  HAS_ERRORS=1
+                fi
+                rm -f /tmp/twine_pypi_output.txt
+              fi
+            fi
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ PYPI VALIDATION FAILED - UPLOAD BLOCKED"
+            echo "======================================================================"
+            echo ""
+            echo "Corrupted packages detected. PyPI upload BLOCKED."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ ALL PACKAGES VALIDATED - Safe to upload to PyPI"
+            echo "======================================================================"
+          fi
+
+      - name: Publish to PyPI using bleeding-edge twine
+        if: steps.pypi_check.outputs.exists == 'false'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          echo "==> Publishing to PyPI using twine from master..."
+          # Install bleeding-edge packaging and twine for PEP 639 support
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+
+          echo "Upload environment:"
+          echo "twine: $(twine --version)"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:')"
+          echo ""
+
+          # Upload to PyPI - explicit patterns to avoid uploading metadata files
+          twine upload dist/*.whl dist/*.tar.gz --verbose

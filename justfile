@@ -1388,8 +1388,22 @@ dist venv="": clean-build (build venv) (build-sourcedist venv)
     echo "==> Contents of wheel:"
     unzip -l dist/zlmdb-*-py*.whl || echo "Wheel not found"
 
-# Publish package to PyPI (requires twine setup) - meta-recipe
+# Publish package to PyPI and Read the Docs (meta-recipe)
 publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
+    #!/usr/bin/env bash
+    set -e
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        TAG=$(git describe --tags --abbrev=0)
+    fi
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "✅ Successfully published version ${TAG}"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "📦 PyPI: https://pypi.org/project/zlmdb/${TAG#v}/"
+    echo "📚 RTD:  https://zlmdb.readthedocs.io/en/${TAG}/"
+    echo ""
 
 # Download GitHub release artifacts (usage: `just download-github-release` for nightly, or `just download-github-release stable`)
 download-github-release release_type="nightly":
@@ -1409,44 +1423,149 @@ download-github-release release_type="nightly":
     ls -la dist/
 
 # Download release artifacts from GitHub and publish to PyPI
-publish-pypi venv="" tag="": (install-tools venv)
+publish-pypi venv="" tag="":
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
     if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
         VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
-    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
 
+    # Determine which tag to use
     TAG="{{ tag }}"
     if [ -z "${TAG}" ]; then
-        echo "==> No tag specified, using local build..."
-        just dist ${VENV_NAME}
-    else
-        echo "==> Downloading release artifacts for tag ${TAG}..."
-        mkdir -p dist/
-        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/ "${TAG}"
+        echo "==> No tag specified. Using latest git tag..."
+        TAG=$(git describe --tags --abbrev=0)
+        echo "==> Using tag: ${TAG}"
     fi
 
-    echo "==> Verifying artifacts..."
-    ${VENV_PYTHON} -m twine check dist/*
+    # Verify tag looks like a version tag
+    if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "❌ Error: Tag '${TAG}' doesn't look like a version tag (expected format: vX.Y.Z)"
+        exit 1
+    fi
 
-    echo "==> Publishing to PyPI..."
-    ${VENV_PYTHON} -m twine upload dist/*
+    # Create temp directory for downloads
+    TEMP_DIR=$(mktemp -d)
+    echo "==> Downloading release artifacts from GitHub release ${TAG}..."
+    echo "    Temp directory: ${TEMP_DIR}"
+
+    # Download all release assets
+    gh release download "${TAG}" --repo crossbario/zlmdb --dir "${TEMP_DIR}"
+
+    echo ""
+    echo "==> Downloaded files:"
+    ls -lh "${TEMP_DIR}"
+    echo ""
+
+    # Count wheels and source distributions
+    WHEEL_COUNT=$(find "${TEMP_DIR}" -name "*.whl" | wc -l)
+    SDIST_COUNT=$(find "${TEMP_DIR}" -name "*.tar.gz" | wc -l)
+
+    echo "Found ${WHEEL_COUNT} wheel(s) and ${SDIST_COUNT} source distribution(s)"
+
+    if [ "${WHEEL_COUNT}" -eq 0 ] || [ "${SDIST_COUNT}" -eq 0 ]; then
+        echo "❌ Error: Expected at least 1 wheel and 1 source distribution"
+        echo "    Wheels found: ${WHEEL_COUNT}"
+        echo "    Source dist found: ${SDIST_COUNT}"
+        rm -rf "${TEMP_DIR}"
+        exit 1
+    fi
+
+    # Ensure twine is installed
+    if [ ! -f "${VENV_PATH}/bin/twine" ]; then
+        echo "==> Installing twine in ${VENV_NAME}..."
+        "${VENV_PATH}/bin/pip" install twine
+    fi
+
+    echo "==> Publishing to PyPI using twine..."
+    # Use explicit patterns to avoid uploading metadata files (build-info.txt, CHECKSUMS.sha256, etc.)
+    "${VENV_PATH}/bin/twine" upload "${TEMP_DIR}"/*.whl "${TEMP_DIR}"/*.tar.gz
+
+    # Cleanup
+    rm -rf "${TEMP_DIR}"
+    echo "✅ Successfully published ${TAG} to PyPI"
 
 # Trigger Read the Docs build for a specific tag
 publish-rtd tag="":
     #!/usr/bin/env bash
     set -e
+
+    # Determine which tag to use
     TAG="{{ tag }}"
     if [ -z "${TAG}" ]; then
-        echo "==> No tag specified. RTD will build from webhook on push."
-        echo "    To manually trigger: https://readthedocs.org/projects/zlmdb/builds/"
-    else
-        echo "==> RTD build triggered by GitHub webhook on tag push."
-        echo "    Monitor build at: https://readthedocs.org/projects/zlmdb/builds/"
-        echo "    Documentation will be available at: https://zlmdb.readthedocs.io/en/${TAG}/"
+        echo "==> No tag specified. Using latest git tag..."
+        TAG=$(git describe --tags --abbrev=0)
+        echo "==> Using tag: ${TAG}"
     fi
+
+    # Verify tag looks like a version tag
+    if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "❌ Error: Tag '${TAG}' doesn't look like a version tag (expected format: vX.Y.Z)"
+        exit 1
+    fi
+
+    # Check if RTD_TOKEN is set
+    if [ -z "${RTD_TOKEN}" ]; then
+        echo "❌ Error: RTD_TOKEN environment variable is not set"
+        echo ""
+        echo "To trigger RTD builds, you need to:"
+        echo "1. Get an API token from https://readthedocs.org/accounts/tokens/"
+        echo "2. Export it: export RTD_TOKEN=your_token_here"
+        echo ""
+        exit 1
+    fi
+
+    echo "==> Triggering Read the Docs build for ${TAG}..."
+    echo ""
+
+    # Trigger build via RTD API
+    # See: https://docs.readthedocs.io/en/stable/api/v3.html#post--api-v3-projects-(string-project_slug)-versions-(string-version_slug)-builds-
+    RTD_PROJECT="zlmdb"
+    RTD_API_URL="https://readthedocs.org/api/v3/projects/${RTD_PROJECT}/versions/${TAG}/builds/"
+
+    echo "==> Calling RTD API..."
+    echo "    Project: ${RTD_PROJECT}"
+    echo "    Version: ${TAG}"
+    echo "    URL: ${RTD_API_URL}"
+    echo ""
+
+    # Trigger the build
+    HTTP_CODE=$(curl -X POST \
+        -H "Authorization: Token ${RTD_TOKEN}" \
+        -w "%{http_code}" \
+        -s -o /tmp/rtd_response.json \
+        "${RTD_API_URL}")
+
+    echo "==> API Response (HTTP ${HTTP_CODE}):"
+    cat /tmp/rtd_response.json | python3 -m json.tool 2>/dev/null || cat /tmp/rtd_response.json
+    echo ""
+
+    if [ "${HTTP_CODE}" = "202" ] || [ "${HTTP_CODE}" = "201" ]; then
+        echo "✅ Read the Docs build triggered successfully!"
+        echo ""
+        echo "Check build status at:"
+        echo "  https://readthedocs.org/projects/${RTD_PROJECT}/builds/"
+        echo ""
+        echo "Documentation will be available at:"
+        echo "  https://${RTD_PROJECT}.readthedocs.io/en/${TAG}/"
+        echo "  https://${RTD_PROJECT}.readthedocs.io/en/stable/ (if marked as stable)"
+        echo ""
+    else
+        echo "❌ Error: Failed to trigger RTD build (HTTP ${HTTP_CODE})"
+        echo ""
+        echo "Common issues:"
+        echo "- Invalid RTD_TOKEN"
+        echo "- Version/tag doesn't exist in RTD project"
+        echo "- Network/API connectivity problems"
+        echo ""
+        exit 1
+    fi
+
+    rm -f /tmp/rtd_response.json
 
 # -----------------------------------------------------------------------------
 # -- Utilities
