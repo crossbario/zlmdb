@@ -168,23 +168,39 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
         ]
 
-        # For manylinux compatibility on Linux:
-        # 1. Use baseline ISA flags to avoid x86_64_v2 instructions in our code
-        # 2. Static link libstdc++/libgcc to avoid depending on system libs that
-        #    may contain x86_64_v2 instructions (auditwheel checks linked libs too)
+        # ====================================================================
+        # Manylinux compatibility flags for Linux builds
+        # ====================================================================
+        # Goal: Produce an auditwheel-safe binary that only uses baseline ISA
         #
-        # The _INIT variants are applied BEFORE the project sets its own flags,
-        # and FlatBuffers appends rather than replaces, so our flags take effect.
-        # We use CMAKE_EXE_LINKER_FLAGS (not _INIT) for the static linking flags.
+        # Without these flags, the resulting flatc binary may contain x86_64_v2
+        # instructions (SSE4.2, POPCNT, etc.) either from:
+        #   1. Our compiled code (compiler auto-vectorization)
+        #   2. Dynamically linked libstdc++/libgcc from system toolchain
+        #
+        # auditwheel rejects wheels with x86_64_v2+ instructions because they
+        # won't run on older CPUs that manylinux wheels are supposed to support.
+        #
+        # The solution:
+        #   - Use baseline ISA flags (-march=x86-64) for portable code
+        #   - Static link C++ runtime to avoid v2 instructions from system libs
+        #   - Clear FlatBuffers' own CXX flags to prevent it adding extras
+        #   - Keep glibc dynamic (required for manylinux compatibility)
+        # ====================================================================
         if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
             print("==================================================================")
             print("  -> Using baseline x86-64 flags for manylinux compatibility")
             print("  -> Static linking libstdc++/libgcc to avoid v2 instructions")
             print("==================================================================")
             cmake_args.extend([
+                # Baseline x86-64 ISA (no SSE4.2, AVX, etc.) - ensures portable code
                 "-DCMAKE_C_FLAGS_INIT=-march=x86-64 -mtune=generic",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=x86-64 -mtune=generic",
-                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libgcc -static-libstdc++",
+                # Clear FlatBuffers' own CXX flags to prevent it adding extras
+                "-DFLATBUFFERS_CXX_FLAGS=",
+                # Static link C++ runtime - avoids x86_64_v2 from system libstdc++
+                # Note: glibc remains dynamic (required for manylinux)
+                "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
             ])
         elif sys.platform.startswith("linux") and os.uname().machine in (
             "aarch64",
@@ -195,9 +211,14 @@ class LmdbCffiBuildHook(BuildHookInterface):
             print("  -> Static linking libstdc++/libgcc")
             print("==================================================================")
             cmake_args.extend([
+                # Baseline ARMv8-A ISA - ensures portable code
                 "-DCMAKE_C_FLAGS_INIT=-march=armv8-a",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=armv8-a",
-                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libgcc -static-libstdc++",
+                # Clear FlatBuffers' own CXX flags
+                "-DFLATBUFFERS_CXX_FLAGS=",
+                # Static link C++ runtime - avoids ISA issues from system libs
+                # Note: glibc remains dynamic (required for manylinux)
+                "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
             ])
 
         result = subprocess.run(
