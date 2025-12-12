@@ -168,17 +168,23 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
         ]
 
-        # For manylinux compatibility, use baseline ISA flags via CMAKE_*_FLAGS_INIT
+        # For manylinux compatibility on Linux:
+        # 1. Use baseline ISA flags to avoid x86_64_v2 instructions in our code
+        # 2. Static link libstdc++/libgcc to avoid depending on system libs that
+        #    may contain x86_64_v2 instructions (auditwheel checks linked libs too)
+        #
         # The _INIT variants are applied BEFORE the project sets its own flags,
         # and FlatBuffers appends rather than replaces, so our flags take effect.
-        # Using CMAKE_*_FLAGS directly doesn't work because FlatBuffers overwrites them.
+        # We use CMAKE_EXE_LINKER_FLAGS (not _INIT) for the static linking flags.
         if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
             print("==================================================================")
             print("  -> Using baseline x86-64 flags for manylinux compatibility")
+            print("  -> Static linking libstdc++/libgcc to avoid v2 instructions")
             print("==================================================================")
             cmake_args.extend([
                 "-DCMAKE_C_FLAGS_INIT=-march=x86-64 -mtune=generic",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=x86-64 -mtune=generic",
+                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libgcc -static-libstdc++",
             ])
         elif sys.platform.startswith("linux") and os.uname().machine in (
             "aarch64",
@@ -186,10 +192,12 @@ class LmdbCffiBuildHook(BuildHookInterface):
         ):
             print("==================================================================")
             print("  -> Using baseline arm64 flags for manylinux compatibility")
+            print("  -> Static linking libstdc++/libgcc")
             print("==================================================================")
             cmake_args.extend([
                 "-DCMAKE_C_FLAGS_INIT=-march=armv8-a",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=armv8-a",
+                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libgcc -static-libstdc++",
             ])
 
         result = subprocess.run(
