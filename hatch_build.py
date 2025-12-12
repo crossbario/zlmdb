@@ -170,11 +170,38 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Without this, the compiler may use x86_64_v2+ instructions (SSE4.2, etc.)
         # which auditwheel will reject as incompatible with manylinux
         if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
+            print("==================================================================")
             print("  -> Using baseline x86-64 flags for manylinux compatibility")
-            cmake_args.extend([
-                "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
-                "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
-            ])
+            print("==================================================================")
+            cmake_args.extend(
+                [
+                    "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
+                    "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
+                ]
+            )
+        elif sys.platform.startswith("linux") and os.uname().machine in (
+            "aarch64",
+            "arm64",
+        ):
+            print("==================================================================")
+            print("  -> Using baseline arm64 flags for manylinux compatibility")
+            print("==================================================================")
+            cmake_args.extend(
+                [
+                    "-DCMAKE_C_FLAGS=-march=armv8-a",
+                    "-DCMAKE_CXX_FLAGS=-march=armv8-a",
+                ]
+            )
+        else:
+            print("==================================================================")
+            print("  -> Unknown platform/arch; falling back to safe generic flags")
+            print("==================================================================")
+            cmake_args.extend(
+                [
+                    "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
+                    "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
+                ]
+            )
 
         result = subprocess.run(
             cmake_args,
@@ -188,7 +215,15 @@ class LmdbCffiBuildHook(BuildHookInterface):
 
         # Step 2: Build flatc
         print("  -> Building flatc...")
-        build_args = [cmake_path, "--build", ".", "--config", "Release", "--target", "flatc"]
+        build_args = [
+            cmake_path,
+            "--build",
+            ".",
+            "--config",
+            "Release",
+            "--target",
+            "flatc",
+        ]
 
         result = subprocess.run(
             build_args,
@@ -310,11 +345,7 @@ class LmdbCffiBuildHook(BuildHookInterface):
 
         flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
         git_version_file = (
-            Path(self.root)
-            / "src"
-            / "zlmdb"
-            / "flatbuffers"
-            / "_git_version.py"
+            Path(self.root) / "src" / "zlmdb" / "flatbuffers" / "_git_version.py"
         )
 
         # Default version if git is not available or submodule not initialized
