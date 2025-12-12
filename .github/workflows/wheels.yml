@@ -431,6 +431,57 @@ jobs:
           echo "======================================================================"
         shell: bash
 
+      - name: Verify source distribution installs and works (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          echo "======================================================================"
+          echo "==> Verifying Source Distribution Installs and Works"
+          echo "======================================================================"
+          echo ""
+          echo "This test installs the sdist in a fresh venv and runs smoke tests"
+          echo "to verify LMDB CFFI compilation and FlatBuffers work correctly."
+          echo ""
+
+          # Find the source distribution
+          SDIST=$(ls dist/*.tar.gz 2>/dev/null | head -1)
+          if [ -z "$SDIST" ]; then
+            echo "❌ No source distribution found in dist/"
+            exit 1
+          fi
+
+          echo "Testing: $(basename $SDIST)"
+          echo ""
+
+          # Run the smoke test via just recipe
+          just test-sdist-install "$SDIST"
+
+          echo ""
+          echo "======================================================================"
+          echo "✅ Source distribution verification PASSED"
+          echo "======================================================================"
+        shell: bash
+
+      - name: Generate build metadata (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          BUILD_INFO=dist/build-info.txt
+
+          echo "Source Distribution Build Information" > $BUILD_INFO
+          echo "======================================" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
+          echo "Platform: Linux x86_64 (GitHub Actions runner)" >> $BUILD_INFO
+          echo "Build Method: python -m build --sdist" >> $BUILD_INFO
+          echo "Python: $(python3 --version)" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+          echo "Source Distributions Built:" >> $BUILD_INFO
+          for sdist in dist/*.tar.gz; do
+            echo "- $(basename "$sdist")" >> $BUILD_INFO
+          done
+
+          cat $BUILD_INFO
+        shell: bash
+
       - name: Upload source distribution (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main

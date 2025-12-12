@@ -269,6 +269,47 @@ jobs:
           sync
           echo "[OK] All buffers flushed to disk"
 
+      - name: Verify manylinux wheels install and work
+        run: |
+          export PATH="/root/.cargo/bin:$PATH"
+
+          echo "======================================================================"
+          echo "==> Verifying Manylinux Wheels Install and Work"
+          echo "======================================================================"
+          echo ""
+          echo "This test installs each wheel in a fresh venv and runs smoke tests"
+          echo "to verify LMDB CFFI extension and FlatBuffers work correctly."
+          echo ""
+
+          # Test one wheel (the system Python version wheel)
+          # We pick cp312 as it's commonly available
+          SYSTEM_PYVER=$(python3 -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          echo "System Python: $SYSTEM_PYVER"
+          echo ""
+
+          # Find a wheel matching the system Python version
+          TEST_WHEEL=$(ls wheelhouse/zlmdb-*-${SYSTEM_PYVER}-*.whl 2>/dev/null | head -1)
+          if [ -z "$TEST_WHEEL" ]; then
+            # Fall back to any wheel
+            TEST_WHEEL=$(ls wheelhouse/*.whl 2>/dev/null | head -1)
+          fi
+
+          if [ -z "$TEST_WHEEL" ]; then
+            echo "❌ No wheels found in wheelhouse/"
+            exit 1
+          fi
+
+          echo "Testing: $(basename $TEST_WHEEL)"
+          echo ""
+
+          # Run the smoke test via just recipe
+          just test-wheel-install "$TEST_WHEEL"
+
+          echo ""
+          echo "======================================================================"
+          echo "✅ Manylinux wheel verification PASSED"
+          echo "======================================================================"
+
       - name: Generate build metadata
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
@@ -287,7 +328,7 @@ jobs:
           for whl in wheelhouse/*.whl; do
             echo "- $(basename "$whl")" >> $BUILD_INFO
           done
-          
+
           cat $BUILD_INFO
 
       - name: List built artifacts

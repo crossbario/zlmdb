@@ -540,6 +540,258 @@ test-bundled-flatc venv="": (install venv)
     echo "✅ ALL BUNDLED FLATC TESTS PASSED"
     echo "========================================================================"
 
+# -----------------------------------------------------------------------------
+# -- Artifact Verification (smoke tests for built wheels and sdist)
+# -----------------------------------------------------------------------------
+
+# Run smoke tests on an installed zlmdb package (verifies LMDB + FlatBuffers work)
+# This is used by test-wheel-install and test-sdist-install after installation
+test-smoke venv="":
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "========================================================================"
+    echo "  SMOKE TESTS - Verifying zlmdb installation"
+    echo "========================================================================"
+    echo ""
+    echo "Python: $(${VENV_PYTHON} --version)"
+    echo "Venv: ${VENV_PATH}"
+    echo ""
+
+    FAILURES=0
+
+    # Test 1: Import zlmdb and check version
+    echo "Test 1: Importing zlmdb and checking version..."
+    if ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb version: {zlmdb.__version__}')" 2>&1; then
+        echo "  ✓ PASS"
+    else
+        echo "  ❌ FAIL: Could not import zlmdb"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    # Test 2: Import zlmdb.lmdb and check version
+    echo "Test 2: Importing zlmdb.lmdb (CFFI extension)..."
+    if ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; print(f'  LMDB version: {lmdb.version()}')" 2>&1; then
+        echo "  ✓ PASS"
+    else
+        echo "  ❌ FAIL: Could not import zlmdb.lmdb"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    # Test 3: Basic LMDB operations (open/put/get/close)
+    echo "Test 3: Basic LMDB operations (open/put/get/close)..."
+    LMDB_TEST_SCRIPT='
+import tempfile
+import os
+import zlmdb.lmdb as lmdb
+
+with tempfile.TemporaryDirectory() as tmpdir:
+    env = lmdb.open(tmpdir, max_dbs=1)
+    with env.begin(write=True) as txn:
+        txn.put(b"key1", b"value1")
+        txn.put(b"key2", b"value2")
+    with env.begin() as txn:
+        assert txn.get(b"key1") == b"value1"
+        assert txn.get(b"key2") == b"value2"
+        assert txn.get(b"key3") is None
+    env.close()
+    print("  LMDB operations: open, put, get, close - all work!")
+'
+    if ${VENV_PYTHON} -c "${LMDB_TEST_SCRIPT}" 2>&1; then
+        echo "  ✓ PASS"
+    else
+        echo "  ❌ FAIL: LMDB operations failed"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    # Test 4: Import zlmdb.flatbuffers and check version
+    echo "Test 4: Importing zlmdb.flatbuffers..."
+    if ${VENV_PYTHON} -c "import zlmdb.flatbuffers; print(f'  FlatBuffers version: {zlmdb.flatbuffers.__version__}')" 2>&1; then
+        echo "  ✓ PASS"
+    else
+        echo "  ❌ FAIL: Could not import zlmdb.flatbuffers"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    # Test 5: Check flatc binary is available and works
+    echo "Test 5: Checking flatc binary..."
+    if ${VENV_PYTHON} -c "from zlmdb._flatc import get_flatc_path; import os; p = get_flatc_path(); print(f'  flatc path: {p}'); assert os.path.isfile(p) and os.access(p, os.X_OK), 'not executable'" 2>&1; then
+        # Try running flatc --version
+        FLATC_PATH=$(${VENV_PYTHON} -c "from zlmdb._flatc import get_flatc_path; print(get_flatc_path())")
+        if [ -x "${FLATC_PATH}" ]; then
+            FLATC_VERSION=$("${FLATC_PATH}" --version 2>&1 || echo "failed")
+            echo "  flatc version: ${FLATC_VERSION}"
+            if [[ "${FLATC_VERSION}" == *"flatc"* ]]; then
+                echo "  ✓ PASS"
+            else
+                echo "  ❌ FAIL: flatc --version returned unexpected output"
+                FAILURES=$((FAILURES + 1))
+            fi
+        else
+            echo "  ❌ FAIL: flatc not executable"
+            FAILURES=$((FAILURES + 1))
+        fi
+    else
+        echo "  ❌ FAIL: Could not get flatc path"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    # Test 6: Verify reflection files are present
+    echo "Test 6: Checking FlatBuffers reflection files..."
+    REFLECTION_TEST='
+import zlmdb.flatbuffers
+from pathlib import Path
+fbs_dir = Path(zlmdb.flatbuffers.__file__).parent
+fbs_file = fbs_dir / "reflection.fbs"
+bfbs_file = fbs_dir / "reflection.bfbs"
+assert fbs_file.exists(), f"reflection.fbs not found at {fbs_file}"
+assert bfbs_file.exists(), f"reflection.bfbs not found at {bfbs_file}"
+print(f"  reflection.fbs: {fbs_file.stat().st_size} bytes")
+print(f"  reflection.bfbs: {bfbs_file.stat().st_size} bytes")
+'
+    if ${VENV_PYTHON} -c "${REFLECTION_TEST}" 2>&1; then
+        echo "  ✓ PASS"
+    else
+        echo "  ❌ FAIL: Reflection files not found"
+        FAILURES=$((FAILURES + 1))
+    fi
+    echo ""
+
+    echo "========================================================================"
+    if [ ${FAILURES} -eq 0 ]; then
+        echo "✅ ALL SMOKE TESTS PASSED (6/6)"
+    else
+        echo "❌ SMOKE TESTS FAILED (${FAILURES} failures)"
+        exit 1
+    fi
+    echo "========================================================================"
+
+# Test installing and verifying a built wheel (used in CI for artifact verification)
+# Usage: just test-wheel-install /path/to/zlmdb-*.whl
+test-wheel-install wheel_path:
+    #!/usr/bin/env bash
+    set -e
+    WHEEL_PATH="{{ wheel_path }}"
+
+    if [ ! -f "${WHEEL_PATH}" ]; then
+        echo "ERROR: Wheel file not found: ${WHEEL_PATH}"
+        exit 1
+    fi
+
+    WHEEL_NAME=$(basename "${WHEEL_PATH}")
+    echo "========================================================================"
+    echo "  WHEEL INSTALL TEST"
+    echo "========================================================================"
+    echo ""
+    echo "Wheel: ${WHEEL_NAME}"
+    echo ""
+
+    # Create ephemeral venv name based on wheel
+    EPHEMERAL_VENV="smoke-wheel-$$"
+    EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
+
+    echo "Creating ephemeral venv: ${EPHEMERAL_VENV}..."
+
+    # Detect system Python version and create venv
+    SYSTEM_VERSION=$(/usr/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    ENV_NAME="cpy$(echo ${SYSTEM_VERSION} | tr -d '.')"
+    PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+
+    mkdir -p "{{ VENV_DIR }}"
+    uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
+
+    EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+
+    # Install the wheel
+    echo ""
+    echo "Installing wheel..."
+    ${EPHEMERAL_PYTHON} -m pip install "${WHEEL_PATH}"
+
+    # Run smoke tests
+    echo ""
+    VENV_DIR="{{ VENV_DIR }}" just test-smoke "${EPHEMERAL_VENV}"
+
+    # Cleanup
+    echo ""
+    echo "Cleaning up ephemeral venv..."
+    rm -rf "${EPHEMERAL_PATH}"
+
+    echo ""
+    echo "========================================================================"
+    echo "✅ WHEEL INSTALL TEST PASSED: ${WHEEL_NAME}"
+    echo "========================================================================"
+
+# Test installing and verifying a source distribution (used in CI for artifact verification)
+# Usage: just test-sdist-install /path/to/zlmdb-*.tar.gz
+test-sdist-install sdist_path:
+    #!/usr/bin/env bash
+    set -e
+    SDIST_PATH="{{ sdist_path }}"
+
+    if [ ! -f "${SDIST_PATH}" ]; then
+        echo "ERROR: Source distribution not found: ${SDIST_PATH}"
+        exit 1
+    fi
+
+    SDIST_NAME=$(basename "${SDIST_PATH}")
+    echo "========================================================================"
+    echo "  SOURCE DISTRIBUTION INSTALL TEST"
+    echo "========================================================================"
+    echo ""
+    echo "Source dist: ${SDIST_NAME}"
+    echo ""
+
+    # Create ephemeral venv name
+    EPHEMERAL_VENV="smoke-sdist-$$"
+    EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
+
+    echo "Creating ephemeral venv: ${EPHEMERAL_VENV}..."
+
+    # Detect system Python version and create venv
+    SYSTEM_VERSION=$(/usr/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    ENV_NAME="cpy$(echo ${SYSTEM_VERSION} | tr -d '.')"
+    PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+
+    mkdir -p "{{ VENV_DIR }}"
+    uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
+
+    EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+
+    # Install build dependencies (CFFI needs these for compilation)
+    echo ""
+    echo "Installing build dependencies..."
+    ${EPHEMERAL_PYTHON} -m pip install cffi setuptools wheel
+
+    # Install from source distribution (this will compile LMDB CFFI extension)
+    echo ""
+    echo "Installing from source distribution (includes CFFI compilation)..."
+    ${EPHEMERAL_PYTHON} -m pip install "${SDIST_PATH}"
+
+    # Run smoke tests
+    echo ""
+    VENV_DIR="{{ VENV_DIR }}" just test-smoke "${EPHEMERAL_VENV}"
+
+    # Cleanup
+    echo ""
+    echo "Cleaning up ephemeral venv..."
+    rm -rf "${EPHEMERAL_PATH}"
+
+    echo ""
+    echo "========================================================================"
+    echo "✅ SOURCE DISTRIBUTION INSTALL TEST PASSED: ${SDIST_NAME}"
+    echo "========================================================================"
+
 # Test all LMDB examples
 test-examples-lmdb venv="": (test-examples-lmdb-addressbook venv) (test-examples-lmdb-dirtybench-gdbm venv) (test-examples-lmdb-dirtybench venv) (test-examples-lmdb-nastybench venv) (test-examples-lmdb-parabench venv)
 
