@@ -186,22 +186,44 @@ class LmdbCffiBuildHook(BuildHookInterface):
         #   - Static link C++ runtime to avoid v2 instructions from system libs
         #   - Clear FlatBuffers' own CXX flags to prevent it adding extras
         #   - Keep glibc dynamic (required for manylinux compatibility)
+        #
+        # We use multiple mechanisms to ensure flags are applied:
+        #   1. Environment variables (CFLAGS, CXXFLAGS, LDFLAGS)
+        #   2. CMAKE_*_FLAGS_INIT (applied before project flags)
+        #   3. CMAKE_*_FLAGS (may be overwritten but worth trying)
+        #   4. FLATBUFFERS_CXX_FLAGS= (clear FlatBuffers' own additions)
         # ====================================================================
+        cmake_env = os.environ.copy()
+
         if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
             print("==================================================================")
             print("  -> Using baseline x86-64 flags for manylinux compatibility")
             print("  -> Static linking libstdc++/libgcc to avoid v2 instructions")
             print("==================================================================")
+
+            # Set via environment (most reliable)
+            cmake_env["CFLAGS"] = "-march=x86-64 -mtune=generic"
+            cmake_env["CXXFLAGS"] = "-march=x86-64 -mtune=generic"
+            cmake_env["LDFLAGS"] = "-static-libstdc++ -static-libgcc"
+
             cmake_args.extend([
-                # Baseline x86-64 ISA (no SSE4.2, AVX, etc.) - ensures portable code
+                # _INIT variants applied before project sets its flags
                 "-DCMAKE_C_FLAGS_INIT=-march=x86-64 -mtune=generic",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=x86-64 -mtune=generic",
-                # Clear FlatBuffers' own CXX flags to prevent it adding extras
+                # Also set non-INIT versions as fallback
+                "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
+                "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
+                # Clear FlatBuffers' own CXX flags
                 "-DFLATBUFFERS_CXX_FLAGS=",
-                # Static link C++ runtime - avoids x86_64_v2 from system libstdc++
-                # Note: glibc remains dynamic (required for manylinux)
+                # Static link C++ runtime
+                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libstdc++ -static-libgcc",
                 "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
             ])
+
+            print(f"  -> CFLAGS={cmake_env['CFLAGS']}")
+            print(f"  -> CXXFLAGS={cmake_env['CXXFLAGS']}")
+            print(f"  -> LDFLAGS={cmake_env['LDFLAGS']}")
+
         elif sys.platform.startswith("linux") and os.uname().machine in (
             "aarch64",
             "arm64",
@@ -210,22 +232,34 @@ class LmdbCffiBuildHook(BuildHookInterface):
             print("  -> Using baseline arm64 flags for manylinux compatibility")
             print("  -> Static linking libstdc++/libgcc")
             print("==================================================================")
+
+            cmake_env["CFLAGS"] = "-march=armv8-a"
+            cmake_env["CXXFLAGS"] = "-march=armv8-a"
+            cmake_env["LDFLAGS"] = "-static-libstdc++ -static-libgcc"
+
             cmake_args.extend([
-                # Baseline ARMv8-A ISA - ensures portable code
                 "-DCMAKE_C_FLAGS_INIT=-march=armv8-a",
                 "-DCMAKE_CXX_FLAGS_INIT=-march=armv8-a",
-                # Clear FlatBuffers' own CXX flags
+                "-DCMAKE_C_FLAGS=-march=armv8-a",
+                "-DCMAKE_CXX_FLAGS=-march=armv8-a",
                 "-DFLATBUFFERS_CXX_FLAGS=",
-                # Static link C++ runtime - avoids ISA issues from system libs
-                # Note: glibc remains dynamic (required for manylinux)
+                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libstdc++ -static-libgcc",
                 "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
             ])
+
+            print(f"  -> CFLAGS={cmake_env['CFLAGS']}")
+            print(f"  -> CXXFLAGS={cmake_env['CXXFLAGS']}")
+            print(f"  -> LDFLAGS={cmake_env['LDFLAGS']}")
+
+        # Log the full cmake command for debugging
+        print(f"  -> cmake args: {' '.join(cmake_args)}")
 
         result = subprocess.run(
             cmake_args,
             cwd=build_dir,
             capture_output=True,
             text=True,
+            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake configure failed:\n{result.stderr}")
