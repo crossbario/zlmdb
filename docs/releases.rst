@@ -5,136 +5,12 @@ This page provides links to release artifacts for each version of zLMDB.
 
 For detailed changelog entries, see :doc:`changelog`.
 
-25.12.1 (2025-12-10)
---------------------
+25.12.2
+-------
+
+**Release Date:** 2025-12-12
 
 **Release Type:** Stable release
-
-**Source Build:** `master-202512092131 <https://github.com/crossbario/autobahn-python/releases/tag/master-202512092131>`__
-
-WebSocket Conformance
-^^^^^^^^^^^^^^^^^^^^^
-
-Autobahn|Python passes 100% of the WebSocket conformance tests from the
-`Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`_.
-
-Configuration: with-nvx (NVX acceleration)
-""""""""""""""""""""""""""""""""""""""""""
-
-**Client Conformance**
-
-.. list-table::
-   :header-rows: 1
-   :widths: 60 20 10
-
-   * - Testee
-     - Cases
-     - Status
-   * - ``Autobahn/25.12.1-NVXCFFI/1.18.0.dev0-Twisted/25.5.0-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/1.18.0.dev0-asyncio-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-Twisted/25.5.0-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-Twisted/25.5.0-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-asyncio-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-asyncio-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-
-**Server Conformance**
-
-.. list-table::
-   :header-rows: 1
-   :widths: 60 20 10
-
-   * - Testee
-     - Cases
-     - Status
-   * - ``Autobahn/25.12.1-NVXCFFI/1.18.0.dev0-Twisted/25.5.0-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/1.18.0.dev0-asyncio-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-Twisted/25.5.0-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-Twisted/25.5.0-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-asyncio-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-NVXCFFI/2.0.0-asyncio-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-
-Configuration: without-nvx (pure Python)
-""""""""""""""""""""""""""""""""""""""""""
-
-**Client Conformance**
-
-.. list-table::
-   :header-rows: 1
-   :widths: 60 20 10
-
-   * - Testee
-     - Cases
-     - Status
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-
-**Server Conformance**
-
-.. list-table::
-   :header-rows: 1
-   :widths: 60 20 10
-
-   * - Testee
-     - Cases
-     - Status
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-Twisted/25.5.0-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-CPython/3.11.14``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-CPython/3.14.2``
-     - 246 / 246
-     - ✅
-   * - ``Autobahn/25.12.1-asyncio-PyPy/3.11.13``
-     - 246 / 246
-     - ✅
 
 Release Artifacts
 ^^^^^^^^^^^^^^^^^
@@ -152,96 +28,98 @@ Binary wheels are available for the following platforms:
    * - Linux
      - CPython 3.11
      - x86_64
-     - ``autobahn-25.12.1-cp311-cp311-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+     - ``zlmdb-25.12.2-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
    * - Linux
      - CPython 3.11
      - ARM64
-     - ``autobahn-25.12.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+     - ``zlmdb-25.12.2-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl``
    * - Linux
      - CPython 3.12
      - x86_64
-     - ``autobahn-25.12.1-cp312-cp312-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+     - ``zlmdb-25.12.2-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.12
+     - ARM64
+     - ``zlmdb-25.12.2-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl``
    * - Linux
      - CPython 3.13
      - x86_64
-     - ``autobahn-25.12.1-cp313-cp313-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+     - ``zlmdb-25.12.2-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
    * - Linux
      - CPython 3.13
      - ARM64
-     - ``autobahn-25.12.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+     - ``zlmdb-25.12.2-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl``
    * - Linux
      - CPython 3.14
      - x86_64
-     - ``autobahn-25.12.1-cp314-cp314-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+     - ``zlmdb-25.12.2-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.14t
+     - ARM64
+     - ``zlmdb-25.12.2-cp314-cp314t-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl``
    * - Linux
      - PyPy 3.11
      - x86_64
-     - ``autobahn-25.12.1-pp311-pypy311_pp73-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+     - ``zlmdb-25.12.2-pp311-pypy311_pp73-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
    * - Linux
      - PyPy 3.11
      - ARM64
-     - ``autobahn-25.12.1-pp311-pypy311_pp73-manylinux2014_aarch64.manylinux_2_17_aarch64.whl``
+     - ``zlmdb-25.12.2-pp311-pypy311_pp73-manylinux_2_34_aarch64.whl``
+   * - macOS
+     - CPython 3.11
+     - ARM64
+     - ``zlmdb-25.12.2-cp311-cp311-macosx_15_0_arm64.whl``
+   * - macOS
+     - CPython 3.12
+     - ARM64
+     - ``zlmdb-25.12.2-cp312-cp312-macosx_15_0_arm64.whl``
    * - macOS
      - CPython 3.13
      - ARM64
-     - ``autobahn-25.12.1-cp313-cp313-macosx_15_0_arm64.whl``
+     - ``zlmdb-25.12.2-cp313-cp313-macosx_15_0_arm64.whl``
    * - macOS
      - CPython 3.14
      - ARM64
-     - ``autobahn-25.12.1-cp314-cp314-macosx_15_0_arm64.whl``
+     - ``zlmdb-25.12.2-cp314-cp314-macosx_15_0_arm64.whl``
    * - macOS
      - PyPy 3.11
      - ARM64
-     - ``autobahn-25.12.1-pp311-pypy311_pp73-macosx_15_0_arm64.whl``
+     - ``zlmdb-25.12.2-pp311-pypy311_pp73-macosx_15_0_arm64.whl``
    * - Windows
      - CPython 3.11
      - x86_64
-     - ``autobahn-25.12.1-cp311-cp311-win_amd64.whl``
+     - ``zlmdb-25.12.2-cp311-cp311-win_amd64.whl``
    * - Windows
      - CPython 3.12
      - x86_64
-     - ``autobahn-25.12.1-cp312-cp312-win_amd64.whl``
+     - ``zlmdb-25.12.2-cp312-cp312-win_amd64.whl``
    * - Windows
      - CPython 3.13
      - x86_64
-     - ``autobahn-25.12.1-cp313-cp313-win_amd64.whl``
+     - ``zlmdb-25.12.2-cp313-cp313-win_amd64.whl``
    * - Windows
      - CPython 3.14
      - x86_64
-     - ``autobahn-25.12.1-cp314-cp314-win_amd64.whl``
-   * - Windows
-     - PyPy 3.11
-     - x86_64
-     - ``autobahn-25.12.1-pp311-pypy311_pp73-win_amd64.whl``
+     - ``zlmdb-25.12.2-cp314-cp314-win_amd64.whl``
 
-Source distribution: ``autobahn-25.12.1.tar.gz``
-
-Artifact Verification
-^^^^^^^^^^^^^^^^^^^^^
-
-All release artifacts include SHA256 checksums for integrity verification.
-
-* `CHECKSUMS.sha256 <https://github.com/crossbario/autobahn-python/releases/download/master-202512092131/CHECKSUMS.sha256>`__
-
-To verify a downloaded artifact:
-
-.. code-block:: bash
-
-   # Download checksum file
-   curl -LO https://github.com/crossbario/autobahn-python/releases/download/master-202512092131/CHECKSUMS.sha256
-
-   # Verify a wheel (example)
-   openssl sha256 autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl
-   # Compare output with corresponding line in CHECKSUMS.sha256
+Source distribution: ``zlmdb-25.12.2.tar.gz``
 
 Release Links
 ^^^^^^^^^^^^^
 
-* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v25.12.1>`__
-* `PyPI Package <https://pypi.org/project/autobahn/25.12.1/>`__
-* `Documentation <https://autobahn.readthedocs.io/en/v25.12.1/>`__
+* `GitHub Release <https://github.com/crossbario/zlmdb/releases/tag/v25.12.2>`__
+* `PyPI Package <https://pypi.org/project/zlmdb/25.12.2/>`__
+* `Documentation <https://zlmdb.readthedocs.io/en/v25.12.2/>`__
 
-**Detailed Changes:** See :ref:`changelog` (25.12.1 section)
+**Detailed Changes:** See :doc:`changelog` (25.12.2 section)
+
+
+25.12.1
+-------
+
+* `GitHub Release <https://github.com/crossbario/zlmdb/releases/tag/v25.12.1>`__
+* `PyPI Package <https://pypi.org/project/zlmdb/25.12.1/>`__
+* `Documentation <https://zlmdb.readthedocs.io/en/v25.12.1/>`__
 
 
 25.10.2

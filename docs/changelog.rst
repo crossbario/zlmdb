@@ -8,6 +8,21 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+25.12.2
+-------
+
+**Fix**
+
+* Fix sdist packaging to include flatbuffers grpc/ source files (#92, #93)
+* Fix release.yml targets to match actual wheel manylinux tags
+* Make smoke tests required for sdist validation (sdist must provide same functionality as wheels)
+
+**Other**
+
+* Improve CI workflow ordering with 5-phase execution and filesystem sync points
+* Add artifact verification smoke tests to CI workflows
+* Update .github/workflows/README.md with correct manylinux tags and wheel details
+
 25.12.1
 -------
 
