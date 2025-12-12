@@ -30,11 +30,11 @@ jobs:
           # zlmdb builds binary wheels with compiled LMDB C sources
           # using CFFI on all platforms (required for CPython and PyPy)
           # =========================================================
-
-          # --- Linux ---
-          - os: ubuntu-24.04 # ✅ GitHub-hosted Linux x86_64 (most common, always fast)
-            platform: linux
-            arch: x86_64
+          # NOTE: Linux x86_64 wheels are built in wheels-docker.yml using
+          # manylinux_2_28 containers for proper ABI compliance.
+          # Linux ARM64 wheels are built in wheels-arm64.yml.
+          # This workflow handles macOS, Windows, and source distribution.
+          # =========================================================
 
           # --- macOS ---
           - os: macos-15 # ✅ GitHub-hosted macOS Apple Silicon (current Macs, fast)
@@ -45,6 +45,12 @@ jobs:
           - os: windows-2022 # ✅ GitHub-hosted Windows x86_64 (mostly fast)
             platform: windows
             arch: x86_64
+
+          # --- Linux (source distribution only, no wheels) ---
+          - os: ubuntu-24.04
+            platform: linux
+            arch: x86_64
+            sdist_only: true  # Only build source distribution, not wheels
 
     steps:
       - name: Checkout code
@@ -113,9 +119,10 @@ jobs:
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
 
-      # Build binary wheels with compiled LMDB (all platforms)
-      - name: Build binary wheels with CFFI+LMDB (Linux/macOS)
-        if: runner.os != 'Windows'
+      # Build binary wheels with compiled LMDB (macOS and Windows only)
+      # Linux wheels are built in wheels-docker.yml using manylinux containers
+      - name: Build binary wheels with CFFI+LMDB (macOS)
+        if: matrix.platform == 'macos'
         run: |
           # Build binary wheels with compiled LMDB C sources via CFFI
           # This builds wheels for ALL Python environments (CPython + PyPy)
@@ -143,173 +150,8 @@ jobs:
           just build-sourcedist
         shell: bash
 
-      - name: Force file system sync (post-build, pre-validation) - Linux
-        if: matrix.platform == 'linux'
-        run: |
-          echo "======================================================================"
-          echo "==> Forcing File System Sync (Post-Build)"
-          echo "======================================================================"
-          echo ""
-          sync
-          echo "✅ All buffers flushed to disk"
-          echo ""
-        shell: bash
-
-      - name: Validate wheels integrity (Linux only)
-        if: matrix.platform == 'linux'
-        run: |
-          set -o pipefail
-          echo "======================================================================"
-          echo "==> Validating Wheel Integrity (Fail Fast)"
-          echo "======================================================================"
-          echo ""
-          echo "Installing twine for validation..."
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
-          echo ""
-
-          echo "==> Validation environment:"
-          echo "Python: $(python3 --version)"
-          echo "twine: $(twine --version)"
-          echo ""
-
-          # Initialize validation output file
-          VALIDATION_FILE="dist/VALIDATION.txt"
-          echo "Wheel Validation Results - Build Time (wheels workflow)" > "$VALIDATION_FILE"
-          echo "=========================================================" >> "$VALIDATION_FILE"
-          echo "" >> "$VALIDATION_FILE"
-          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
-          echo "Platform: Linux x86_64 (binary with CFFI+LMDB)" >> "$VALIDATION_FILE"
-          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
-          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
-          echo "" >> "$VALIDATION_FILE"
-
-          HAS_ERRORS=0
-
-          for wheel in dist/*.whl; do
-            if [ ! -f "$wheel" ]; then
-              echo "⚠️  No wheels found in dist/"
-              continue
-            fi
-
-            WHEEL_NAME=$(basename "$wheel")
-            echo "==> Validating: $WHEEL_NAME"
-            echo "" >> "$VALIDATION_FILE"
-            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
-            echo "---" >> "$VALIDATION_FILE"
-
-            # Test 1: ZIP integrity
-            echo "  [1/3] ZIP integrity test..."
-            if unzip -t "$wheel" > /dev/null 2>&1; then
-              echo "  ✅ ZIP test PASS"
-              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
-            else
-              echo "  ❌ ZIP test FAIL - wheel is corrupted!"
-              echo "  ZIP test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
-              HAS_ERRORS=1
-            fi
-
-            # Test 2: Python zipfile module
-            echo "  [2/3] Python zipfile test..."
-            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
-              echo "  ✅ Python zipfile test PASS"
-              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
-            else
-              echo "  ❌ Python zipfile test FAIL - wheel is corrupted!"
-              echo "  Python zipfile test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
-              HAS_ERRORS=1
-            fi
-
-            # Test 3: twine check
-            echo "  [3/3] Twine validation..."
-            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
-            TWINE_EXIT=${PIPESTATUS[0]}
-
-            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
-              echo "  ✅ Twine check PASS"
-              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
-            else
-              echo "  ❌ Twine check FAIL"
-              cat /tmp/twine_output.txt
-              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
-              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
-              HAS_ERRORS=1
-            fi
-            rm -f /tmp/twine_output.txt
-
-            echo ""
-          done
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "" >> "$VALIDATION_FILE"
-            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
-            echo "======================================================================"
-            echo "❌ WHEEL VALIDATION FAILED"
-            echo "======================================================================"
-            echo ""
-            echo "DO NOT PROCEED - corrupted wheels must NOT become artifacts!"
-            exit 1
-          else
-            echo "" >> "$VALIDATION_FILE"
-            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
-            echo "======================================================================"
-            echo "✅ All wheels validated successfully"
-            echo "======================================================================"
-            echo ""
-            echo "Validation results written to: $VALIDATION_FILE"
-          fi
-        shell: bash
-
-      - name: Generate SHA256 checksums (Linux only)
-        if: matrix.platform == 'linux'
-        run: |
-          echo "======================================================================"
-          echo "==> Generating SHA256 Checksums for Chain of Custody"
-          echo "======================================================================"
-          echo ""
-          echo "OpenSSL version:"
-          openssl version
-          echo ""
-
-          # Force sync before checksumming
-          echo "Forcing sync before checksumming..."
-          sync
-          echo "✅ Buffers flushed"
-          echo ""
-
-          # Change to dist directory to generate relative paths
-          cd dist
-
-          CHECKSUM_FILE="CHECKSUMS.sha256"
-
-          # Generate checksums for all wheels
-          echo "Generating checksums for wheels..."
-          for wheel in *.whl; do
-            if [ -f "$wheel" ]; then
-              sync
-              openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
-            fi
-          done
-
-          echo ""
-          echo "==> Generated checksum file:"
-          cat "$CHECKSUM_FILE"
-          echo ""
-
-          cd ..
-        shell: bash
-
-      - name: Force file system sync (post-checksum, pre-upload) - Linux
-        if: matrix.platform == 'linux'
-        run: |
-          echo "======================================================================"
-          echo "==> Forcing File System Sync (Post-Checksum)"
-          echo "======================================================================"
-          echo ""
-          sync
-          echo "✅ All buffers flushed to disk"
-          echo ""
-        shell: bash
+      # NOTE: Linux wheel validation/checksums are handled in wheels-docker.yml
+      # This job only builds source distribution on Linux
 
       - name: Force file system sync (post-build, pre-validation) - macOS
         if: matrix.platform == 'macos'
@@ -503,10 +345,17 @@ jobs:
           Set-Location ..
         shell: pwsh
 
-      - name: List built artifacts (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: List built artifacts (macOS)
+        if: matrix.platform == 'macos'
         run: |
           echo "Built wheels:"
+          ls -la dist/
+        shell: bash
+
+      - name: List built artifacts (Linux - source distribution only)
+        if: matrix.platform == 'linux'
+        run: |
+          echo "Built source distribution:"
           ls -la dist/
         shell: bash
 
@@ -517,7 +366,8 @@ jobs:
           Get-ChildItem dist
         shell: pwsh
 
-      - name: Upload wheel artifacts
+      - name: Upload wheel artifacts (macOS and Windows only)
+        if: matrix.platform != 'linux'
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}

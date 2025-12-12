@@ -169,97 +169,25 @@ class LmdbCffiBuildHook(BuildHookInterface):
         ]
 
         # ====================================================================
-        # Manylinux compatibility flags for Linux builds
+        # Note on manylinux compatibility:
         # ====================================================================
-        # Goal: Produce an auditwheel-safe binary that only uses baseline ISA
+        # For manylinux-compatible Linux wheels, flatc must be built inside
+        # official PyPA manylinux containers (e.g., manylinux_2_28_x86_64).
+        # These containers have toolchains pre-configured for the correct
+        # glibc and ISA requirements. No special compiler flags needed.
         #
-        # Without these flags, the resulting flatc binary may contain x86_64_v2
-        # instructions (SSE4.2, POPCNT, etc.) either from:
-        #   1. Our compiled code (compiler auto-vectorization)
-        #   2. Dynamically linked libstdc++/libgcc from system toolchain
+        # The wheels-docker.yml and wheels-arm64.yml workflows handle Linux
+        # builds using these containers. This hatch_build.py works correctly
+        # in those environments without any ISA-specific flags.
         #
-        # auditwheel rejects wheels with x86_64_v2+ instructions because they
-        # won't run on older CPUs that manylinux wheels are supposed to support.
-        #
-        # The solution:
-        #   - Use baseline ISA flags (-march=x86-64) for portable code
-        #   - Static link C++ runtime to avoid v2 instructions from system libs
-        #   - Clear FlatBuffers' own CXX flags to prevent it adding extras
-        #   - Keep glibc dynamic (required for manylinux compatibility)
-        #
-        # We use multiple mechanisms to ensure flags are applied:
-        #   1. Environment variables (CFLAGS, CXXFLAGS, LDFLAGS)
-        #   2. CMAKE_*_FLAGS_INIT (applied before project flags)
-        #   3. CMAKE_*_FLAGS (may be overwritten but worth trying)
-        #   4. FLATBUFFERS_CXX_FLAGS= (clear FlatBuffers' own additions)
+        # macOS and Windows builds use native GitHub runners (wheels.yml).
         # ====================================================================
-        cmake_env = os.environ.copy()
-
-        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
-            print("==================================================================")
-            print("  -> Using baseline x86-64 flags for manylinux compatibility")
-            print("  -> Static linking libstdc++/libgcc to avoid v2 instructions")
-            print("==================================================================")
-
-            # Set via environment (most reliable)
-            cmake_env["CFLAGS"] = "-march=x86-64 -mtune=generic"
-            cmake_env["CXXFLAGS"] = "-march=x86-64 -mtune=generic"
-            cmake_env["LDFLAGS"] = "-static-libstdc++ -static-libgcc"
-
-            cmake_args.extend([
-                # _INIT variants applied before project sets its flags
-                "-DCMAKE_C_FLAGS_INIT=-march=x86-64 -mtune=generic",
-                "-DCMAKE_CXX_FLAGS_INIT=-march=x86-64 -mtune=generic",
-                # Also set non-INIT versions as fallback
-                "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
-                "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
-                # Clear FlatBuffers' own CXX flags
-                "-DFLATBUFFERS_CXX_FLAGS=",
-                # Static link C++ runtime
-                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libstdc++ -static-libgcc",
-                "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
-            ])
-
-            print(f"  -> CFLAGS={cmake_env['CFLAGS']}")
-            print(f"  -> CXXFLAGS={cmake_env['CXXFLAGS']}")
-            print(f"  -> LDFLAGS={cmake_env['LDFLAGS']}")
-
-        elif sys.platform.startswith("linux") and os.uname().machine in (
-            "aarch64",
-            "arm64",
-        ):
-            print("==================================================================")
-            print("  -> Using baseline arm64 flags for manylinux compatibility")
-            print("  -> Static linking libstdc++/libgcc")
-            print("==================================================================")
-
-            cmake_env["CFLAGS"] = "-march=armv8-a"
-            cmake_env["CXXFLAGS"] = "-march=armv8-a"
-            cmake_env["LDFLAGS"] = "-static-libstdc++ -static-libgcc"
-
-            cmake_args.extend([
-                "-DCMAKE_C_FLAGS_INIT=-march=armv8-a",
-                "-DCMAKE_CXX_FLAGS_INIT=-march=armv8-a",
-                "-DCMAKE_C_FLAGS=-march=armv8-a",
-                "-DCMAKE_CXX_FLAGS=-march=armv8-a",
-                "-DFLATBUFFERS_CXX_FLAGS=",
-                "-DCMAKE_EXE_LINKER_FLAGS_INIT=-static-libstdc++ -static-libgcc",
-                "-DCMAKE_EXE_LINKER_FLAGS=-static-libstdc++ -static-libgcc",
-            ])
-
-            print(f"  -> CFLAGS={cmake_env['CFLAGS']}")
-            print(f"  -> CXXFLAGS={cmake_env['CXXFLAGS']}")
-            print(f"  -> LDFLAGS={cmake_env['LDFLAGS']}")
-
-        # Log the full cmake command for debugging
-        print(f"  -> cmake args: {' '.join(cmake_args)}")
 
         result = subprocess.run(
             cmake_args,
             cwd=build_dir,
             capture_output=True,
             text=True,
-            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake configure failed:\n{result.stderr}")
