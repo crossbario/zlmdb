@@ -556,126 +556,12 @@ test-smoke venv="":
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
 
-    echo "========================================================================"
-    echo "  SMOKE TESTS - Verifying zlmdb installation"
-    echo "========================================================================"
-    echo ""
-    echo "Python: $(${VENV_PYTHON} --version)"
+    echo "Running smoke tests with Python: $(${VENV_PYTHON} --version)"
     echo "Venv: ${VENV_PATH}"
     echo ""
 
-    FAILURES=0
-
-    # Test 1: Import zlmdb and check version
-    echo "Test 1: Importing zlmdb and checking version..."
-    if ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb version: {zlmdb.__version__}')" 2>&1; then
-        echo "  ✓ PASS"
-    else
-        echo "  ❌ FAIL: Could not import zlmdb"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    # Test 2: Import zlmdb.lmdb and check version
-    echo "Test 2: Importing zlmdb.lmdb (CFFI extension)..."
-    if ${VENV_PYTHON} -c "import zlmdb.lmdb as lmdb; print(f'  LMDB version: {lmdb.version()}')" 2>&1; then
-        echo "  ✓ PASS"
-    else
-        echo "  ❌ FAIL: Could not import zlmdb.lmdb"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    # Test 3: Basic LMDB operations (open/put/get/close)
-    echo "Test 3: Basic LMDB operations (open/put/get/close)..."
-    LMDB_TEST_SCRIPT='
-import tempfile
-import os
-import zlmdb.lmdb as lmdb
-
-with tempfile.TemporaryDirectory() as tmpdir:
-    env = lmdb.open(tmpdir, max_dbs=1)
-    with env.begin(write=True) as txn:
-        txn.put(b"key1", b"value1")
-        txn.put(b"key2", b"value2")
-    with env.begin() as txn:
-        assert txn.get(b"key1") == b"value1"
-        assert txn.get(b"key2") == b"value2"
-        assert txn.get(b"key3") is None
-    env.close()
-    print("  LMDB operations: open, put, get, close - all work!")
-'
-    if ${VENV_PYTHON} -c "${LMDB_TEST_SCRIPT}" 2>&1; then
-        echo "  ✓ PASS"
-    else
-        echo "  ❌ FAIL: LMDB operations failed"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    # Test 4: Import zlmdb.flatbuffers and check version
-    echo "Test 4: Importing zlmdb.flatbuffers..."
-    if ${VENV_PYTHON} -c "import zlmdb.flatbuffers; print(f'  FlatBuffers version: {zlmdb.flatbuffers.__version__}')" 2>&1; then
-        echo "  ✓ PASS"
-    else
-        echo "  ❌ FAIL: Could not import zlmdb.flatbuffers"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    # Test 5: Check flatc binary is available and works
-    echo "Test 5: Checking flatc binary..."
-    if ${VENV_PYTHON} -c "from zlmdb._flatc import get_flatc_path; import os; p = get_flatc_path(); print(f'  flatc path: {p}'); assert os.path.isfile(p) and os.access(p, os.X_OK), 'not executable'" 2>&1; then
-        # Try running flatc --version
-        FLATC_PATH=$(${VENV_PYTHON} -c "from zlmdb._flatc import get_flatc_path; print(get_flatc_path())")
-        if [ -x "${FLATC_PATH}" ]; then
-            FLATC_VERSION=$("${FLATC_PATH}" --version 2>&1 || echo "failed")
-            echo "  flatc version: ${FLATC_VERSION}"
-            if [[ "${FLATC_VERSION}" == *"flatc"* ]]; then
-                echo "  ✓ PASS"
-            else
-                echo "  ❌ FAIL: flatc --version returned unexpected output"
-                FAILURES=$((FAILURES + 1))
-            fi
-        else
-            echo "  ❌ FAIL: flatc not executable"
-            FAILURES=$((FAILURES + 1))
-        fi
-    else
-        echo "  ❌ FAIL: Could not get flatc path"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    # Test 6: Verify reflection files are present
-    echo "Test 6: Checking FlatBuffers reflection files..."
-    REFLECTION_TEST='
-import zlmdb.flatbuffers
-from pathlib import Path
-fbs_dir = Path(zlmdb.flatbuffers.__file__).parent
-fbs_file = fbs_dir / "reflection.fbs"
-bfbs_file = fbs_dir / "reflection.bfbs"
-assert fbs_file.exists(), f"reflection.fbs not found at {fbs_file}"
-assert bfbs_file.exists(), f"reflection.bfbs not found at {bfbs_file}"
-print(f"  reflection.fbs: {fbs_file.stat().st_size} bytes")
-print(f"  reflection.bfbs: {bfbs_file.stat().st_size} bytes")
-'
-    if ${VENV_PYTHON} -c "${REFLECTION_TEST}" 2>&1; then
-        echo "  ✓ PASS"
-    else
-        echo "  ❌ FAIL: Reflection files not found"
-        FAILURES=$((FAILURES + 1))
-    fi
-    echo ""
-
-    echo "========================================================================"
-    if [ ${FAILURES} -eq 0 ]; then
-        echo "✅ ALL SMOKE TESTS PASSED (6/6)"
-    else
-        echo "❌ SMOKE TESTS FAILED (${FAILURES} failures)"
-        exit 1
-    fi
-    echo "========================================================================"
+    # Run the smoke test Python script
+    ${VENV_PYTHON} "{{ PROJECT_DIR }}/scripts/smoke_test.py"
 
 # Test installing and verifying a built wheel (used in CI for artifact verification)
 # Usage: just test-wheel-install /path/to/zlmdb-*.whl
@@ -701,12 +587,36 @@ test-wheel-install wheel_path:
     EPHEMERAL_VENV="smoke-wheel-$$"
     EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
 
-    echo "Creating ephemeral venv: ${EPHEMERAL_VENV}..."
+    # Extract Python version from wheel filename
+    # Wheel format: {name}-{version}-{python tag}-{abi tag}-{platform tag}.whl
+    # Python tag examples: cp312, cp311, pp311, py3
+    PYTAG=$(echo "${WHEEL_NAME}" | sed -n 's/.*-\(cp[0-9]*\|pp[0-9]*\|py[0-9]*\)-.*/\1/p')
 
-    # Detect system Python version and create venv
-    SYSTEM_VERSION=$(/usr/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    ENV_NAME="cpy$(echo ${SYSTEM_VERSION} | tr -d '.')"
-    PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+    if [[ "${PYTAG}" =~ ^cp([0-9])([0-9]+)$ ]]; then
+        # CPython wheel (e.g., cp312 -> 3.12)
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PYTHON_SPEC="cpython-${MAJOR}.${MINOR}"
+        echo "Detected CPython ${MAJOR}.${MINOR} wheel"
+    elif [[ "${PYTAG}" =~ ^pp([0-9])([0-9]+)$ ]]; then
+        # PyPy wheel (e.g., pp311 -> pypy-3.11)
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PYTHON_SPEC="pypy-${MAJOR}.${MINOR}"
+        echo "Detected PyPy ${MAJOR}.${MINOR} wheel"
+    elif [[ "${PYTAG}" =~ ^py([0-9])$ ]]; then
+        # Pure Python wheel (e.g., py3) - use system Python
+        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+        echo "Pure Python wheel, using system Python ${SYSTEM_VERSION}"
+    else
+        # Fallback to system Python
+        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+        echo "Could not detect Python version from wheel, using system Python ${SYSTEM_VERSION}"
+    fi
+
+    echo "Creating ephemeral venv with ${PYTHON_SPEC}..."
 
     mkdir -p "{{ VENV_DIR }}"
     uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
@@ -752,6 +662,15 @@ test-sdist-install sdist_path:
     echo "Source dist: ${SDIST_NAME}"
     echo ""
 
+    # Check if cmake is available (required for full functionality)
+    if command -v cmake >/dev/null 2>&1; then
+        echo "cmake: $(cmake --version | head -1)"
+    else
+        echo "WARNING: cmake not found - flatc binary will not be built"
+        echo "         Install cmake for full functionality"
+    fi
+    echo ""
+
     # Create ephemeral venv name
     EPHEMERAL_VENV="smoke-sdist-$$"
     EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
@@ -759,7 +678,7 @@ test-sdist-install sdist_path:
     echo "Creating ephemeral venv: ${EPHEMERAL_VENV}..."
 
     # Detect system Python version and create venv
-    SYSTEM_VERSION=$(/usr/bin/python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
     ENV_NAME="cpy$(echo ${SYSTEM_VERSION} | tr -d '.')"
     PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
 
@@ -768,15 +687,20 @@ test-sdist-install sdist_path:
 
     EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
 
-    # Install build dependencies (CFFI needs these for compilation)
+    # Install build dependencies (required for --no-build-isolation)
+    # CFFI is needed for LMDB extension, hatchling for the build system
+    # Use --no-cache-dir consistently to ensure fresh installs
     echo ""
     echo "Installing build dependencies..."
-    ${EPHEMERAL_PYTHON} -m pip install cffi setuptools wheel
+    ${EPHEMERAL_PYTHON} -m pip install --no-cache-dir cffi setuptools wheel hatchling
 
     # Install from source distribution (this will compile LMDB CFFI extension)
+    # Use --no-build-isolation to allow access to system cmake for building flatc
+    # Use --no-cache-dir to ensure fresh build (avoid cached wheels without flatc)
+    # Note: flatc may not build if cmake is missing or grpc submodule isn't present
     echo ""
     echo "Installing from source distribution (includes CFFI compilation)..."
-    ${EPHEMERAL_PYTHON} -m pip install "${SDIST_PATH}"
+    ${EPHEMERAL_PYTHON} -m pip install --no-build-isolation --no-cache-dir "${SDIST_PATH}"
 
     # Run smoke tests
     echo ""
