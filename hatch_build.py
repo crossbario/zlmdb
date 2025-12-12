@@ -150,8 +150,40 @@ class LmdbCffiBuildHook(BuildHookInterface):
             print("  -> Initialize git submodule: git submodule update --init")
             return False
 
-        # Create build directory
+        # Clean and create build directory (remove any cached cmake config)
+        if build_dir.exists():
+            shutil.rmtree(build_dir)
         build_dir.mkdir(parents=True, exist_ok=True)
+
+        # Determine compiler flags for manylinux compatibility
+        # We need baseline ISA to avoid x86_64_v2+ instructions that auditwheel rejects
+        cmake_env = os.environ.copy()
+        extra_c_flags = ""
+        extra_cxx_flags = ""
+
+        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
+            print("==================================================================")
+            print("  -> Using baseline x86-64 flags for manylinux compatibility")
+            print("==================================================================")
+            extra_c_flags = "-march=x86-64 -mtune=generic"
+            extra_cxx_flags = "-march=x86-64 -mtune=generic"
+        elif sys.platform.startswith("linux") and os.uname().machine in (
+            "aarch64",
+            "arm64",
+        ):
+            print("==================================================================")
+            print("  -> Using baseline arm64 flags for manylinux compatibility")
+            print("==================================================================")
+            extra_c_flags = "-march=armv8-a"
+            extra_cxx_flags = "-march=armv8-a"
+
+        # Set flags via environment variables (more reliable than cmake -D args)
+        # These take precedence and won't be overridden by CMakeCache.txt
+        if extra_c_flags:
+            cmake_env["CFLAGS"] = extra_c_flags
+            cmake_env["CXXFLAGS"] = extra_cxx_flags
+            print(f"  -> CFLAGS={extra_c_flags}")
+            print(f"  -> CXXFLAGS={extra_cxx_flags}")
 
         # Step 1: Configure with cmake
         print("  -> Configuring with cmake...")
@@ -166,48 +198,12 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
         ]
 
-        # For Linux x86_64, use baseline ISA to ensure manylinux compatibility
-        # Without this, the compiler may use x86_64_v2+ instructions (SSE4.2, etc.)
-        # which auditwheel will reject as incompatible with manylinux
-        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
-            print("==================================================================")
-            print("  -> Using baseline x86-64 flags for manylinux compatibility")
-            print("==================================================================")
-            cmake_args.extend(
-                [
-                    "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
-                    "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
-                ]
-            )
-        elif sys.platform.startswith("linux") and os.uname().machine in (
-            "aarch64",
-            "arm64",
-        ):
-            print("==================================================================")
-            print("  -> Using baseline arm64 flags for manylinux compatibility")
-            print("==================================================================")
-            cmake_args.extend(
-                [
-                    "-DCMAKE_C_FLAGS=-march=armv8-a",
-                    "-DCMAKE_CXX_FLAGS=-march=armv8-a",
-                ]
-            )
-        else:
-            print("==================================================================")
-            print("  -> Unknown platform/arch; falling back to safe generic flags")
-            print("==================================================================")
-            cmake_args.extend(
-                [
-                    "-DCMAKE_C_FLAGS=-march=x86-64 -mtune=generic",
-                    "-DCMAKE_CXX_FLAGS=-march=x86-64 -mtune=generic",
-                ]
-            )
-
         result = subprocess.run(
             cmake_args,
             cwd=build_dir,
             capture_output=True,
             text=True,
+            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake configure failed:\n{result.stderr}")
@@ -230,6 +226,7 @@ class LmdbCffiBuildHook(BuildHookInterface):
             cwd=build_dir,
             capture_output=True,
             text=True,
+            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake build failed:\n{result.stderr}")
