@@ -155,36 +155,6 @@ class LmdbCffiBuildHook(BuildHookInterface):
             shutil.rmtree(build_dir)
         build_dir.mkdir(parents=True, exist_ok=True)
 
-        # Determine compiler flags for manylinux compatibility
-        # We need baseline ISA to avoid x86_64_v2+ instructions that auditwheel rejects
-        cmake_env = os.environ.copy()
-        extra_c_flags = ""
-        extra_cxx_flags = ""
-
-        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
-            print("==================================================================")
-            print("  -> Using baseline x86-64 flags for manylinux compatibility")
-            print("==================================================================")
-            extra_c_flags = "-march=x86-64 -mtune=generic"
-            extra_cxx_flags = "-march=x86-64 -mtune=generic"
-        elif sys.platform.startswith("linux") and os.uname().machine in (
-            "aarch64",
-            "arm64",
-        ):
-            print("==================================================================")
-            print("  -> Using baseline arm64 flags for manylinux compatibility")
-            print("==================================================================")
-            extra_c_flags = "-march=armv8-a"
-            extra_cxx_flags = "-march=armv8-a"
-
-        # Set flags via environment variables (more reliable than cmake -D args)
-        # These take precedence and won't be overridden by CMakeCache.txt
-        if extra_c_flags:
-            cmake_env["CFLAGS"] = extra_c_flags
-            cmake_env["CXXFLAGS"] = extra_cxx_flags
-            print(f"  -> CFLAGS={extra_c_flags}")
-            print(f"  -> CXXFLAGS={extra_cxx_flags}")
-
         # Step 1: Configure with cmake
         print("  -> Configuring with cmake...")
         cmake_args = [
@@ -198,12 +168,35 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "-DFLATBUFFERS_BUILD_SHAREDLIB=OFF",
         ]
 
+        # For manylinux compatibility, use baseline ISA flags via CMAKE_*_FLAGS_INIT
+        # The _INIT variants are applied BEFORE the project sets its own flags,
+        # and FlatBuffers appends rather than replaces, so our flags take effect.
+        # Using CMAKE_*_FLAGS directly doesn't work because FlatBuffers overwrites them.
+        if sys.platform.startswith("linux") and os.uname().machine == "x86_64":
+            print("==================================================================")
+            print("  -> Using baseline x86-64 flags for manylinux compatibility")
+            print("==================================================================")
+            cmake_args.extend([
+                "-DCMAKE_C_FLAGS_INIT=-march=x86-64 -mtune=generic",
+                "-DCMAKE_CXX_FLAGS_INIT=-march=x86-64 -mtune=generic",
+            ])
+        elif sys.platform.startswith("linux") and os.uname().machine in (
+            "aarch64",
+            "arm64",
+        ):
+            print("==================================================================")
+            print("  -> Using baseline arm64 flags for manylinux compatibility")
+            print("==================================================================")
+            cmake_args.extend([
+                "-DCMAKE_C_FLAGS_INIT=-march=armv8-a",
+                "-DCMAKE_CXX_FLAGS_INIT=-march=armv8-a",
+            ])
+
         result = subprocess.run(
             cmake_args,
             cwd=build_dir,
             capture_output=True,
             text=True,
-            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake configure failed:\n{result.stderr}")
@@ -226,7 +219,6 @@ class LmdbCffiBuildHook(BuildHookInterface):
             cwd=build_dir,
             capture_output=True,
             text=True,
-            env=cmake_env,
         )
         if result.returncode != 0:
             print(f"ERROR: cmake build failed:\n{result.stderr}")
@@ -262,6 +254,28 @@ class LmdbCffiBuildHook(BuildHookInterface):
             flatc_dest.chmod(0o755)
 
         print(f"  -> Built flatc: {flatc_dest}")
+
+        # Verify ISA level on Linux (check for x86_64_v2 instructions)
+        if sys.platform.startswith("linux"):
+            print("  -> Verifying ISA level...")
+            readelf_result = subprocess.run(
+                ["readelf", "-A", str(flatc_dest)],
+                capture_output=True,
+                text=True,
+            )
+            if readelf_result.returncode == 0:
+                # Look for ISA info in output
+                for line in readelf_result.stdout.splitlines():
+                    if "ISA" in line or "x86" in line.lower():
+                        print(f"     {line.strip()}")
+            # Also check file command for architecture info
+            file_result = subprocess.run(
+                ["file", str(flatc_dest)],
+                capture_output=True,
+                text=True,
+            )
+            if file_result.returncode == 0:
+                print(f"     {file_result.stdout.strip()}")
 
         # Add flatc to wheel
         src_file = str(flatc_dest)
