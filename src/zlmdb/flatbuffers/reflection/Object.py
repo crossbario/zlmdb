@@ -47,7 +47,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.Field import Field
+            from reflection.Field import Field
 
             obj = Field()
             obj.Init(self._tab.Bytes, x)
@@ -96,7 +96,7 @@ class Object(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from zlmdb.flatbuffers.reflection.KeyValue import KeyValue
+            from reflection.KeyValue import KeyValue
 
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)

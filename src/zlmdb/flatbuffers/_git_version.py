@@ -1,4 +1,4 @@
-# Copyright 2019 Google Inc. All rights reserved.
+# Copyright 2014 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Placeholder, to be updated during the release process
-# by the setup.py
-__version__ = u"latest"
+# Git version from deps/flatbuffers submodule.
+# This file is regenerated at build time by hatch_build.py.
+# The version is captured via `git describe --tags` in the submodule.
+#
+# Format: "v25.9.23" (tagged release) or "v25.9.23-2-g95053e6a" (post-tag)
+#
+# If building from sdist without git, this will retain the version
+# from when the sdist was created.
+
+__git_version__ = "v25.9.23"

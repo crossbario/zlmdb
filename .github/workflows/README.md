@@ -1,0 +1,131 @@
+# GitHub Actions Workflows
+
+This document describes the CI/CD workflow architecture for zlmdb,
+including artifact production and consumption flow.
+
+## Workflow Overview
+
+| Workflow | Purpose | Trigger |
+|----------|---------|---------|
+| `main.yml` | Code quality, tests, documentation | Push, PR |
+| `wheels.yml` | macOS/Windows wheels + source dist | Push, PR, tags |
+| `wheels-docker.yml` | Linux x86_64 manylinux wheels | Push, PR, tags |
+| `wheels-arm64.yml` | Linux ARM64 manylinux wheels | Push, PR, tags |
+| `release.yml` | Collect artifacts, publish releases | workflow_run |
+
+## Artifact Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ARTIFACT PRODUCERS                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  main.yml                                                                   │
+│  └── documentation                     (docs HTML)                          │
+│                                                                             │
+│  wheels.yml (native GitHub runners)                                         │
+│  ├── wheels-macos-arm64                (macOS ARM64 wheels)                 │
+│  ├── wheels-windows-x86_64             (Windows x64 wheels)                 │
+│  └── source-distribution               (*.tar.gz sdist)                     │
+│                                                                             │
+│  wheels-docker.yml (manylinux_2_28_x86_64 container)                        │
+│  └── artifacts-docker-manylinux_2_28_x86_64  (Linux x64 wheels)             │
+│                                                                             │
+│  wheels-arm64.yml (manylinux_2_28_aarch64 container)                        │
+│  ├── artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64                    │
+│  ├── artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64                    │
+│  ├── artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64                    │
+│  ├── artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64                    │
+│  └── artifacts-arm64-pypy-3.11-manylinux_2_36_aarch64                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ARTIFACT CONSUMER                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  release.yml                                                                │
+│  ├── Downloads all artifacts from above workflows                           │
+│  ├── Creates GitHub Release (nightly or stable)                             │
+│  └── Publishes to PyPI (on tags only)                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Artifact Details
+
+### 1. Artifact Producers (Upload)
+
+| Workflow | Artifact Name | Contents | Platform |
+|----------|--------------|----------|----------|
+| **main.yml** | `documentation` | `docs/_build/html/` | N/A |
+| **wheels.yml** | `wheels-macos-arm64` | macOS ARM64 wheels | macOS arm64 |
+| **wheels.yml** | `wheels-windows-x86_64` | Windows x64 wheels | Windows x86_64 |
+| **wheels.yml** | `source-distribution` | `*.tar.gz` sdist | Linux (build host) |
+| **wheels-docker.yml** | `artifacts-docker-manylinux_2_28_x86_64` | manylinux x64 wheels | Linux x86_64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64` | CPython 3.11 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64` | CPython 3.12 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64` | CPython 3.13 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64` | CPython 3.14 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-pypy-3.11-manylinux_2_36_aarch64` | PyPy 3.11 wheel | Linux aarch64 |
+
+### 2. Artifact Consumer (release.yml)
+
+The `release.yml` workflow downloads artifacts using the `wamp-cicd` verified
+download action. It maps artifact names via the `check-workflows` job outputs:
+
+| Output Variable | Source Workflow | Artifact Pattern |
+|-----------------|-----------------|------------------|
+| `artifact_macos_wheels` | wheels.yml | `wheels-macos-arm64` |
+| `artifact_windows_wheels` | wheels.yml | `wheels-windows-x86_64` |
+| `artifact_source_dist` | wheels.yml | `source-distribution` |
+| `artifact_manylinux_x86_64` | wheels-docker.yml | `artifacts-docker-manylinux_2_28_x86_64` |
+| `artifact_arm64_cp311` | wheels-arm64.yml | `artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp312` | wheels-arm64.yml | `artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp313` | wheels-arm64.yml | `artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp314` | wheels-arm64.yml | `artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64` |
+| `artifact_arm64_pypy311` | wheels-arm64.yml | `artifacts-arm64-pypy-3.11-manylinux_2_36_aarch64` |
+
+## Platform Coverage
+
+### Wheels Built
+
+| Platform | Architecture | Python Versions | Manylinux Tag | Workflow |
+|----------|--------------|-----------------|---------------|----------|
+| Linux | x86_64 | 3.11, 3.12, 3.13, 3.14, PyPy 3.11 | manylinux_2_28 | wheels-docker.yml |
+| Linux | aarch64 | 3.11, 3.12, 3.13, 3.14 | manylinux_2_28 | wheels-arm64.yml |
+| Linux | aarch64 | PyPy 3.11 | manylinux_2_36 | wheels-arm64.yml |
+| macOS | arm64 | 3.11, 3.12, 3.13, 3.14, PyPy 3.11 | N/A | wheels.yml |
+| Windows | x86_64 | 3.11, 3.12, 3.13, 3.14 | N/A | wheels.yml |
+
+### Why Manylinux Containers?
+
+Linux wheels are built inside official PyPA manylinux containers to ensure:
+
+1. **ABI Compatibility** - Correct glibc symbol versions for target platforms
+2. **ISA Compliance** - Baseline instruction set (no x86_64_v2+ on x86_64)
+3. **auditwheel Success** - Clean wheel repair without ISA warnings
+4. **Wide Compatibility** - Wheels work on older Linux distributions
+
+The `manylinux_2_28` tag targets glibc 2.28+ (RHEL 8, Ubuntu 20.04+, Debian 11+).
+
+## Release Process
+
+1. **On every push/PR**: All wheel workflows run and upload artifacts
+2. **On workflow completion**: `release.yml` triggers via `workflow_run`
+3. **Nightly releases**: Created automatically from master branch
+4. **Stable releases**: Created when a `v*` tag is pushed, also publishes to PyPI
+
+## Maintenance Notes
+
+When updating Python versions or manylinux tags:
+
+1. Update the matrix in the relevant workflow file
+2. Update artifact name patterns in `release.yml` `check-workflows` job
+3. Update this README to reflect changes
+4. Test with a PR before merging
+
+---
+
+*This documentation is maintained alongside the workflow files.*

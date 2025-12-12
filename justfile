@@ -409,6 +409,23 @@ test-import venv="": (install venv)
     echo "Test 4: Verifying version attributes..."
     ${VENV_PYTHON} -c "import zlmdb; print('  zlmdb.__version__:', zlmdb.__version__)"
 
+    # LMDB 0.9.33 Release (2024/05/21)
+    #
+    #   - Development happens on mdb.master (version 0.9.70).
+    #   - Releases are backported/committed to mdb.RE/0.9.
+    #   - Tagging happens on mdb.RE/0.9.
+    #
+    # Thus we want to track the tip of the mdb.RE/0.9 branch.
+    #
+    # See:
+    #   - https://github.com/LMDB/lmdb/blob/mdb.RE/0.9/libraries/liblmdb/CHANGES
+    #   - https://github.com/LMDB/lmdb/blob/mdb.master/libraries/liblmdb/lmdb.h
+    #   - https://github.com/LMDB/lmdb/commit/3a29a24777c82a0165de813ae696a5068b5add30
+    #
+    # MDB_VERSION_MAJOR   0     // Library major version
+    # MDB_VERSION_MINOR   9     // Library minor version
+    # MDB_VERSION_PATCH   33    // Library patch version
+
     # Test 4b: Verify zlmdb.lmdb does NOT have __version__
     echo ""
     echo "Test 4b: Verifying zlmdb.lmdb has NO __version__ (only zlmdb has version)..."
@@ -420,8 +437,107 @@ test-import venv="": (install venv)
     fi
     echo ""
 
+    echo "Test 5: Verifying zlmdb.lmdb.version()..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.lmdb.version(): {zlmdb.lmdb.version()}')"
+    echo ""
+
+    # For a production or stable project (like zlmdb), the recommended approach is to strictly
+    # use and track the Latest Named Tag, not Development:
+    #
+    # cd deps/flatbuffers && git checkout $(git describe --tags --abbrev=0) && git describe --tags
+
+    echo "Test 6: Verifying zlmdb.flatbuffers.__version__..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.__version__: {zlmdb.flatbuffers.__version__}')"
+    echo ""
+
+    echo "Test 7: Verifying zlmdb.flatbuffers._git_version__..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.__git_version__: {zlmdb.flatbuffers.__git_version__}')"
+    echo ""
+
+    echo "Test 8: Verifying zlmdb.flatbuffers.version()..."
+    ${VENV_PYTHON} -c "import zlmdb; print(f'  zlmdb.flatbuffers.version(): {zlmdb.flatbuffers.version()}')"
+    echo ""
+
     echo "========================================================================"
     echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
+    echo "========================================================================"
+
+# Test bundled flatc compiler (verifies flatc binary is bundled and works)
+test-bundled-flatc venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Testing bundled flatc compiler in ${VENV_NAME}..."
+    echo ""
+
+    # Test 1: flatc console script works
+    echo "Test 1: Verifying 'flatc --version' works via console script..."
+    FLATC_VERSION=$("${VENV_PATH}/bin/flatc" --version 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "  ✓ PASS: flatc console script works"
+        echo "  Version: ${FLATC_VERSION}"
+    else
+        echo "  ❌ FAIL: flatc console script failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 2: Python API get_flatc_path() works
+    echo "Test 2: Verifying zlmdb._flatc.get_flatc_path() works..."
+    FLATC_PATH=$(${VENV_PYTHON} -c "from zlmdb._flatc import get_flatc_path; print(get_flatc_path())")
+    if [ -x "${FLATC_PATH}" ]; then
+        echo "  ✓ PASS: get_flatc_path() returns executable path"
+        echo "  Path: ${FLATC_PATH}"
+    else
+        echo "  ❌ FAIL: get_flatc_path() returned non-executable: ${FLATC_PATH}"
+        exit 1
+    fi
+    echo ""
+
+    # Test 3: Python API run_flatc() works
+    echo "Test 3: Verifying zlmdb._flatc.run_flatc() works..."
+    RET=$(${VENV_PYTHON} -c "from zlmdb._flatc import run_flatc; exit(run_flatc(['--version']))")
+    if [ $? -eq 0 ]; then
+        echo "  ✓ PASS: run_flatc(['--version']) works"
+    else
+        echo "  ❌ FAIL: run_flatc() failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 4: reflection.fbs is accessible
+    echo "Test 4: Verifying reflection.fbs is accessible at runtime..."
+    FBS_PATH=$(${VENV_PYTHON} -c 'import zlmdb.flatbuffers; from pathlib import Path; p = Path(zlmdb.flatbuffers.__file__).parent / "reflection.fbs"; print(p) if p.exists() else exit(1)')
+    if [ $? -eq 0 ]; then
+        FBS_SIZE=$(stat -c%s "${FBS_PATH}" 2>/dev/null || stat -f%z "${FBS_PATH}")
+        echo "  ✓ PASS: reflection.fbs found at ${FBS_PATH}"
+        echo "  Size: ${FBS_SIZE} bytes"
+    else
+        echo "  ❌ FAIL: reflection.fbs not found"
+        exit 1
+    fi
+    echo ""
+
+    # Test 5: reflection.bfbs is accessible
+    echo "Test 5: Verifying reflection.bfbs is accessible at runtime..."
+    BFBS_PATH=$(${VENV_PYTHON} -c 'import zlmdb.flatbuffers; from pathlib import Path; p = Path(zlmdb.flatbuffers.__file__).parent / "reflection.bfbs"; print(p) if p.exists() else exit(1)')
+    if [ $? -eq 0 ]; then
+        BFBS_SIZE=$(stat -c%s "${BFBS_PATH}" 2>/dev/null || stat -f%z "${BFBS_PATH}")
+        echo "  ✓ PASS: reflection.bfbs found at ${BFBS_PATH}"
+        echo "  Size: ${BFBS_SIZE} bytes"
+    else
+        echo "  ❌ FAIL: reflection.bfbs not found"
+        exit 1
+    fi
+    echo ""
+
+    echo "========================================================================"
+    echo "✅ ALL BUNDLED FLATC TESTS PASSED"
     echo "========================================================================"
 
 # Test all LMDB examples
@@ -1154,9 +1270,9 @@ publish-rtd tag="":
 # Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
     echo "==> Updating vendored flatbuffers from submodule..."
-    rm -rf ./src/zlmdb/_flatbuffers_vendor
-    cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/_flatbuffers_vendor
-    echo "✓ Flatbuffers vendor updated in src/zlmdb/_flatbuffers_vendor"
+    rm -rf ./src/zlmdb/flatbuffers
+    cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/flatbuffers
+    echo "✓ Flatbuffers vendor updated in src/zlmdb/flatbuffers"
 
 # Generate flatbuffers reflection Python code
 generate-flatbuffers-reflection:

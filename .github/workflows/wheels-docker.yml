@@ -39,10 +39,11 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # manylinux_2_34 (glibc 2.34+) - PEP 600 compliant for modern Linux
+          # manylinux_2_28 (glibc 2.28+) - PEP 600 compliant, wide compatibility
+          # Matches wheels-arm64.yml which also uses manylinux_2_28
           # https://github.com/pypa/manylinux
-          - name: "manylinux_2_34_x86_64"
-            base_image: "quay.io/pypa/manylinux_2_34_x86_64"
+          - name: "manylinux_2_28_x86_64"
+            base_image: "quay.io/pypa/manylinux_2_28_x86_64"
 
     steps:
       - name: Checkout code
@@ -151,9 +152,9 @@ jobs:
           command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
           mkdir -p wheelhouse
 
-          # Convert linux_x86_64 wheels to manylinux_2_34_x86_64 using auditwheel
+          # Convert linux_x86_64 wheels to manylinux_2_28_x86_64 using auditwheel
           echo ""
-          echo "==> Converting wheels to manylinux_2_34_x86_64 format..."
+          echo "==> Converting wheels to manylinux_2_28_x86_64 format..."
           for wheel in dist/*.whl; do
             if [[ "$wheel" == *"linux_x86_64"* ]]; then
               echo "Converting: $(basename $wheel)"
@@ -278,7 +279,7 @@ jobs:
           echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
           echo "Base Image: ${{ matrix.target.base_image }}" >> $BUILD_INFO
           echo "Platform: linux/x86_64" >> $BUILD_INFO
-          echo "Manylinux Tag: manylinux_2_34_x86_64" >> $BUILD_INFO
+          echo "Manylinux Tag: manylinux_2_28_x86_64" >> $BUILD_INFO
           echo "Build Method: GitHub Actions + Docker container" >> $BUILD_INFO
           echo "LMDB: CFFI binary wheels with vendored LMDB sources" >> $BUILD_INFO
           echo "" >> $BUILD_INFO

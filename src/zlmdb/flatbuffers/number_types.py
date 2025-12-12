@@ -26,6 +26,7 @@ np = import_numpy()
 # These classes could be collections.namedtuple instances, but those are new
 # in 2.6 and we want to work towards 2.5 compatability.
 
+
 class BoolFlags(object):
     bytewidth = 1
     min_val = False
@@ -176,6 +177,6 @@ def uint64_to_float64(n):
 
 def to_numpy_type(number_type):
     if np is not None:
-        return np.dtype(number_type.name).newbyteorder('<')
+        return np.dtype(number_type.name).newbyteorder("<")
     else:
-        raise NumpyRequiredForThisFeature('Numpy was not found.')
+        raise NumpyRequiredForThisFeature("Numpy was not found.")

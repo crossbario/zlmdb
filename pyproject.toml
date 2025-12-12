@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zlmdb"
-version = "25.12.1"
+version = "25.12.2"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = "MIT"
 # Twine 6.2 validator (via pkginfo) still flags license-files as "unrecognized or malformed",
 # because it only understands the old-style License: field (Core Metadata 2.3).
@@ -24,8 +24,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -106,6 +104,7 @@ docs = [
 
 [project.scripts]
 zlmdb = "zlmdb.cli:main"
+flatc = "zlmdb._flatc:main"
 
 [project.urls]
 Homepage = "https://github.com/crossbario/zlmdb"
@@ -124,7 +123,8 @@ packages = ["src/zlmdb"]
 
 [tool.hatch.build.targets.sdist]
 # By default, hatchling includes all git-tracked files
-# Exclude build artifacts and large submodules from sdist
+# We only use exclude to remove build artifacts and large submodule directories
+# Note: Do NOT use `include` - it overrides default git-tracked behavior
 exclude = [
     "/.github",
     "/docs/_build",
@@ -135,8 +135,24 @@ exclude = [
     "/.mypy_cache",
     "/.ruff_cache",
     "/build",
-    # Exclude git submodule - LMDB sources are copied during build
-    "/lmdb-upstream",
+    # Exclude large test/sample/doc files from flatbuffers submodule
+    # Keep: CMakeLists.txt, cmake/, src/, include/, reflection/, python/
+    "/deps/flatbuffers/tests",
+    "/deps/flatbuffers/samples",
+    "/deps/flatbuffers/docs",
+    "/deps/flatbuffers/android",
+    "/deps/flatbuffers/swift",
+    "/deps/flatbuffers/kotlin",
+    "/deps/flatbuffers/java",
+    "/deps/flatbuffers/dart",
+    "/deps/flatbuffers/lua",
+    "/deps/flatbuffers/lobster",
+    "/deps/flatbuffers/net",
+    "/deps/flatbuffers/php",
+    "/deps/flatbuffers/rust",
+    "/deps/flatbuffers/ts",
+    "/deps/flatbuffers/go",
+    "/deps/flatbuffers/grpc",
 ]
 
 # Custom build hook for CFFI extension modules (LMDB)
@@ -151,7 +167,7 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-target-version = "py39"  # Minimum supported Python version
+target-version = "py311"  # Minimum supported Python version
 
 [tool.ruff.lint]
 
@@ -163,7 +179,7 @@ exclude = [
     ".tox",
     ".git",
     "__pycache__",
-    "src/zlmdb/_flatbuffers_vendor/*",  # Vendored flatbuffers runtime
+    "src/zlmdb/flatbuffers/*",  # Vendored flatbuffers runtime
     "src/zlmdb/_lmdb_vendor/*",  # Vendored LMDB bindings
     "src/zlmdb/flatbuffers/*",  # Auto-generated flatbuffers reflection code
     "src/zlmdb/tests/orm/MNodeLog.py",  # Auto-generated test file
@@ -225,7 +241,7 @@ norecursedirs = [
     "build",        # Build artifacts
     "dist",         # Distribution artifacts
     "src/zlmdb/_lmdb_vendor",   # Vendored LMDB bindings
-    "src/zlmdb/_flatbuffers_vendor",  # Vendored flatbuffers runtime
+    "src/zlmdb/flatbuffers",  # Vendored flatbuffers runtime
     "lmdb-upstream", # LMDB upstream submodule
     "lmdb-patches", # LMDB patches
     "deps",         # Dependencies

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" A tiny version of `six` to help with backwards compability. Also includes
- compatibility helpers for numpy. """
+"""A tiny version of `six` to help with backwards compability. Also includes
+compatibility helpers for numpy."""
 
 import sys
 
@@ -26,16 +26,18 @@ PY34 = sys.version_info[0:2] >= (3, 4)
 
 if PY3:
     import importlib.machinery
+
     string_types = (str,)
-    binary_types = (bytes,bytearray)
+    binary_types = (bytes, bytearray)
     range_func = range
     memoryview_type = memoryview
     struct_bool_decl = "?"
 else:
     import imp
+
     string_types = (unicode,)
     if PY26 or PY27:
-        binary_types = (str,bytearray)
+        binary_types = (str, bytearray)
     else:
         binary_types = (str,)
     range_func = xrange
@@ -48,17 +50,17 @@ else:
 
 # Helper functions to facilitate making numpy optional instead of required
 
+
 def import_numpy():
     """
     Returns the numpy module if it exists on the system,
     otherwise returns None.
     """
     if PY3:
-        numpy_exists = (
-            importlib.machinery.PathFinder.find_spec('numpy') is not None)
+        numpy_exists = importlib.machinery.PathFinder.find_spec("numpy") is not None
     else:
         try:
-            imp.find_module('numpy')
+            imp.find_module("numpy")
             numpy_exists = True
         except ImportError:
             numpy_exists = False
@@ -80,6 +82,7 @@ class NumpyRequiredForThisFeature(RuntimeError):
     Error raised when user tries to use a feature that
     requires numpy without having numpy installed.
     """
+
     pass
 
 
