@@ -696,11 +696,12 @@ test-sdist-install sdist_path:
 
     # Install from source distribution (this will compile LMDB CFFI extension)
     # Use --no-build-isolation to allow access to system cmake for building flatc
-    # Use --no-cache-dir to ensure fresh build (avoid cached wheels without flatc)
+    # Use --no-cache-dir to disable HTTP download cache
+    # Use --no-binary zlmdb to force building from source (disable wheel cache)
     # Note: flatc may not build if cmake is missing or grpc submodule isn't present
     echo ""
     echo "Installing from source distribution (includes CFFI compilation)..."
-    ${EPHEMERAL_PYTHON} -m pip install --no-build-isolation --no-cache-dir "${SDIST_PATH}"
+    ${EPHEMERAL_PYTHON} -m pip install --no-build-isolation --no-cache-dir --no-binary zlmdb "${SDIST_PATH}"
 
     # Run smoke tests
     echo ""
@@ -883,6 +884,14 @@ build-sourcedist venv="": (install-build-tools venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building source distribution with ${VENV_NAME}..."
+
+    # CRITICAL: Initialize all submodules recursively BEFORE building sdist
+    # Hatchling uses `git ls-files` to determine what goes into the sdist,
+    # and nested submodules (like deps/flatbuffers/grpc/) must be initialized
+    # for their files to be visible to git and thus included in the sdist.
+    echo "==> Initializing git submodules (recursive)..."
+    git submodule update --init --recursive
+
     mkdir -p dist/
     ${VENV_PYTHON} -m build --sdist
     ls -lh dist/

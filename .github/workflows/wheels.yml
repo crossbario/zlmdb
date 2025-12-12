@@ -53,6 +53,9 @@ jobs:
             sdist_only: true  # Only build source distribution, not wheels
 
     steps:
+      # ================================================================
+      # PHASE 1: SETUP - Install toolchain (just, uv)
+      # ================================================================
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -119,6 +122,10 @@ jobs:
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
 
+      # ================================================================
+      # PHASE 2: BUILD - Build wheels/sdist for each platform
+      # ================================================================
+
       # Build binary wheels with compiled LMDB (macOS and Windows only)
       # Linux wheels are built in wheels-docker.yml using manylinux containers
       - name: Build binary wheels with CFFI+LMDB (macOS)
@@ -150,9 +157,12 @@ jobs:
           just build-sourcedist
         shell: bash
 
-      # NOTE: Linux wheel validation/checksums are handled in wheels-docker.yml
-      # This job only builds source distribution on Linux
+      # ================================================================
+      # PHASE 3: VALIDATION - Validate artifacts (per-OS)
+      # Each OS validates its own artifacts with FS sync points
+      # ================================================================
 
+      # --- macOS validation ---
       - name: Force file system sync (post-build, pre-validation) - macOS
         if: matrix.platform == 'macos'
         run: |
@@ -255,6 +265,22 @@ jobs:
         run: sync
         shell: bash
 
+      # --- Windows validation ---
+      - name: Force file system sync (post-build, pre-validation) - Windows
+        if: matrix.platform == 'windows'
+        run: |
+          Write-Host "======================================================================"
+          Write-Host "==> Forcing File System Sync (Post-Build) - Windows"
+          Write-Host "======================================================================"
+          Write-Host ""
+          # Windows equivalent of sync - flush file system buffers
+          Write-VolumeCache -DriveLetter C -ErrorAction SilentlyContinue
+          [System.GC]::Collect()
+          [System.GC]::WaitForPendingFinalizers()
+          Write-Host "✅ File system buffers flushed"
+          Write-Host ""
+        shell: pwsh
+
       - name: Validate wheels integrity (Windows only)
         if: matrix.platform == 'windows'
         run: |
@@ -345,34 +371,27 @@ jobs:
           Set-Location ..
         shell: pwsh
 
-      - name: List built artifacts (macOS)
-        if: matrix.platform == 'macos'
+      - name: Force file system sync (post-checksum) - Windows
+        if: matrix.platform == 'windows'
         run: |
-          echo "Built wheels:"
-          ls -la dist/
-        shell: bash
-
-      - name: List built artifacts (Linux - source distribution only)
-        if: matrix.platform == 'linux'
-        run: |
-          echo "Built source distribution:"
-          ls -la dist/
-        shell: bash
-
-      - name: List built artifacts (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          Write-Host "Built wheels:"
-          Get-ChildItem dist
+          Write-VolumeCache -DriveLetter C -ErrorAction SilentlyContinue
+          [System.GC]::Collect()
+          [System.GC]::WaitForPendingFinalizers()
+          Write-Host "✅ File system buffers flushed (post-checksum)"
         shell: pwsh
 
-      - name: Upload wheel artifacts (macOS and Windows only)
-        if: matrix.platform != 'linux'
-        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
-        with:
-          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
-          path: ${{ github.workspace }}/dist/
-          retention-days: 30
+      # --- Linux validation (source distribution) ---
+      - name: Force file system sync (post-build, pre-validation) - Linux
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Build) - Linux"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
 
       - name: Verify source distribution integrity (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
@@ -461,26 +480,129 @@ jobs:
           echo "======================================================================"
         shell: bash
 
-      - name: Generate build metadata (Linux x86_64 only)
+      - name: Generate SHA256 checksums (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          echo "==> Generating SHA256 checksums..."
+          sync
+          cd dist
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+          for file in *.tar.gz; do
+            [ -f "$file" ] && openssl sha256 "$file" | tee -a "$CHECKSUM_FILE"
+          done
+          cat "$CHECKSUM_FILE"
+          cd ..
+        shell: bash
+
+      - name: Force file system sync (post-checksum) - Linux
+        if: matrix.platform == 'linux'
+        run: sync
+        shell: bash
+
+      # ================================================================
+      # PHASE 4: METADATA - Generate build metadata (after all validations)
+      # This comes AFTER all OS validations/checksums so it can aggregate results
+      # ================================================================
+
+      - name: Generate build metadata
         run: |
           BUILD_INFO=dist/build-info.txt
 
-          echo "Source Distribution Build Information" > $BUILD_INFO
-          echo "======================================" >> $BUILD_INFO
+          echo "zlmdb Build Information" > $BUILD_INFO
+          echo "=======================" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
           echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
-          echo "Platform: Linux x86_64 (GitHub Actions runner)" >> $BUILD_INFO
-          echo "Build Method: python -m build --sdist" >> $BUILD_INFO
-          echo "Python: $(python3 --version)" >> $BUILD_INFO
+          echo "Platform: ${{ matrix.platform }} ${{ matrix.arch }}" >> $BUILD_INFO
+          echo "Runner OS: ${{ runner.os }}" >> $BUILD_INFO
+          echo "Workflow: wheels.yml" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
-          echo "Source Distributions Built:" >> $BUILD_INFO
-          for sdist in dist/*.tar.gz; do
-            echo "- $(basename "$sdist")" >> $BUILD_INFO
-          done
+
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            echo "Build Type: Source Distribution" >> $BUILD_INFO
+            echo "Build Method: python -m build --sdist" >> $BUILD_INFO
+            echo "" >> $BUILD_INFO
+            echo "Source Distributions:" >> $BUILD_INFO
+            for sdist in dist/*.tar.gz; do
+              [ -f "$sdist" ] && echo "- $(basename "$sdist")" >> $BUILD_INFO
+            done
+          else
+            echo "Build Type: Binary Wheels (CFFI+LMDB)" >> $BUILD_INFO
+            echo "Build Method: just build-all / just build" >> $BUILD_INFO
+            echo "" >> $BUILD_INFO
+            echo "Wheels Built:" >> $BUILD_INFO
+            for wheel in dist/*.whl; do
+              [ -f "$wheel" ] && echo "- $(basename "$wheel")" >> $BUILD_INFO
+            done
+          fi
+
+          echo "" >> $BUILD_INFO
+          echo "Validation Status:" >> $BUILD_INFO
+          if [ -f "dist/VALIDATION.txt" ]; then
+            grep "RESULT:" dist/VALIDATION.txt >> $BUILD_INFO || echo "- See VALIDATION.txt" >> $BUILD_INFO
+          else
+            echo "- Integrity verification passed" >> $BUILD_INFO
+          fi
+
+          echo "" >> $BUILD_INFO
+          echo "Checksums:" >> $BUILD_INFO
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "- See CHECKSUMS.sha256" >> $BUILD_INFO
+          fi
 
           cat $BUILD_INFO
         shell: bash
+
+      - name: Force file system sync (post-metadata) - macOS
+        if: matrix.platform == 'macos'
+        run: sync
+        shell: bash
+
+      - name: Force file system sync (post-metadata) - Windows
+        if: matrix.platform == 'windows'
+        run: |
+          Write-VolumeCache -DriveLetter C -ErrorAction SilentlyContinue
+          [System.GC]::Collect()
+          [System.GC]::WaitForPendingFinalizers()
+          Write-Host "✅ File system buffers flushed (post-metadata)"
+        shell: pwsh
+
+      - name: Force file system sync (post-metadata) - Linux
+        if: matrix.platform == 'linux'
+        run: sync
+        shell: bash
+
+      # ================================================================
+      # PHASE 5: LIST & UPLOAD - List artifacts and upload
+      # ================================================================
+
+      - name: List built artifacts (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          echo "Built wheels:"
+          ls -la dist/
+        shell: bash
+
+      - name: List built artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Built wheels:"
+          Get-ChildItem dist
+        shell: pwsh
+
+      - name: List built artifacts (Linux - source distribution only)
+        if: matrix.platform == 'linux'
+        run: |
+          echo "Built source distribution:"
+          ls -la dist/
+        shell: bash
+
+      - name: Upload wheel artifacts (macOS and Windows only)
+        if: matrix.platform != 'linux'
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
+        with:
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ github.workspace }}/dist/
+          retention-days: 30
 
       - name: Upload source distribution (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'

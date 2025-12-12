@@ -136,7 +136,8 @@ exclude = [
     "/.ruff_cache",
     "/build",
     # Exclude large test/sample/doc files from flatbuffers submodule
-    # Keep: CMakeLists.txt, cmake/, src/, include/, reflection/, python/
+    # Keep: CMakeLists.txt, cmake/, src/, include/, reflection/, python/, grpc/
+    # Note: grpc/ is REQUIRED for building flatc - it contains schema_interface.h
     "/deps/flatbuffers/tests",
     "/deps/flatbuffers/samples",
     "/deps/flatbuffers/docs",
@@ -152,7 +153,8 @@ exclude = [
     "/deps/flatbuffers/rust",
     "/deps/flatbuffers/ts",
     "/deps/flatbuffers/go",
-    "/deps/flatbuffers/grpc",
+    # Note: grpc/ excluded from this list - it contains required source files
+    # for building flatc (schema_interface.h, cpp_generator.h, etc.)
 ]
 
 # Custom build hook for CFFI extension modules (LMDB)
