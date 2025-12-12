@@ -422,11 +422,11 @@ jobs:
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
-            cpy311-linux-x86_64-manylinux_2_34
-            cpy312-linux-x86_64-manylinux_2_34
-            cpy313-linux-x86_64-manylinux_2_34
-            cpy314-linux-x86_64-manylinux_2_34
-            pypy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-x86_64-manylinux_2_28
+            cpy312-linux-x86_64-manylinux_2_28
+            cpy313-linux-x86_64-manylinux_2_28
+            cpy314-linux-x86_64-manylinux_2_28
+            pypy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy312-linux-aarch64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
@@ -805,11 +805,11 @@ jobs:
           distdir: dist
           mode: strict
           targets: |
-            cpy311-linux-x86_64-manylinux_2_34
-            cpy312-linux-x86_64-manylinux_2_34
-            cpy313-linux-x86_64-manylinux_2_34
-            cpy314-linux-x86_64-manylinux_2_34
-            pypy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-x86_64-manylinux_2_28
+            cpy312-linux-x86_64-manylinux_2_28
+            cpy313-linux-x86_64-manylinux_2_28
+            cpy314-linux-x86_64-manylinux_2_28
+            pypy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy312-linux-aarch64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28

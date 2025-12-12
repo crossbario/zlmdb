@@ -540,6 +540,183 @@ test-bundled-flatc venv="": (install venv)
     echo "✅ ALL BUNDLED FLATC TESTS PASSED"
     echo "========================================================================"
 
+# -----------------------------------------------------------------------------
+# -- Artifact Verification (smoke tests for built wheels and sdist)
+# -----------------------------------------------------------------------------
+
+# Run smoke tests on an installed zlmdb package (verifies LMDB + FlatBuffers work)
+# This is used by test-wheel-install and test-sdist-install after installation
+test-smoke venv="":
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "Running smoke tests with Python: $(${VENV_PYTHON} --version)"
+    echo "Venv: ${VENV_PATH}"
+    echo ""
+
+    # Run the smoke test Python script
+    ${VENV_PYTHON} "{{ PROJECT_DIR }}/scripts/smoke_test.py"
+
+# Test installing and verifying a built wheel (used in CI for artifact verification)
+# Usage: just test-wheel-install /path/to/zlmdb-*.whl
+test-wheel-install wheel_path:
+    #!/usr/bin/env bash
+    set -e
+    WHEEL_PATH="{{ wheel_path }}"
+
+    if [ ! -f "${WHEEL_PATH}" ]; then
+        echo "ERROR: Wheel file not found: ${WHEEL_PATH}"
+        exit 1
+    fi
+
+    WHEEL_NAME=$(basename "${WHEEL_PATH}")
+    echo "========================================================================"
+    echo "  WHEEL INSTALL TEST"
+    echo "========================================================================"
+    echo ""
+    echo "Wheel: ${WHEEL_NAME}"
+    echo ""
+
+    # Create ephemeral venv name based on wheel
+    EPHEMERAL_VENV="smoke-wheel-$$"
+    EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
+
+    # Extract Python version from wheel filename
+    # Wheel format: {name}-{version}-{python tag}-{abi tag}-{platform tag}.whl
+    # Python tag examples: cp312, cp311, pp311, py3
+    PYTAG=$(echo "${WHEEL_NAME}" | sed -n 's/.*-\(cp[0-9]*\|pp[0-9]*\|py[0-9]*\)-.*/\1/p')
+
+    if [[ "${PYTAG}" =~ ^cp([0-9])([0-9]+)$ ]]; then
+        # CPython wheel (e.g., cp312 -> 3.12)
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PYTHON_SPEC="cpython-${MAJOR}.${MINOR}"
+        echo "Detected CPython ${MAJOR}.${MINOR} wheel"
+    elif [[ "${PYTAG}" =~ ^pp([0-9])([0-9]+)$ ]]; then
+        # PyPy wheel (e.g., pp311 -> pypy-3.11)
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PYTHON_SPEC="pypy-${MAJOR}.${MINOR}"
+        echo "Detected PyPy ${MAJOR}.${MINOR} wheel"
+    elif [[ "${PYTAG}" =~ ^py([0-9])$ ]]; then
+        # Pure Python wheel (e.g., py3) - use system Python
+        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+        echo "Pure Python wheel, using system Python ${SYSTEM_VERSION}"
+    else
+        # Fallback to system Python
+        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+        echo "Could not detect Python version from wheel, using system Python ${SYSTEM_VERSION}"
+    fi
+
+    echo "Creating ephemeral venv with ${PYTHON_SPEC}..."
+
+    mkdir -p "{{ VENV_DIR }}"
+    uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
+
+    EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+
+    # Install the wheel
+    echo ""
+    echo "Installing wheel..."
+    ${EPHEMERAL_PYTHON} -m pip install "${WHEEL_PATH}"
+
+    # Run smoke tests
+    echo ""
+    VENV_DIR="{{ VENV_DIR }}" just test-smoke "${EPHEMERAL_VENV}"
+
+    # Cleanup
+    echo ""
+    echo "Cleaning up ephemeral venv..."
+    rm -rf "${EPHEMERAL_PATH}"
+
+    echo ""
+    echo "========================================================================"
+    echo "✅ WHEEL INSTALL TEST PASSED: ${WHEEL_NAME}"
+    echo "========================================================================"
+
+# Test installing and verifying a source distribution (used in CI for artifact verification)
+# Usage: just test-sdist-install /path/to/zlmdb-*.tar.gz
+test-sdist-install sdist_path:
+    #!/usr/bin/env bash
+    set -e
+    SDIST_PATH="{{ sdist_path }}"
+
+    if [ ! -f "${SDIST_PATH}" ]; then
+        echo "ERROR: Source distribution not found: ${SDIST_PATH}"
+        exit 1
+    fi
+
+    SDIST_NAME=$(basename "${SDIST_PATH}")
+    echo "========================================================================"
+    echo "  SOURCE DISTRIBUTION INSTALL TEST"
+    echo "========================================================================"
+    echo ""
+    echo "Source dist: ${SDIST_NAME}"
+    echo ""
+
+    # Check if cmake is available (required for full functionality)
+    if command -v cmake >/dev/null 2>&1; then
+        echo "cmake: $(cmake --version | head -1)"
+    else
+        echo "WARNING: cmake not found - flatc binary will not be built"
+        echo "         Install cmake for full functionality"
+    fi
+    echo ""
+
+    # Create ephemeral venv name
+    EPHEMERAL_VENV="smoke-sdist-$$"
+    EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
+
+    echo "Creating ephemeral venv: ${EPHEMERAL_VENV}..."
+
+    # Detect system Python version and create venv
+    SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    ENV_NAME="cpy$(echo ${SYSTEM_VERSION} | tr -d '.')"
+    PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
+
+    mkdir -p "{{ VENV_DIR }}"
+    uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
+
+    EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+
+    # Install build dependencies (required for --no-build-isolation)
+    # CFFI is needed for LMDB extension, hatchling for the build system
+    # Use --no-cache-dir consistently to ensure fresh installs
+    echo ""
+    echo "Installing build dependencies..."
+    ${EPHEMERAL_PYTHON} -m pip install --no-cache-dir cffi setuptools wheel hatchling
+
+    # Install from source distribution (this will compile LMDB CFFI extension)
+    # Use --no-build-isolation to allow access to system cmake for building flatc
+    # Use --no-cache-dir to disable HTTP download cache
+    # Use --no-binary zlmdb to force building from source (disable wheel cache)
+    # Note: flatc may not build if cmake is missing or grpc submodule isn't present
+    echo ""
+    echo "Installing from source distribution (includes CFFI compilation)..."
+    ${EPHEMERAL_PYTHON} -m pip install --no-build-isolation --no-cache-dir --no-binary zlmdb "${SDIST_PATH}"
+
+    # Run smoke tests
+    echo ""
+    VENV_DIR="{{ VENV_DIR }}" just test-smoke "${EPHEMERAL_VENV}"
+
+    # Cleanup
+    echo ""
+    echo "Cleaning up ephemeral venv..."
+    rm -rf "${EPHEMERAL_PATH}"
+
+    echo ""
+    echo "========================================================================"
+    echo "✅ SOURCE DISTRIBUTION INSTALL TEST PASSED: ${SDIST_NAME}"
+    echo "========================================================================"
+
 # Test all LMDB examples
 test-examples-lmdb venv="": (test-examples-lmdb-addressbook venv) (test-examples-lmdb-dirtybench-gdbm venv) (test-examples-lmdb-dirtybench venv) (test-examples-lmdb-nastybench venv) (test-examples-lmdb-parabench venv)
 
@@ -707,6 +884,14 @@ build-sourcedist venv="": (install-build-tools venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building source distribution with ${VENV_NAME}..."
+
+    # CRITICAL: Initialize all submodules recursively BEFORE building sdist
+    # Hatchling uses `git ls-files` to determine what goes into the sdist,
+    # and nested submodules (like deps/flatbuffers/grpc/) must be initialized
+    # for their files to be visible to git and thus included in the sdist.
+    echo "==> Initializing git submodules (recursive)..."
+    git submodule update --init --recursive
+
     mkdir -p dist/
     ${VENV_PYTHON} -m build --sdist
     ls -lh dist/
