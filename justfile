@@ -1127,7 +1127,7 @@ clean-build:
 # Clean test and coverage artifacts
 clean-test:
     echo "==> Removing test and coverage artifacts..."
-    rm -rf .tox/ .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
+    rm -rf .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
     rm -rf .test* 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
@@ -1151,7 +1151,7 @@ _prepare-lmdb-sources venv="":
         ${VENV_PYTHON} build_lmdb.py
     fi
 
-# Run quick tests with pytest (no tox)
+# Run quick tests with pytest
 test-quick venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
