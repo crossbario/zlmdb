@@ -1267,16 +1267,6 @@ test-zdb-fbs venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources
 # Run all zdb tests
 test-zdb venv="": (test-zdb-etcd venv) (test-zdb-df venv) (test-zdb-dyn venv) (test-zdb-fbs venv)
 
-# Run tests with tox
-test-tox:
-    echo "==> Running tests with tox..."
-    tox -e py39,py310,py311,py312,py313,flake8,coverage,mypy,yapf,sphinx
-
-# Run all tox environments
-test-tox-all:
-    echo "==> Running all tox environments..."
-    tox
-
 # Generate code coverage report
 check-coverage venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
