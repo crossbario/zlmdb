@@ -1561,6 +1561,22 @@ publish-rtd tag="":
 # -- Utilities
 # -----------------------------------------------------------------------------
 
+# Bump vendored flatbuffers to latest release tag
+bump-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Fetching latest tags from upstream..."
+    cd deps/flatbuffers && git fetch --tags
+    LATEST_TAG=$(cd deps/flatbuffers && git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+    echo "==> Latest release tag: ${LATEST_TAG}"
+    cd deps/flatbuffers && git checkout "${LATEST_TAG}"
+    echo "==> Submodule now at: $(cd deps/flatbuffers && git describe --tags --always)"
+    echo ""
+    echo "Next steps:"
+    echo "  1. just update-flatbuffers"
+    echo "  2. git add deps/flatbuffers src/zlmdb/flatbuffers"
+    echo "  3. git commit -m 'Bump vendored flatbuffers to ${LATEST_TAG}'"
+
 # Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
     echo "==> Updating vendored flatbuffers from submodule..."
