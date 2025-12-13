@@ -1592,9 +1592,21 @@ fix-copyright:
 # -- Release workflow recipes
 # -----------------------------------------------------------------------------
 
+# Download release artifacts from GitHub Actions
+# Usage: just download-release-artifacts master-202512092131
+# This downloads everything needed for generate-release-notes and prepare-changelog
+download-release-artifacts release_name:
+    .cicd/scripts/download-release-artifacts.sh "{{ release_name }}" "crossbario/zlmdb"
+
 # Generate changelog entry from git history for a given version
 prepare-changelog version:
     .cicd/scripts/prepare-changelog.sh "{{ version }}" "crossbario/zlmdb"
+
+# Generate release notes entry from downloaded artifacts
+# Usage: just generate-release-notes 25.12.1 master-202512092131
+# Requires: artifacts downloaded via `just download-release-artifacts`
+generate-release-notes version release_name:
+    .cicd/scripts/generate-release-notes.sh "{{ version }}" "{{ release_name }}" "crossbario/zlmdb"
 
 # Validate release is ready: checks changelog, releases, version
 draft-release version:
