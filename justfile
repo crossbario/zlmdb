@@ -1594,47 +1594,7 @@ fix-copyright:
 
 # Generate changelog entry from git history for a given version
 prepare-changelog version:
-    #!/usr/bin/env bash
-    set -e
-    VERSION="{{ version }}"
-
-    echo ""
-    echo "=========================================="
-    echo " Generating changelog for version ${VERSION}"
-    echo "=========================================="
-    echo ""
-
-    # Find the previous tag
-    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -z "${PREV_TAG}" ]; then
-        echo "No previous tag found. Showing all commits..."
-        git log --oneline --no-decorate | head -50
-    else
-        echo "Commits since ${PREV_TAG}:"
-        echo ""
-        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
-    fi
-
-    echo ""
-    echo "=========================================="
-    echo " Suggested changelog format:"
-    echo "=========================================="
-    echo ""
-    echo "${VERSION}"
-    echo "------"
-    echo ""
-    echo "**New**"
-    echo ""
-    echo "* new: <feature description>"
-    echo ""
-    echo "**Fix**"
-    echo ""
-    echo "* fix: <fix description>"
-    echo ""
-    echo "**Other**"
-    echo ""
-    echo "* other: <other changes>"
-    echo ""
+    .cicd/scripts/prepare-changelog.sh "{{ version }}" "crossbario/zlmdb"
 
 # Validate release is ready: checks changelog, releases, version
 draft-release version:
