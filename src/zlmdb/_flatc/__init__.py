@@ -24,9 +24,9 @@
 #
 ###############################################################################
 """
-FlatBuffers compiler (flatc) bundled with zlmdb.
+FlatBuffers compiler (flatc) bundled with the package.
 
-This module provides access to the flatc binary that is bundled with zlmdb,
+This module provides access to the flatc binary that is bundled with the package,
 ensuring version compatibility with the vendored FlatBuffers runtime.
 
 Usage from command line::
@@ -36,13 +36,17 @@ Usage from command line::
 
 Usage from Python::
 
-    from zlmdb._flatc import get_flatc_path, run_flatc
+    from <package>._flatc import get_flatc_path, run_flatc
 
     # Get path to flatc binary
     flatc_path = get_flatc_path()
 
     # Run flatc with arguments
     returncode = run_flatc(["--version"])
+
+Note: This file is shared across WAMP ecosystem projects via wamp-cicd.
+      Source: wamp-cicd/scripts/flatc/_flatc.py
+      Projects copy this file to: src/<package>/_flatc/__init__.py
 """
 
 import os
@@ -63,10 +67,13 @@ def get_flatc_path() -> Path:
     flatc_path = Path(__file__).parent / "bin" / exe_name
 
     if not flatc_path.exists():
+        # Determine package name from module path for helpful error message
+        module_parts = __name__.split(".")
+        pkg_name = module_parts[0] if module_parts else "package"
         raise FileNotFoundError(
             f"flatc binary not found at {flatc_path}. "
             f"This may indicate a corrupted installation. "
-            f"Try reinstalling zlmdb: pip install --force-reinstall zlmdb"
+            f"Try reinstalling: pip install --force-reinstall {pkg_name}"
         )
 
     return flatc_path

@@ -1082,6 +1082,122 @@ docs-view venv="": (docs venv)
     echo "==> Opening documentation in browser..."
     xdg-open docs/_build/html/index.html 2>/dev/null || open docs/_build/html/index.html 2>/dev/null || echo "Please open docs/_build/html/index.html manually"
 
+# Integrate downloaded GitHub release artifacts into docs build
+# Usage: just docs-integrate-github-release [release_tag]
+# If no tag specified, finds the most recently downloaded artifacts
+docs-integrate-github-release release_tag="":
+    #!/usr/bin/env bash
+    set -e
+
+    RELEASE_TAG="{{ release_tag }}"
+
+    # Check that docs have been built first
+    if [ ! -d "docs/_build/html" ]; then
+        echo "ERROR: Documentation not built yet"
+        echo ""
+        echo "Please build documentation first using:"
+        echo "  just docs"
+        echo ""
+        echo "Then integrate artifacts with:"
+        echo "  just docs-integrate-github-release"
+        echo ""
+        exit 1
+    fi
+
+    # If no tag specified, find the most recently downloaded artifacts
+    if [ -z "${RELEASE_TAG}" ]; then
+        echo "==> No release tag specified. Finding latest downloaded artifacts..."
+        LATEST_DIR=$(find /tmp -maxdepth 1 -type d -name "zlmdb-release-artifacts-*" -printf "%T@ %p\n" 2>/dev/null \
+          | sort -rn \
+          | head -1 \
+          | cut -d' ' -f2-)
+
+        if [ -z "${LATEST_DIR}" ]; then
+            echo "ERROR: No downloaded release artifacts found in /tmp/"
+            echo ""
+            echo "Please download artifacts first using:"
+            echo "  just download-release-artifacts <release_name>"
+            echo ""
+            exit 1
+        fi
+
+        RELEASE_TAG=$(basename "${LATEST_DIR}" | sed 's/zlmdb-release-artifacts-//')
+        echo "Found latest downloaded artifacts: ${RELEASE_TAG}"
+    fi
+
+    DOWNLOAD_DIR="/tmp/zlmdb-release-artifacts-${RELEASE_TAG}"
+
+    if [ ! -d "${DOWNLOAD_DIR}" ]; then
+        echo "ERROR: Release artifacts not found at: ${DOWNLOAD_DIR}"
+        echo ""
+        echo "Please download artifacts first using:"
+        echo "  just download-release-artifacts ${RELEASE_TAG}"
+        echo ""
+        exit 1
+    fi
+
+    echo "==> Integrating GitHub release artifacts into built documentation..."
+    echo "    Release: ${RELEASE_TAG}"
+    echo "    Source: ${DOWNLOAD_DIR}"
+    echo "    Target: docs/_build/html/_static/"
+    echo ""
+
+    # Create target directories in the BUILT docs
+    echo "==> Creating target directories in docs/_build/html/_static/..."
+    mkdir -p docs/_build/html/_static/flatbuffers
+
+    # Copy FlatBuffers schemas (source .fbs files)
+    echo "==> Copying FlatBuffers source schemas (.fbs)..."
+    if [ -d "${DOWNLOAD_DIR}/flatbuffers" ]; then
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}/flatbuffers" -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/flatbuffers"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .fbs files found in ${DOWNLOAD_DIR}/flatbuffers"
+        fi
+    else
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .fbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    # Copy FlatBuffers binary schemas (.bfbs files)
+    echo "==> Copying FlatBuffers binary schemas (.bfbs)..."
+    if [ -d "${DOWNLOAD_DIR}/gen/schema" ]; then
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}/gen/schema" -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/gen/schema"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .bfbs files found in ${DOWNLOAD_DIR}/gen/schema"
+        fi
+    else
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .bfbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    echo ""
+    echo "========================================================================"
+    echo "GitHub release artifacts integrated into built documentation"
+    echo "========================================================================"
+    echo ""
+    echo "Integrated artifacts from: ${RELEASE_TAG}"
+    echo "Target location: docs/_build/html/_static/"
+    echo ""
+    echo "Next steps:"
+    echo "  1. View documentation: just docs-view"
+    echo ""
+
 # Clean generated documentation
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
@@ -1127,7 +1243,7 @@ clean-build:
 # Clean test and coverage artifacts
 clean-test:
     echo "==> Removing test and coverage artifacts..."
-    rm -rf .tox/ .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
+    rm -rf .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
     rm -rf .test* 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
@@ -1151,7 +1267,7 @@ _prepare-lmdb-sources venv="":
         ${VENV_PYTHON} build_lmdb.py
     fi
 
-# Run quick tests with pytest (no tox)
+# Run quick tests with pytest
 test-quick venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
@@ -1266,16 +1382,6 @@ test-zdb-fbs venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources
 
 # Run all zdb tests
 test-zdb venv="": (test-zdb-etcd venv) (test-zdb-df venv) (test-zdb-dyn venv) (test-zdb-fbs venv)
-
-# Run tests with tox
-test-tox:
-    echo "==> Running tests with tox..."
-    tox -e py39,py310,py311,py312,py313,flake8,coverage,mypy,yapf,sphinx
-
-# Run all tox environments
-test-tox-all:
-    echo "==> Running all tox environments..."
-    tox
 
 # Generate code coverage report
 check-coverage venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
@@ -1571,6 +1677,22 @@ publish-rtd tag="":
 # -- Utilities
 # -----------------------------------------------------------------------------
 
+# Bump vendored flatbuffers to latest release tag
+bump-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Fetching latest tags from upstream..."
+    cd deps/flatbuffers && git fetch --tags
+    LATEST_TAG=$(cd deps/flatbuffers && git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+    echo "==> Latest release tag: ${LATEST_TAG}"
+    cd deps/flatbuffers && git checkout "${LATEST_TAG}"
+    echo "==> Submodule now at: $(cd deps/flatbuffers && git describe --tags --always)"
+    echo ""
+    echo "Next steps:"
+    echo "  1. just update-flatbuffers"
+    echo "  2. git add deps/flatbuffers src/zlmdb/flatbuffers"
+    echo "  3. git commit -m 'Bump vendored flatbuffers to ${LATEST_TAG}'"
+
 # Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
     echo "==> Updating vendored flatbuffers from submodule..."
@@ -1602,49 +1724,21 @@ fix-copyright:
 # -- Release workflow recipes
 # -----------------------------------------------------------------------------
 
+# Download release artifacts from GitHub Actions
+# Usage: just download-release-artifacts master-202512092131
+# This downloads everything needed for generate-release-notes and prepare-changelog
+download-release-artifacts release_name:
+    .cicd/scripts/download-release-artifacts.sh "{{ release_name }}" "crossbario/zlmdb"
+
 # Generate changelog entry from git history for a given version
 prepare-changelog version:
-    #!/usr/bin/env bash
-    set -e
-    VERSION="{{ version }}"
+    .cicd/scripts/prepare-changelog.sh "{{ version }}" "crossbario/zlmdb"
 
-    echo ""
-    echo "=========================================="
-    echo " Generating changelog for version ${VERSION}"
-    echo "=========================================="
-    echo ""
-
-    # Find the previous tag
-    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -z "${PREV_TAG}" ]; then
-        echo "No previous tag found. Showing all commits..."
-        git log --oneline --no-decorate | head -50
-    else
-        echo "Commits since ${PREV_TAG}:"
-        echo ""
-        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
-    fi
-
-    echo ""
-    echo "=========================================="
-    echo " Suggested changelog format:"
-    echo "=========================================="
-    echo ""
-    echo "${VERSION}"
-    echo "------"
-    echo ""
-    echo "**New**"
-    echo ""
-    echo "* new: <feature description>"
-    echo ""
-    echo "**Fix**"
-    echo ""
-    echo "* fix: <fix description>"
-    echo ""
-    echo "**Other**"
-    echo ""
-    echo "* other: <other changes>"
-    echo ""
+# Generate release notes entry from downloaded artifacts
+# Usage: just generate-release-notes 25.12.1 master-202512092131
+# Requires: artifacts downloaded via `just download-release-artifacts`
+generate-release-notes version release_name:
+    .cicd/scripts/generate-release-notes.sh "{{ version }}" "{{ release_name }}" "crossbario/zlmdb"
 
 # Validate release is ready: checks changelog, releases, version
 draft-release version:
