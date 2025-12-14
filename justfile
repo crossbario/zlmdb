@@ -1082,6 +1082,122 @@ docs-view venv="": (docs venv)
     echo "==> Opening documentation in browser..."
     xdg-open docs/_build/html/index.html 2>/dev/null || open docs/_build/html/index.html 2>/dev/null || echo "Please open docs/_build/html/index.html manually"
 
+# Integrate downloaded GitHub release artifacts into docs build
+# Usage: just docs-integrate-github-release [release_tag]
+# If no tag specified, finds the most recently downloaded artifacts
+docs-integrate-github-release release_tag="":
+    #!/usr/bin/env bash
+    set -e
+
+    RELEASE_TAG="{{ release_tag }}"
+
+    # Check that docs have been built first
+    if [ ! -d "docs/_build/html" ]; then
+        echo "ERROR: Documentation not built yet"
+        echo ""
+        echo "Please build documentation first using:"
+        echo "  just docs"
+        echo ""
+        echo "Then integrate artifacts with:"
+        echo "  just docs-integrate-github-release"
+        echo ""
+        exit 1
+    fi
+
+    # If no tag specified, find the most recently downloaded artifacts
+    if [ -z "${RELEASE_TAG}" ]; then
+        echo "==> No release tag specified. Finding latest downloaded artifacts..."
+        LATEST_DIR=$(find /tmp -maxdepth 1 -type d -name "zlmdb-release-artifacts-*" -printf "%T@ %p\n" 2>/dev/null \
+          | sort -rn \
+          | head -1 \
+          | cut -d' ' -f2-)
+
+        if [ -z "${LATEST_DIR}" ]; then
+            echo "ERROR: No downloaded release artifacts found in /tmp/"
+            echo ""
+            echo "Please download artifacts first using:"
+            echo "  just download-release-artifacts <release_name>"
+            echo ""
+            exit 1
+        fi
+
+        RELEASE_TAG=$(basename "${LATEST_DIR}" | sed 's/zlmdb-release-artifacts-//')
+        echo "Found latest downloaded artifacts: ${RELEASE_TAG}"
+    fi
+
+    DOWNLOAD_DIR="/tmp/zlmdb-release-artifacts-${RELEASE_TAG}"
+
+    if [ ! -d "${DOWNLOAD_DIR}" ]; then
+        echo "ERROR: Release artifacts not found at: ${DOWNLOAD_DIR}"
+        echo ""
+        echo "Please download artifacts first using:"
+        echo "  just download-release-artifacts ${RELEASE_TAG}"
+        echo ""
+        exit 1
+    fi
+
+    echo "==> Integrating GitHub release artifacts into built documentation..."
+    echo "    Release: ${RELEASE_TAG}"
+    echo "    Source: ${DOWNLOAD_DIR}"
+    echo "    Target: docs/_build/html/_static/"
+    echo ""
+
+    # Create target directories in the BUILT docs
+    echo "==> Creating target directories in docs/_build/html/_static/..."
+    mkdir -p docs/_build/html/_static/flatbuffers
+
+    # Copy FlatBuffers schemas (source .fbs files)
+    echo "==> Copying FlatBuffers source schemas (.fbs)..."
+    if [ -d "${DOWNLOAD_DIR}/flatbuffers" ]; then
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}/flatbuffers" -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/flatbuffers"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .fbs files found in ${DOWNLOAD_DIR}/flatbuffers"
+        fi
+    else
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .fbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    # Copy FlatBuffers binary schemas (.bfbs files)
+    echo "==> Copying FlatBuffers binary schemas (.bfbs)..."
+    if [ -d "${DOWNLOAD_DIR}/gen/schema" ]; then
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}/gen/schema" -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/gen/schema"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .bfbs files found in ${DOWNLOAD_DIR}/gen/schema"
+        fi
+    else
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "No .bfbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    echo ""
+    echo "========================================================================"
+    echo "GitHub release artifacts integrated into built documentation"
+    echo "========================================================================"
+    echo ""
+    echo "Integrated artifacts from: ${RELEASE_TAG}"
+    echo "Target location: docs/_build/html/_static/"
+    echo ""
+    echo "Next steps:"
+    echo "  1. View documentation: just docs-view"
+    echo ""
+
 # Clean generated documentation
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
