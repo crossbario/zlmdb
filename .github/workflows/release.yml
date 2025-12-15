@@ -166,18 +166,33 @@ jobs:
             core.setOutput('is_tag', isTag ? 'true' : 'false');
             core.setOutput('tag_name', tagName);
 
+  identifiers:
+    needs: check-workflows
+    if: needs.check-workflows.outputs.all_complete == 'true'
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
   # Development GitHub releases (for master branch builds)
   release-development:
     name: Development GitHub Release
-    needs: check-workflows
+    needs: [check-workflows, identifiers]
     runs-on: ubuntu-latest
 
-    # Only create releases for development builds (not tags)
+    # Only create releases for development builds (explicit positive list)
     if: |
       needs.check-workflows.outputs.all_complete == 'true' &&
-      needs.check-workflows.outputs.is_tag == 'false' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) &&
+      needs.identifiers.outputs.release_type == 'development'
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
 
     steps:
       - name: Checkout code
@@ -496,15 +511,19 @@ jobs:
   # Production releases (for version tags)
   release-production:
     name: Production Release (PyPI)
-    needs: check-workflows
+    needs: [check-workflows, identifiers]
     runs-on: ubuntu-latest
 
-    # Only publish to PyPI for version tags
+    # Only publish to PyPI for stable releases (version tags)
     if: |
       needs.check-workflows.outputs.all_complete == 'true' &&
-      needs.check-workflows.outputs.is_tag == 'true' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) &&
+      needs.identifiers.outputs.release_type == 'stable'
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
 
     environment: pypi
 

@@ -1082,6 +1082,144 @@ docs-view venv="": (docs venv)
     echo "==> Opening documentation in browser..."
     xdg-open docs/_build/html/index.html 2>/dev/null || open docs/_build/html/index.html 2>/dev/null || echo "Please open docs/_build/html/index.html manually"
 
+# Integrate downloaded GitHub release artifacts into docs build
+# Usage: just docs-integrate-github-release [release_tag]
+# If no tag specified, finds the most recently downloaded artifacts
+docs-integrate-github-release release_tag="":
+    #!/usr/bin/env bash
+    set -e
+
+    RELEASE_TAG="{{ release_tag }}"
+
+    # Check that docs have been built first
+    if [ ! -d "docs/_build/html" ]; then
+        echo "❌ ERROR: Documentation not built yet"
+        echo ""
+        echo "Please build documentation first using:"
+        echo "  just docs"
+        echo ""
+        echo "Then integrate artifacts with:"
+        echo "  just docs-integrate-github-release"
+        echo ""
+        exit 1
+    fi
+
+    # If no tag specified, find the most recently downloaded artifacts
+    if [ -z "${RELEASE_TAG}" ]; then
+        echo "==> No release tag specified. Finding latest downloaded artifacts..."
+        LATEST_DIR=$(find /tmp/release-artifacts -maxdepth 1 -type d -printf "%T@ %p\n" 2>/dev/null \
+          | sort -rn \
+          | head -1 \
+          | cut -d' ' -f2-)
+
+        if [ -z "${LATEST_DIR}" ] || [ "${LATEST_DIR}" = "/tmp/release-artifacts" ]; then
+            echo "❌ ERROR: No downloaded release artifacts found in /tmp/release-artifacts/"
+            echo ""
+            echo "Please download artifacts first using:"
+            echo "  just download-github-release"
+            echo ""
+            exit 1
+        fi
+
+        RELEASE_TAG=$(basename "${LATEST_DIR}")
+        echo "✅ Found latest downloaded artifacts: ${RELEASE_TAG}"
+    fi
+
+    DOWNLOAD_DIR="/tmp/release-artifacts/${RELEASE_TAG}"
+
+    if [ ! -d "${DOWNLOAD_DIR}" ]; then
+        echo "❌ ERROR: Release artifacts not found at: ${DOWNLOAD_DIR}"
+        echo ""
+        echo "Please download artifacts first using:"
+        echo "  just download-github-release ${RELEASE_TAG}"
+        echo ""
+        exit 1
+    fi
+
+    echo "==> Integrating GitHub release artifacts into built documentation..."
+    echo "    Release: ${RELEASE_TAG}"
+    echo "    Source: ${DOWNLOAD_DIR}"
+    echo "    Target: docs/_build/html/_static/"
+    echo ""
+
+    # Create target directories in the BUILT docs
+    echo "==> Creating target directories in docs/_build/html/_static/..."
+    mkdir -p docs/_build/html/_static/flatbuffers
+    mkdir -p docs/_build/html/_static/release
+
+    # Copy FlatBuffers schemas (source .fbs files)
+    echo "==> Copying FlatBuffers source schemas (.fbs)..."
+    if [ -d "${DOWNLOAD_DIR}/flatbuffers" ]; then
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}/flatbuffers" -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/flatbuffers"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}/flatbuffers"
+        fi
+    else
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    # Copy FlatBuffers binary schemas (.bfbs files)
+    echo "==> Copying FlatBuffers binary schemas (.bfbs)..."
+    if [ -d "${DOWNLOAD_DIR}/gen/schema" ]; then
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}/gen/schema" -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/gen/schema"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}/gen/schema"
+        fi
+    elif [ -d "${DOWNLOAD_DIR}/flatbuffers" ]; then
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}/flatbuffers" -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/flatbuffers"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}/flatbuffers"
+        fi
+    else
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}"
+        fi
+    fi
+
+    # Copy chain-of-custody files (checksums, validation, build info)
+    echo "==> Copying chain-of-custody files..."
+    for custody_file in CHECKSUMS.sha256 VALIDATION.txt build-info.txt; do
+        if [ -f "${DOWNLOAD_DIR}/${custody_file}" ]; then
+            cp "${DOWNLOAD_DIR}/${custody_file}" docs/_build/html/_static/release/
+            echo "✅ Copied ${custody_file} to docs/_build/html/_static/release/"
+        fi
+    done
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "✅ GitHub release artifacts integrated into built documentation"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Integrated artifacts from: ${RELEASE_TAG}"
+    echo "Target location: docs/_build/html/_static/"
+    echo ""
+    echo "Contents integrated:"
+    echo "  - FlatBuffers schemas: docs/_build/html/_static/flatbuffers/"
+    echo "  - Chain-of-custody:    docs/_build/html/_static/release/"
+    echo ""
+    echo "Next steps:"
+    echo "  1. View documentation: just docs-view"
+    echo ""
+
 # Clean generated documentation
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
@@ -1127,7 +1265,7 @@ clean-build:
 # Clean test and coverage artifacts
 clean-test:
     echo "==> Removing test and coverage artifacts..."
-    rm -rf .tox/ .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
+    rm -rf .coverage .coverage.* htmlcov/ .pytest_cache/ .ty/ .ruff_cache/
     rm -rf .test* 2>/dev/null || true
 
 # -----------------------------------------------------------------------------
@@ -1151,7 +1289,7 @@ _prepare-lmdb-sources venv="":
         ${VENV_PYTHON} build_lmdb.py
     fi
 
-# Run quick tests with pytest (no tox)
+# Run quick tests with pytest
 test-quick venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
     #!/usr/bin/env bash
     set -e
@@ -1266,16 +1404,6 @@ test-zdb-fbs venv="": (install-tools venv) (install venv) (_prepare-lmdb-sources
 
 # Run all zdb tests
 test-zdb venv="": (test-zdb-etcd venv) (test-zdb-df venv) (test-zdb-dyn venv) (test-zdb-fbs venv)
-
-# Run tests with tox
-test-tox:
-    echo "==> Running tests with tox..."
-    tox -e py39,py310,py311,py312,py313,flake8,coverage,mypy,yapf,sphinx
-
-# Run all tox environments
-test-tox-all:
-    echo "==> Running all tox environments..."
-    tox
 
 # Generate code coverage report
 check-coverage venv="": (install-tools venv) (install-dev venv) (_prepare-lmdb-sources venv)
@@ -1406,21 +1534,154 @@ publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
     echo ""
 
 # Download GitHub release artifacts (usage: `just download-github-release` for nightly, or `just download-github-release stable`)
+# Downloads wheels, sdist, FlatBuffers schemas, and verifies checksums
+# This is the unified download recipe for both docs integration and release notes generation
 download-github-release release_type="nightly":
     #!/usr/bin/env bash
-    set -e
-    echo "==> Downloading GitHub release artifacts (${release_type})..."
-    mkdir -p dist/
-    if [ "{{ release_type }}" = "stable" ]; then
-        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/
-    else
-        gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/ nightly || echo "No nightly release found, trying latest..."
-        if [ ! -f dist/*.whl ]; then
-            gh release download --repo crossbario/zlmdb --pattern "*.whl" --pattern "*.tar.gz" --dir dist/
+    set -euo pipefail
+
+    RELEASE_TYPE="{{ release_type }}"
+    REPO="crossbario/zlmdb"
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "  Downloading GitHub Release Artifacts"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Release type: ${RELEASE_TYPE}"
+    echo ""
+
+    # Check if gh is available and authenticated
+    if ! command -v gh &> /dev/null; then
+        echo "❌ ERROR: GitHub CLI (gh) is not installed"
+        echo "   Install: https://cli.github.com/"
+        exit 1
+    fi
+
+    if ! gh auth status &> /dev/null; then
+        echo "❌ ERROR: GitHub CLI is not authenticated"
+        echo "   Run: gh auth login"
+        exit 1
+    fi
+
+    # Determine which release tag to download
+    case "${RELEASE_TYPE}" in
+        nightly)
+            echo "==> Looking for nightly release..."
+            RELEASE_TAG=$(gh release list --repo "${REPO}" --limit 20 | grep -E "^master-" | head -1 | awk '{print $1}') || true
+            if [ -z "${RELEASE_TAG}" ]; then
+                echo "❌ ERROR: No nightly (master-*) release found"
+                echo "Available releases:"
+                gh release list --repo "${REPO}" --limit 10
+                exit 1
+            fi
+            ;;
+        stable)
+            echo "==> Looking for stable release..."
+            RELEASE_TAG=$(gh release list --repo "${REPO}" --limit 20 | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+" | head -1 | awk '{print $1}') || true
+            if [ -z "${RELEASE_TAG}" ]; then
+                echo "❌ ERROR: No stable (v*) release found"
+                echo "Available releases:"
+                gh release list --repo "${REPO}" --limit 10
+                exit 1
+            fi
+            ;;
+        *)
+            # Assume it's a specific tag name
+            RELEASE_TAG="${RELEASE_TYPE}"
+            ;;
+    esac
+
+    echo "✅ Found release: ${RELEASE_TAG}"
+    echo ""
+
+    # Destination directory - compatible with generate-release-notes
+    DEST_DIR="/tmp/release-artifacts/${RELEASE_TAG}"
+
+    # Create/clean destination directory
+    if [ -d "${DEST_DIR}" ]; then
+        echo "==> Cleaning existing directory: ${DEST_DIR}"
+        rm -rf "${DEST_DIR}"
+    fi
+    mkdir -p "${DEST_DIR}"
+
+    # Download all release assets
+    echo "==> Downloading all release assets to: ${DEST_DIR}"
+    echo ""
+    cd "${DEST_DIR}"
+
+    gh release download "${RELEASE_TAG}" \
+        --repo "${REPO}" \
+        --pattern "*" \
+        --clobber
+
+    echo ""
+    echo "==> Downloaded assets:"
+    ls -la
+
+    # Count different types of files
+    WHEEL_COUNT=$(ls -1 *.whl 2>/dev/null | wc -l || echo "0")
+    TARBALL_COUNT=$(ls -1 *.tar.gz 2>/dev/null | wc -l || echo "0")
+    CHECKSUM_COUNT=$(ls -1 *CHECKSUMS* 2>/dev/null | wc -l || echo "0")
+
+    echo ""
+    echo "==> Asset summary:"
+    echo "    Wheels:     ${WHEEL_COUNT}"
+    echo "    Tarballs:   ${TARBALL_COUNT}"
+    echo "    Checksums:  ${CHECKSUM_COUNT}"
+
+    # Verify checksums if available
+    if [ -f "CHECKSUMS.sha256" ]; then
+        echo ""
+        echo "==> Verifying checksums..."
+        VERIFIED=0
+        FAILED=0
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            FILE_PATH=$(echo "$line" | sed -E 's/^SHA2?-?256\(([^)]+)\)=.*/\1/')
+            EXPECTED_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+            FILE_PATH="${FILE_PATH#./}"
+            if [ -f "$FILE_PATH" ]; then
+                ACTUAL_CHECKSUM=$(openssl sha256 "$FILE_PATH" | awk '{print $2}')
+                if [ "$ACTUAL_CHECKSUM" = "$EXPECTED_CHECKSUM" ]; then
+                    VERIFIED=$((VERIFIED + 1))
+                else
+                    echo "    ❌ MISMATCH: $FILE_PATH"
+                    FAILED=$((FAILED + 1))
+                fi
+            fi
+        done < CHECKSUMS.sha256
+        if [ $FAILED -gt 0 ]; then
+            echo "    ERROR: ${FAILED} file(s) failed verification!"
+            exit 1
+        else
+            echo "    ✅ ${VERIFIED} file(s) verified successfully"
         fi
     fi
-    echo "==> Downloaded artifacts:"
-    ls -la dist/
+
+    # Extract FlatBuffers schema tarball if present
+    if ls flatbuffers-schema*.tar.gz 1> /dev/null 2>&1; then
+        echo ""
+        echo "==> Extracting FlatBuffers schemas..."
+        mkdir -p flatbuffers
+        tar -xzf flatbuffers-schema*.tar.gz -C flatbuffers --strip-components=1 2>/dev/null || tar -xzf flatbuffers-schema*.tar.gz -C flatbuffers
+        FBS_COUNT=$(find flatbuffers -name "*.fbs" -type f 2>/dev/null | wc -l)
+        BFBS_COUNT=$(find flatbuffers -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        echo "    ✅ Extracted ${FBS_COUNT} .fbs files, ${BFBS_COUNT} .bfbs files"
+    fi
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "✅ Download Complete"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Artifacts location: ${DEST_DIR}"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Build docs:            just docs"
+    echo "  2. Integrate artifacts:   just docs-integrate-github-release ${RELEASE_TAG}"
+    echo "  3. Generate release notes: just generate-release-notes <version> ${RELEASE_TAG}"
+    echo ""
 
 # Download release artifacts from GitHub and publish to PyPI
 publish-pypi venv="" tag="":
@@ -1571,6 +1832,22 @@ publish-rtd tag="":
 # -- Utilities
 # -----------------------------------------------------------------------------
 
+# Bump vendored flatbuffers to latest release tag
+bump-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Fetching latest tags from upstream..."
+    cd deps/flatbuffers && git fetch --tags
+    LATEST_TAG=$(cd deps/flatbuffers && git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+    echo "==> Latest release tag: ${LATEST_TAG}"
+    cd deps/flatbuffers && git checkout "${LATEST_TAG}"
+    echo "==> Submodule now at: $(cd deps/flatbuffers && git describe --tags --always)"
+    echo ""
+    echo "Next steps:"
+    echo "  1. just update-flatbuffers"
+    echo "  2. git add deps/flatbuffers src/zlmdb/flatbuffers"
+    echo "  3. git commit -m 'Bump vendored flatbuffers to ${LATEST_TAG}'"
+
 # Update vendored flatbuffers runtime from deps/flatbuffers submodule
 update-flatbuffers:
     echo "==> Updating vendored flatbuffers from submodule..."
@@ -1604,47 +1881,13 @@ fix-copyright:
 
 # Generate changelog entry from git history for a given version
 prepare-changelog version:
-    #!/usr/bin/env bash
-    set -e
-    VERSION="{{ version }}"
+    .cicd/scripts/prepare-changelog.sh "{{ version }}" "crossbario/zlmdb"
 
-    echo ""
-    echo "=========================================="
-    echo " Generating changelog for version ${VERSION}"
-    echo "=========================================="
-    echo ""
-
-    # Find the previous tag
-    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -z "${PREV_TAG}" ]; then
-        echo "No previous tag found. Showing all commits..."
-        git log --oneline --no-decorate | head -50
-    else
-        echo "Commits since ${PREV_TAG}:"
-        echo ""
-        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
-    fi
-
-    echo ""
-    echo "=========================================="
-    echo " Suggested changelog format:"
-    echo "=========================================="
-    echo ""
-    echo "${VERSION}"
-    echo "------"
-    echo ""
-    echo "**New**"
-    echo ""
-    echo "* new: <feature description>"
-    echo ""
-    echo "**Fix**"
-    echo ""
-    echo "* fix: <fix description>"
-    echo ""
-    echo "**Other**"
-    echo ""
-    echo "* other: <other changes>"
-    echo ""
+# Generate release notes entry from downloaded artifacts
+# Usage: just generate-release-notes 25.12.1 master-202512092131
+# Requires: artifacts downloaded via `just download-github-release`
+generate-release-notes version release_name:
+    .cicd/scripts/generate-release-notes.sh "{{ version }}" "{{ release_name }}" "crossbario/zlmdb"
 
 # Validate release is ready: checks changelog, releases, version
 draft-release version:

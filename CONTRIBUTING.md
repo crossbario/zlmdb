@@ -41,10 +41,10 @@ pip install -e .[dev]
 
 ```bash
 # Run all tests
-tox
+just test
 
-# Run tests for specific Python version
-tox -e py312
+# Run tests in specific venv
+just test cpy312
 ```
 
 ## Code Style

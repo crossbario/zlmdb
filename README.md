@@ -135,7 +135,7 @@ management.
 
 -   \[ \] `just test [venv]` - Run full test suite (both test
     directories)
--   \[ \] `just test-quick [venv]` - Quick pytest run (no tox)
+-   \[ \] `just test-quick [venv]` - Quick pytest run
 -   \[x\] `just test-single [venv]` - Run test_basic.py
 -   \[x\] `just test-pmaps [venv]` - Run pmap tests
 -   \[x\] `just test-indexes [venv]` - Run index tests
@@ -143,9 +143,6 @@ management.
 -   \[ \] `just test-zdb-etcd/df/dyn/fbs [venv]` - Individual zdb tests
 -   \[ \] `just test-zdb [venv]` - All zdb tests
 -   \[ \] `just test-all` - Test in all venvs
--   \[ \] `just test-tox` - Run tox (py39-py313, flake8, coverage, mypy,
-    yapf, sphinx)
--   \[ \] `just test-tox-all` - All tox environments
 -   \[ \] `just coverage [venv]` - Generate HTML coverage report
 
 **Code Quality:** ✨
@@ -180,7 +177,7 @@ management.
 -   \[x\] `just clean` - Clean everything (alias for distclean)
 -   \[x\] `just clean-build` - Remove build/ dist/ \*.egg-info
 -   \[x\] `just clean-pyc` - Remove \*.pyc \_\_pycache\_\_
--   \[x\] `just clean-test` - Remove .tox .coverage .pytest_cache
+-   \[x\] `just clean-test` - Remove .coverage .pytest_cache
 -   \[x\] `just distclean` - Nuclear clean (removes venvs too!)
 
 **Utilities:** 🔧
