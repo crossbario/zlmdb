@@ -100,7 +100,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy311, cpy314, pypy311]
+        python-env: [cpy311, cpy312, cpy313, cpy314, pypy311]
 
     steps:
       - name: Checkout code
@@ -157,6 +157,9 @@ jobs:
 
       - name: Run unit tests (PyTest) - zLMDB ORM
         run: just test-orm ${{ matrix.python-env }}
+
+      - name: Test FlatBuffers reflection imports
+        run: just test-reflection ${{ matrix.python-env }}
 
   documentation:
     name: Documentation Build
