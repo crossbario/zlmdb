@@ -45,7 +45,7 @@ class Field(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from reflection.Type import Type
+            from .Type import Type
 
             obj = Type()
             obj.Init(self._tab.Bytes, x)
@@ -120,7 +120,7 @@ class Field(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from reflection.KeyValue import KeyValue
+            from .KeyValue import KeyValue
 
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)

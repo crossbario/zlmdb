@@ -40,7 +40,7 @@ class Schema(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from reflection.Object import Object
+            from .Object import Object
 
             obj = Object()
             obj.Init(self._tab.Bytes, x)
@@ -66,7 +66,7 @@ class Schema(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from reflection.Enum import Enum
+            from .Enum import Enum
 
             obj = Enum()
             obj.Init(self._tab.Bytes, x)
@@ -104,7 +104,7 @@ class Schema(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from reflection.Object import Object
+            from .Object import Object
 
             obj = Object()
             obj.Init(self._tab.Bytes, x)
@@ -118,7 +118,7 @@ class Schema(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from reflection.Service import Service
+            from .Service import Service
 
             obj = Service()
             obj.Init(self._tab.Bytes, x)
@@ -155,7 +155,7 @@ class Schema(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
-            from reflection.SchemaFile import SchemaFile
+            from .SchemaFile import SchemaFile
 
             obj = SchemaFile()
             obj.Init(self._tab.Bytes, x)

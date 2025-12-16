@@ -462,6 +462,29 @@ test-import venv="": (install venv)
     echo "✅ ALL NAMESPACE ISOLATION TESTS PASSED"
     echo "========================================================================"
 
+# Test flatbuffers reflection imports (verifies vendored reflection module works)
+# This is the test that cfxdb, wamp-xbr, and crossbar depend on - they use Schema.GetRootAs()
+# to load .bfbs files for dynamic FlatBuffers access.
+# See: https://github.com/crossbario/zlmdb/issues/102
+test-reflection venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Testing flatbuffers reflection imports in ${VENV_NAME}..."
+    echo ""
+
+    # Run the reflection test script
+    ${VENV_PYTHON} "{{ PROJECT_DIR }}/scripts/test_reflection.py"
+
+    echo ""
+    echo "========================================================================"
+    echo "✅ ALL REFLECTION IMPORT TESTS PASSED"
+    echo "========================================================================"
+
 # Test bundled flatc compiler (verifies flatc binary is bundled and works)
 test-bundled-flatc venv="": (install venv)
     #!/usr/bin/env bash
@@ -1856,7 +1879,7 @@ update-flatbuffers:
     echo "✓ Flatbuffers vendor updated in src/zlmdb/flatbuffers"
 
 # Generate flatbuffers reflection Python code
-generate-flatbuffers-reflection:
+generate-flatbuffers-reflection: && fix-flatbuffers-reflection-imports
     #!/usr/bin/env bash
     FLATC=/usr/local/bin/flatc
     if [ ! -f "${FLATC}" ]; then
@@ -1867,6 +1890,49 @@ generate-flatbuffers-reflection:
     echo "==> Generating flatbuffers reflection code..."
     ${FLATC} --python -o src/zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
     echo "✓ Flatbuffers reflection code generated"
+
+# Fix absolute imports in generated flatbuffers reflection code
+# The flatc compiler generates absolute imports like 'from reflection.Type import Type'
+# but when vendored inside zlmdb, these must be relative imports 'from .Type import Type'
+# See: https://github.com/crossbario/zlmdb/issues/102
+fix-flatbuffers-reflection-imports:
+    #!/usr/bin/env bash
+    set -e
+    REFLECTION_DIR="src/zlmdb/flatbuffers/reflection"
+
+    if [ ! -d "${REFLECTION_DIR}" ]; then
+        echo "ERROR: Reflection directory not found at ${REFLECTION_DIR}"
+        exit 1
+    fi
+
+    echo "==> Fixing absolute imports in flatbuffers reflection code..."
+
+    # Count files that need fixing
+    FILES_WITH_ABSOLUTE=$(grep -l "from reflection\." "${REFLECTION_DIR}"/*.py 2>/dev/null | wc -l)
+
+    if [ "${FILES_WITH_ABSOLUTE}" -eq 0 ]; then
+        echo "✓ No absolute imports found (already fixed or not present)"
+        exit 0
+    fi
+
+    echo "   Found ${FILES_WITH_ABSOLUTE} files with absolute imports"
+
+    # Fix all occurrences of 'from reflection.X import' to 'from .X import'
+    for pyfile in "${REFLECTION_DIR}"/*.py; do
+        if grep -q "from reflection\." "$pyfile" 2>/dev/null; then
+            sed -i 's/from reflection\./from ./g' "$pyfile"
+            echo "   Fixed: $(basename $pyfile)"
+        fi
+    done
+
+    # Verify fix
+    REMAINING=$(grep -l "from reflection\." "${REFLECTION_DIR}"/*.py 2>/dev/null | wc -l)
+    if [ "${REMAINING}" -gt 0 ]; then
+        echo "ERROR: ${REMAINING} files still have absolute imports!"
+        exit 1
+    fi
+
+    echo "✓ Flatbuffers reflection imports fixed (absolute -> relative)"
 
 # Fix copyright headers (typedef int GmbH)
 fix-copyright:

@@ -45,6 +45,7 @@ Contents
    installation
    getting-started
    programming-guide/index
+   flatbuffers/index
    releases
    changelog
    contributing
