@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zlmdb"
-version = "25.12.2"
+version = "25.12.3"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.md"
 requires-python = ">=3.11"
