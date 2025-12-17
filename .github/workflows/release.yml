@@ -188,7 +188,7 @@ jobs:
       needs.check-workflows.outputs.all_complete == 'true' &&
       (github.event_name == 'workflow_dispatch' ||
        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) &&
-      needs.identifiers.outputs.release_type == 'development'
+      (needs.identifiers.outputs.release_type == 'development' || needs.identifiers.outputs.release_type == 'nightly')
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
