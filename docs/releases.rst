@@ -5,6 +5,115 @@ This page provides links to release artifacts for each version of zLMDB.
 
 For detailed changelog entries, see :doc:`changelog`.
 
+25.12.3
+-------
+
+**Release Date:** 2025-12-17
+
+**Release Type:** Stable release
+
+Release Artifacts
+^^^^^^^^^^^^^^^^^
+
+Binary wheels are available for the following platforms:
+
+.. list-table:: Platform Support Matrix
+   :header-rows: 1
+   :widths: 20 15 15 50
+
+   * - Platform
+     - Python
+     - Arch
+     - Wheel
+   * - Linux
+     - CPython 3.11
+     - x86_64
+     - ``zlmdb-25.12.3-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.11
+     - ARM64
+     - ``zlmdb-25.12.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+   * - Linux
+     - CPython 3.12
+     - x86_64
+     - ``zlmdb-25.12.3-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.12
+     - ARM64
+     - ``zlmdb-25.12.3-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl``
+   * - Linux
+     - CPython 3.13
+     - x86_64
+     - ``zlmdb-25.12.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.13
+     - ARM64
+     - ``zlmdb-25.12.3-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+   * - Linux
+     - CPython 3.14
+     - x86_64
+     - ``zlmdb-25.12.3-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - CPython 3.14t
+     - ARM64
+     - ``zlmdb-25.12.3-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+   * - Linux
+     - PyPy 3.11
+     - x86_64
+     - ``zlmdb-25.12.3-pp311-pypy311_pp73-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl``
+   * - Linux
+     - PyPy 3.11
+     - ARM64
+     - ``zlmdb-25.12.3-pp311-pypy311_pp73-manylinux_2_34_aarch64.whl``
+   * - macOS
+     - CPython 3.11
+     - ARM64
+     - ``zlmdb-25.12.3-cp311-cp311-macosx_15_0_arm64.whl``
+   * - macOS
+     - CPython 3.12
+     - ARM64
+     - ``zlmdb-25.12.3-cp312-cp312-macosx_15_0_arm64.whl``
+   * - macOS
+     - CPython 3.13
+     - ARM64
+     - ``zlmdb-25.12.3-cp313-cp313-macosx_15_0_arm64.whl``
+   * - macOS
+     - CPython 3.14
+     - ARM64
+     - ``zlmdb-25.12.3-cp314-cp314-macosx_15_0_arm64.whl``
+   * - macOS
+     - PyPy 3.11
+     - ARM64
+     - ``zlmdb-25.12.3-pp311-pypy311_pp73-macosx_15_0_arm64.whl``
+   * - Windows
+     - CPython 3.11
+     - x86_64
+     - ``zlmdb-25.12.3-cp311-cp311-win_amd64.whl``
+   * - Windows
+     - CPython 3.12
+     - x86_64
+     - ``zlmdb-25.12.3-cp312-cp312-win_amd64.whl``
+   * - Windows
+     - CPython 3.13
+     - x86_64
+     - ``zlmdb-25.12.3-cp313-cp313-win_amd64.whl``
+   * - Windows
+     - CPython 3.14
+     - x86_64
+     - ``zlmdb-25.12.3-cp314-cp314-win_amd64.whl``
+
+Source distribution: ``zlmdb-25.12.3.tar.gz``
+
+Release Links
+^^^^^^^^^^^^^
+
+* `GitHub Release <https://github.com/crossbario/zlmdb/releases/tag/v25.12.3>`__
+* `PyPI Package <https://pypi.org/project/zlmdb/25.12.3/>`__
+* `Documentation <https://zlmdb.readthedocs.io/en/v25.12.3/>`__
+
+**Detailed Changes:** See :doc:`changelog` (25.12.3 section)
+
+
 25.12.2
 -------
 

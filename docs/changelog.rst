@@ -8,6 +8,32 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+25.12.3
+-------
+
+**Fix**
+
+* Fix FlatBuffers reflection imports: convert 18 absolute imports to relative imports
+  for proper package-relative resolution (#104)
+* Fix release.yml: add 'nightly' check to release-development job condition
+  to match other repos (cfxdb, wamp-xbr, txaio, crossbar)
+
+**New**
+
+* Add ``test-reflection`` recipe and ``scripts/test_reflection.py`` for CI validation
+  of FlatBuffers reflection module imports
+* Add FlatBuffers documentation:
+
+  - ``docs/flatbuffers/index.rst`` - Overview of FlatBuffers integration
+  - ``docs/flatbuffers/wamp-zerocopy-dataplane.rst`` - Zero-copy data plane architecture (#98)
+  - ``docs/flatbuffers/vendoring-design-and-technology.rst`` - Vendoring and native binaries (#99)
+
+**Other**
+
+* Synchronize CI/CD, FlatBuffers vendoring and wamp-ai/wamp-cicd submodules
+  between autobahn-python and zlmdb (#101)
+* Add ``fix-flatbuffers-reflection-imports`` recipe for automated import fixes
+
 25.12.2
 -------
 
