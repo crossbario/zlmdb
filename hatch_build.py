@@ -127,7 +127,13 @@ class LmdbCffiBuildHook(BuildHookInterface):
         Returns True if flatc was successfully built.
         """
         print("\n" + "=" * 70)
-        print("Building FlatBuffers compiler (flatc)")
+        if "ZLMDB_FLATC_EXECUTABLE" in os.environ:
+            flatc_path = Path(os.environ["ZLMDB_FLATC_EXECUTABLE"])
+            print(f"Using prebuilt FlatBuffers compiler (flatc): {flatc_path}")
+            self._flatc_path = flatc_path
+            return True
+        else:
+            print("Building FlatBuffers compiler (flatc)")
         print("=" * 70)
 
         flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
