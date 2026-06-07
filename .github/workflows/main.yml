@@ -77,7 +77,10 @@ jobs:
           just install-tools cpy312
 
       - name: Install ty (Astral type checker)
-        run: uv tool install ty
+        # Pin ty: it is pre-1.0 and changes rule names/defaults between releases
+        # (e.g. non-subscriptable -> not-subscriptable), which silently breaks CI.
+        # Keep this in sync with the version used for local `just check-typing`.
+        run: uv tool install ty==0.0.8
 
       - name: Code formatting / linting (via ruff)
         run: just check-format cpy312

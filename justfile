@@ -1517,7 +1517,7 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore too-many-positional-arguments \
         --ignore unknown-argument \
         --ignore missing-argument \
-        --ignore non-subscriptable \
+        --ignore not-subscriptable \
         --ignore not-iterable \
         --ignore no-matching-overload \
         --ignore conflicting-declarations \
