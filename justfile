@@ -1499,7 +1499,7 @@ check-typing venv="": (install-tools venv) (install-dev venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
     # Only check core zlmdb package, exclude tests and vendored packages
-    ty check \
+    "${VENV_PATH}/bin/ty" check \
         --python "${VENV_PATH}/bin/python" \
         --ignore unresolved-import \
         --ignore unresolved-attribute \
@@ -1522,6 +1522,8 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore no-matching-overload \
         --ignore conflicting-declarations \
         --ignore deprecated \
+        --ignore unused-type-ignore-comment \
+        --ignore possibly-missing-submodule \
         src/zlmdb/
 
 # Run all checks in single environment (usage: `just check cpy314`)

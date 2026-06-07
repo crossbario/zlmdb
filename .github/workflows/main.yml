@@ -72,15 +72,12 @@ jobs:
             uv-cache-ubuntu-quality-
 
       - name: Create Python environment and install tools
+        # ty (Astral type checker) is declared in the [dev] extra and installed
+        # here via `install-tools` (pip install -e .[dev]); no separate global
+        # `uv tool install ty` step is needed.
         run: |
           just create cpy312
           just install-tools cpy312
-
-      - name: Install ty (Astral type checker)
-        # Pin ty: it is pre-1.0 and changes rule names/defaults between releases
-        # (e.g. non-subscriptable -> not-subscriptable), which silently breaks CI.
-        # Keep this in sync with the version used for local `just check-typing`.
-        run: uv tool install ty==0.0.8
 
       - name: Code formatting / linting (via ruff)
         run: just check-format cpy312
