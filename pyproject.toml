@@ -191,6 +191,7 @@ exclude = [
 # Technical debt list - aim to remove codes over time
 ignore = [
     "E275",  # missing whitespace after keyword
+    "E731",  # lambda assignment (idiomatic in the vendored py-lmdb test helpers)
     "F401",  # imported but unused
     "E402",  # module level import not at top of file
     "F403",  # unable to detect undefined names
