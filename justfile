@@ -1881,18 +1881,53 @@ update-flatbuffers:
     cp -R deps/flatbuffers/python/flatbuffers ./src/zlmdb/flatbuffers
     echo "✓ Flatbuffers vendor updated in src/zlmdb/flatbuffers"
 
-# Generate flatbuffers reflection Python code
+# Generate flatbuffers reflection: the binary schema (reflection.bfbs) AND the
+# Python wrappers (reflection/*.py), using a host flatc built from the vendored
+# deps/flatbuffers (version-matched, self-contained -- no system flatc needed).
+#
+# reflection.bfbs is committed (source-of-truth) and shipped in the sdist+wheel,
+# so the package build never has to execute flatc. This is what makes
+# cross-compilation (e.g. Buildroot/aarch64) work -- see issue #107. Run this on
+# the host whenever deps/flatbuffers is bumped, then commit the results.
 generate-flatbuffers-reflection: && fix-flatbuffers-reflection-imports
     #!/usr/bin/env bash
-    FLATC=/usr/local/bin/flatc
-    if [ ! -f "${FLATC}" ]; then
-        echo "ERROR: flatc not found at ${FLATC}"
-        echo "Install flatbuffers compiler first"
+    set -e
+    FBS_DIR="deps/flatbuffers"
+    BUILD_DIR="${FBS_DIR}/build"
+    FLATC="${BUILD_DIR}/flatc"
+    OUT_DIR="src/zlmdb/flatbuffers"
+    REFLECTION_FBS="${FBS_DIR}/reflection/reflection.fbs"
+
+    if [ ! -f "${REFLECTION_FBS}" ]; then
+        echo "ERROR: ${REFLECTION_FBS} not found (init the deps/flatbuffers submodule?)"
         exit 1
     fi
-    echo "==> Generating flatbuffers reflection code..."
-    ${FLATC} --python -o src/zlmdb/flatbuffers/ deps/flatbuffers/reflection/reflection.fbs
-    echo "✓ Flatbuffers reflection code generated"
+
+    # Build a host flatc from the vendored flatbuffers if we don't have one yet.
+    # (Delete deps/flatbuffers/build to force a rebuild after a submodule bump.)
+    if [ ! -x "${FLATC}" ]; then
+        echo "==> Building host flatc from ${FBS_DIR}..."
+        mkdir -p "${BUILD_DIR}"
+        ( cd "${BUILD_DIR}" && \
+          cmake .. -DCMAKE_BUILD_TYPE=Release \
+                   -DFLATBUFFERS_BUILD_TESTS=OFF \
+                   -DFLATBUFFERS_BUILD_FLATLIB=OFF \
+                   -DFLATBUFFERS_BUILD_FLATHASH=OFF \
+                   -DFLATBUFFERS_BUILD_GRPCTEST=OFF \
+                   -DFLATBUFFERS_BUILD_SHAREDLIB=OFF >/dev/null && \
+          cmake --build . --config Release --target flatc >/dev/null )
+    fi
+    echo "==> Using flatc: $(${FLATC} --version)"
+
+    # 1) Binary reflection schema (committed; shipped as package data).
+    echo "==> Generating reflection.bfbs..."
+    "${FLATC}" --binary --schema --bfbs-comments --bfbs-builtins -o "${OUT_DIR}" "${REFLECTION_FBS}"
+
+    # 2) Python reflection wrappers.
+    echo "==> Generating reflection Python code..."
+    "${FLATC}" --python -o "${OUT_DIR}" "${REFLECTION_FBS}"
+
+    echo "✓ Flatbuffers reflection generated (reflection.bfbs + reflection/*.py)"
 
 # Fix absolute imports in generated flatbuffers reflection code
 # The flatc compiler generates absolute imports like 'from reflection.Type import Type'

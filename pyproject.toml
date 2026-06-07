@@ -122,6 +122,10 @@ packages = ["src/zlmdb"]
 [tool.hatch.build.targets.wheel.force-include]
 # Include py.typed marker
 "src/zlmdb/py.typed" = "zlmdb/py.typed"
+# Committed FlatBuffers reflection binary schema (see issue #107). Shipping it as
+# package data means the wheel build never has to run flatc to (re)generate it,
+# which is what enables cross-compilation (e.g. Buildroot/aarch64).
+"src/zlmdb/flatbuffers/reflection.bfbs" = "zlmdb/flatbuffers/reflection.bfbs"
 
 [tool.hatch.build.targets.sdist]
 # By default, hatchling includes all git-tracked files
