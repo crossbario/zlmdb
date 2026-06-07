@@ -357,7 +357,8 @@ install-build-tools venv="": (create venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing minimal build tools in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pip install build wheel cffi auditwheel
+    # setuptools is required by CFFI's extension build / ffi.verify() on Python >= 3.12
+    ${VENV_PYTHON} -m pip install build wheel cffi setuptools auditwheel
 
 # -----------------------------------------------------------------------------
 # -- Testing

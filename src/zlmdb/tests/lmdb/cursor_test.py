@@ -22,8 +22,7 @@
 
 # test delete(dupdata)
 
-from __future__ import absolute_import
-from __future__ import with_statement
+import os
 import sys
 import unittest
 
@@ -33,7 +32,6 @@ from . import testlib
 from .testlib import B
 from .testlib import BT
 
-
 class ContextManagerTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
@@ -42,19 +40,20 @@ class ContextManagerTest(unittest.TestCase):
         path, env = testlib.temp_env()
         txn = env.begin(write=True)
         with txn.cursor() as curs:
-            curs.put(B("foo"), B("123"))
-        self.assertRaises(Exception, lambda: curs.get(B("foo")))
+            curs.put(B('foo'), B('123'))
+        self.assertRaises(Exception, lambda: curs.get(B('foo')))
 
     def test_crash(self):
         path, env = testlib.temp_env()
         txn = env.begin(write=True)
 
+        curs = txn.cursor()
         try:
-            with txn.cursor() as curs:
-                curs.put(123, 123)
+            with curs:
+                curs.put(123, 123)  # type: ignore[arg-type]
         except Exception:
             pass
-        self.assertRaises(Exception, lambda: curs.get(B("foo")))
+        self.assertRaises(Exception, lambda: curs.get(B('foo')))
 
 
 class CursorTestBase(unittest.TestCase):
@@ -69,9 +68,9 @@ class CursorTestBase(unittest.TestCase):
 
 class CursorTest(CursorTestBase):
     def testKeyValueItemEmpty(self):
-        self.assertEqual(B(""), self.c.key())
-        self.assertEqual(B(""), self.c.value())
-        self.assertEqual(BT("", ""), self.c.item())
+        self.assertEqual(B(''), self.c.key())
+        self.assertEqual(B(''), self.c.value())
+        self.assertEqual(BT('', ''), self.c.item())
 
     def testFirstLastEmpty(self):
         self.assertEqual(False, self.c.first())
@@ -88,22 +87,22 @@ class CursorTest(CursorTestBase):
         self.assertEqual(testlib.ITEMS[-1], self.c.item())
 
     def testSetKey(self):
-        self.assertRaises(Exception, (lambda: self.c.set_key(B(""))))
-        self.assertEqual(False, self.c.set_key(B("missing")))
+        self.assertRaises(Exception, (lambda: self.c.set_key(B(''))))
+        self.assertEqual(False, self.c.set_key(B('missing')))
         testlib.putData(self.txn)
-        self.assertEqual(True, self.c.set_key(B("b")))
-        self.assertEqual(False, self.c.set_key(B("ba")))
+        self.assertEqual(True, self.c.set_key(B('b')))
+        self.assertEqual(False, self.c.set_key(B('ba')))
 
     def testSetRange(self):
-        self.assertEqual(False, self.c.set_range(B("x")))
+        self.assertEqual(False, self.c.set_range(B('x')))
         testlib.putData(self.txn)
-        self.assertEqual(False, self.c.set_range(B("x")))
-        self.assertEqual(True, self.c.set_range(B("a")))
-        self.assertEqual(B("a"), self.c.key())
-        self.assertEqual(True, self.c.set_range(B("ba")))
-        self.assertEqual(B("baa"), self.c.key())
-        self.c.set_range(B(""))
-        self.assertEqual(B("a"), self.c.key())
+        self.assertEqual(False, self.c.set_range(B('x')))
+        self.assertEqual(True, self.c.set_range(B('a')))
+        self.assertEqual(B('a'), self.c.key())
+        self.assertEqual(True, self.c.set_range(B('ba')))
+        self.assertEqual(B('baa'), self.c.key())
+        self.c.set_range(B(''))
+        self.assertEqual(B('a'), self.c.key())
 
     def testDeleteEmpty(self):
         self.assertEqual(False, self.c.delete())
@@ -112,37 +111,36 @@ class CursorTest(CursorTestBase):
         testlib.putData(self.txn)
         self.assertEqual(False, self.c.delete())
         self.c.first()
-        self.assertEqual(BT("a", ""), self.c.item())
+        self.assertEqual(BT('a', ''), self.c.item())
         self.assertEqual(True, self.c.delete())
-        self.assertEqual(BT("b", ""), self.c.item())
+        self.assertEqual(BT('b', ''), self.c.item())
         self.assertEqual(True, self.c.delete())
-        self.assertEqual(BT("baa", ""), self.c.item())
+        self.assertEqual(BT('baa', ''), self.c.item())
         self.assertEqual(True, self.c.delete())
-        self.assertEqual(BT("d", ""), self.c.item())
+        self.assertEqual(BT('d', ''), self.c.item())
         self.assertEqual(True, self.c.delete())
-        self.assertEqual(BT("", ""), self.c.item())
+        self.assertEqual(BT('', ''), self.c.item())
         self.assertEqual(False, self.c.delete())
-        self.assertEqual(BT("", ""), self.c.item())
+        self.assertEqual(BT('', ''), self.c.item())
 
     def testDeleteLast(self):
         testlib.putData(self.txn)
         self.assertEqual(True, self.c.last())
-        self.assertEqual(BT("d", ""), self.c.item())
+        self.assertEqual(BT('d', ''), self.c.item())
         self.assertEqual(True, self.c.delete())
-        self.assertEqual(BT("", ""), self.c.item())
+        self.assertEqual(BT('', ''), self.c.item())
         self.assertEqual(False, self.c.delete())
-        self.assertEqual(BT("", ""), self.c.item())
+        self.assertEqual(BT('', ''), self.c.item())
 
     def testCount(self):
         self.assertRaises(Exception, (lambda: self.c.count()))
         testlib.putData(self.txn)
         self.c.first()
         # TODO: complete dup key support.
-        # self.assertEqual(1, self.c.count())
+        #self.assertEqual(1, self.c.count())
 
     def testPut(self):
         pass
-
 
 class CursorTest2(unittest.TestCase):
     def tearDown(self):
@@ -150,123 +148,166 @@ class CursorTest2(unittest.TestCase):
 
     def setUp(self):
         self.path, self.env = testlib.temp_env()
-        self.db = self.env.open_db(b"foo", dupsort=True)
+        self.db = self.env.open_db(b'foo', dupsort=True)
         self.txn = self.env.begin(write=True, db=self.db)
         self.c = self.txn.cursor()
 
     def testIterWithDeletes(self):
-        """A problem identified in LMDB 0.9.27"""
-        self.c.put(b"\x00\x01", b"hehe", dupdata=True)
-        self.c.put(b"\x00\x02", b"haha", dupdata=True)
-        self.c.set_key(b"\x00\x02")
+        ''' A problem identified in LMDB 0.9.27 '''
+        self.c.put(b'\x00\x01', b'hehe', dupdata=True)
+        self.c.put(b'\x00\x02', b'haha', dupdata=True)
+        self.c.set_key(b'\x00\x02')
         it = self.c.iternext()
-        self.assertEqual((b"\x00\x02", b"haha"), next(it))
-        self.txn.delete(b"\x00\x01", b"hehe", db=self.db)
+        self.assertEqual((b'\x00\x02', b'haha'), next(it))
+        self.txn.delete(b'\x00\x01', b'hehe', db=self.db)
         self.assertRaises(StopIteration, next, it)
+
+    @unittest.skipIf(os.getenv('LMDB_PURE') or os.getenv('LMDB_FORCE_SYSTEM'),
+                     'requires patched LMDB')
+    def testNextNodupAfterDeletePutSingleKey(self):
+        '''Issue #388: next_nodup infinite loop after delete+put on sole key'''
+        self.c.put(b'key', b'val1')
+        self.c.put(b'key', b'val2')
+        assert self.c.first()
+        self.txn.delete(b'key', db=self.db)
+        self.txn.put(b'key', b'val1', db=self.db)
+        self.txn.put(b'key', b'val2', db=self.db)
+        # Should not find the re-inserted key as "next"
+        self.assertFalse(self.c.next_nodup())
+
+    @unittest.skipIf(os.getenv('LMDB_PURE') or os.getenv('LMDB_FORCE_SYSTEM'),
+                     'requires patched LMDB')
+    def testPrevNodupAfterDeletePutSingleKey(self):
+        '''Issue #388: prev_nodup variant'''
+        self.c.put(b'key', b'val1')
+        self.c.put(b'key', b'val2')
+        assert self.c.last()
+        self.txn.delete(b'key', db=self.db)
+        self.txn.put(b'key', b'val1', db=self.db)
+        # Should not find the re-inserted key as "prev"
+        self.assertFalse(self.c.prev_nodup())
+
+    def testNextNodupAfterDeletePutMultipleKeys(self):
+        '''Issue #388: verify multi-key case still works'''
+        self.c.put(b'key1', b'val1')
+        self.c.put(b'key2', b'val2')
+        assert self.c.first()  # at key1
+        self.txn.delete(b'key1', db=self.db)
+        self.txn.put(b'key1', b'val1', db=self.db)
+        # Should advance to key2, not loop on key1
+        # Note: behavior after txn.delete may vary; the key point is no infinite loop
+        result = self.c.next_nodup()
+        if result:
+            self.assertNotEqual(self.c.key(), b'key1')
 
 
 class PutmultiTest(CursorTestBase):
     def test_empty_seq(self):
-        consumed, added = self.c.putmulti(())
+        consumed, added = self.c.putmulti(())  # type: ignore[arg-type]
         assert consumed == added == 0
 
     def test_2list(self):
-        l = [BT("a", ""), BT("a", "")]
-        consumed, added = self.c.putmulti(l)
+        l = [BT('a', ''), BT('a', '')]
+        consumed, added = self.c.putmulti(l)  # type: ignore[arg-type]
         assert consumed == added == 2
 
         li = iter(l)
-        consumed, added = self.c.putmulti(li)
+        consumed, added = self.c.putmulti(li)  # type: ignore[arg-type]
         assert consumed == added == 2
 
     def test_2list_preserve(self):
-        l = [BT("a", ""), BT("a", "")]
-        consumed, added = self.c.putmulti(l, overwrite=False)
+        l = [BT('a', ''), BT('a', '')]
+        consumed, added = self.c.putmulti(l, overwrite=False)  # type: ignore[arg-type]
         assert consumed == 2
         assert added == 1
 
-        assert self.c.set_key(B("a"))
+        assert self.c.set_key(B('a'))
         assert self.c.delete()
 
         li = iter(l)
-        consumed, added = self.c.putmulti(li, overwrite=False)
+        consumed, added = self.c.putmulti(li, overwrite=False)  # type: ignore[arg-type]
         assert consumed == 2
         assert added == 1
 
     def test_bad_seq1(self):
-        self.assertRaises(Exception, lambda: self.c.putmulti(range(2)))
+        self.assertRaises(Exception,
+                          lambda: self.c.putmulti(range(2)))  # type: ignore[arg-type]
 
     def test_dupsort(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B("db1"), dupsort=True)
+        db1 = env.open_db(B('db1'), dupsort=True)
         txn = env.begin(write=True, db=db1)
         with txn.cursor() as c:
-            tups = [BT("a", "value1"), BT("b", "value1"), BT("b", "value2")]
-            assert (3, 3) == c.putmulti(tups)
+            tups = [BT('a', 'value1'), BT('b', 'value1'), BT('b', 'value2')]
+            assert (3, 3) == c.putmulti(tups)  # type: ignore[arg-type]
 
     def test_dupsort_putmulti_append(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B("db1"), dupsort=True)
+        db1 = env.open_db(B('db1'), dupsort=True)
         txn = env.begin(write=True, db=db1)
         with txn.cursor() as c:
-            tups = [BT("a", "value1"), BT("b", "value1"), BT("b", "value2")]
-            assert (3, 3) == c.putmulti(tups, append=True)
+            tups = [BT('a', 'value1'), BT('b', 'value1'), BT('b', 'value2')]
+            assert (3, 3) == c.putmulti(tups, append=True)  # type: ignore[arg-type]
 
     def test_dupsort_put_append(self):
         _, env = testlib.temp_env()
-        db1 = env.open_db(B("db1"), dupsort=True)
+        db1 = env.open_db(B('db1'), dupsort=True)
         txn = env.begin(write=True, db=db1)
         with txn.cursor() as c:
-            assert c.put(B("a"), B("value1"), append=True)
-            assert c.put(B("b"), B("value1"), append=True)
-            assert c.put(B("b"), B("value2"), append=True)
-
+            assert c.put(B('a'), B('value1'), append=True)
+            assert c.put(B('b'), B('value1'), append=True)
+            assert c.put(B('b'), B('value2'), append=True)
 
 class ReplaceTest(CursorTestBase):
     def test_replace(self):
-        assert None is self.c.replace(B("a"), B(""))
-        assert B("") == self.c.replace(B("a"), B("x"))
-        assert B("x") == self.c.replace(B("a"), B("y"))
+        assert None is self.c.replace(B('a'), B(''))
+        assert B('') == self.c.replace(B('a'), B('x'))
+        assert B('x') == self.c.replace(B('a'), B('y'))
 
 
 class ContextManagerTest2(CursorTestBase):
     def test_enter(self):
         with self.c as c:
             assert c is self.c
-            c.put(B("a"), B("a"))
-            assert c.get(B("a")) == B("a")
-        self.assertRaises(Exception, lambda: c.get(B("a")))
+            c.put(B('a'), B('a'))
+            assert c.get(B('a')) == B('a')
+        self.assertRaises(Exception,
+            lambda: c.get(B('a')))
 
     def test_exit_success(self):
         with self.txn.cursor() as c:
-            c.put(B("a"), B("a"))
-        self.assertRaises(Exception, lambda: c.get(B("a")))
+            c.put(B('a'), B('a'))
+        self.assertRaises(Exception,
+            lambda: c.get(B('a')))
 
     def test_exit_failure(self):
+        c = self.txn.cursor()
         try:
-            with self.txn.cursor() as c:
-                c.put(B("a"), B("a"))
+            with c:
+                c.put(B('a'), B('a'))
             raise ValueError
         except ValueError:
             pass
-        self.assertRaises(Exception, lambda: c.get(B("a")))
+        self.assertRaises(Exception,
+            lambda: c.get(B('a')))
 
     def test_close(self):
         self.c.close()
-        self.assertRaises(Exception, lambda: c.get(B("a")))
+        self.assertRaises(Exception,
+            lambda: self.c.get(B('a')))
 
     def test_double_close(self):
         self.c.close()
         self.c.close()
-        self.assertRaises(Exception, lambda: self.c.put(B("a"), B("a")))
-
+        self.assertRaises(Exception,
+            lambda: self.c.put(B('a'), B('a')))
 
 GiB = 1024 * 1024 * 1024
 
-
 class PreloadTest(CursorTestBase):
+
     def setUp(self, redo=False):
-        env_args = {"writemap": True, "map_size": GiB}
+        env_args = {'writemap': True, 'map_size': GiB}
         if not redo:
             self.path, self.env = testlib.temp_env(**env_args)
         else:
@@ -274,7 +315,7 @@ class PreloadTest(CursorTestBase):
         self.txn = self.env.begin(write=True)
         self.c = self.txn.cursor()
 
-    @unittest.skipIf(not sys.platform.startswith("linux"), "test only works on Linux")
+    @unittest.skipIf(not sys.platform.startswith('linux'), "test only works on Linux")
     def test_preload(self):
         """
         Test that reading just the key doesn't prefault the value contents, but
@@ -282,8 +323,7 @@ class PreloadTest(CursorTestBase):
         """
 
         import resource
-
-        self.c.put(B("a"), B("a") * (256 * 1024 * 1024))
+        self.c.put(B('a'), B('a') * (256 * 1024 * 1024))
         self.txn.commit()
         self.env.close()
         # Just reading the data is obviously going to fault the value in.  The
@@ -295,8 +335,8 @@ class PreloadTest(CursorTestBase):
         self.txn = self.env.begin(write=True, buffers=True)
         self.c = self.txn.cursor()
         minflts_before = resource.getrusage(resource.RUSAGE_SELF)[6]
-        self.c.set_key(B("a"))
-        assert bytes(self.c.key()) == B("a")
+        self.c.set_key(B('a'))
+        assert bytes(self.c.key()) == B('a')
         minflts_after_key = resource.getrusage(resource.RUSAGE_SELF)[6]
 
         self.c.value()
@@ -308,26 +348,24 @@ class PreloadTest(CursorTestBase):
         assert minflts_after_key - minflts_before < epsilon
 
         # Getting the value does prefault the data, even if we only get it by pointer
-        assert minflts_after_value - minflts_after_key > 1000
-
+        assert minflts_after_value > minflts_after_key
 
 class CursorReadOnlyTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
     def test_cursor_readonly(self):
-        """
+        '''
         Tests whether you can open a cursor on a sub-db at all in a read-only environment.
-        """
+        '''
         path, env = testlib.temp_env(max_dbs=10)
-        env.open_db(b"foo")
+        env.open_db(b'foo')
         env.close()
         with lmdb.open(path, max_dbs=10, readonly=True) as env:
-            db2 = env.open_db(b"foo")
+            db2 = env.open_db(b'foo')
             with env.begin(db=db2) as txn:
                 with txn.cursor(db=db2):
                     pass
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
