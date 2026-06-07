@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zlmdb"
-version = "25.12.3"
+version = "26.6.1"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -66,8 +66,10 @@ dev = [
     "auditwheel>=5.0.0",  # Wheel verification and manylinux compliance checking
     "ruff>=0.1.0",  # Fast Python linter and formatter (replaces flake8/black/yapf)
     "scour>=0.38",  # SVG optimizer for documentation logos
-    # Note: ty (Astral type checker) is installed via `uv tool install ty`
-    # It's a standalone Rust binary, not a Python package dependency
+    # ty: Astral's type checker (standalone Rust binary, shipped as a wheel).
+    # Pre-1.0 and fast-moving: we deliberately follow latest upstream releases
+    # rather than pinning, accepting occasional rule-name/default adjustments.
+    "ty>=0.0.44",
     "coverage>=5.0.0",
 ]
 
@@ -120,6 +122,10 @@ packages = ["src/zlmdb"]
 [tool.hatch.build.targets.wheel.force-include]
 # Include py.typed marker
 "src/zlmdb/py.typed" = "zlmdb/py.typed"
+# Committed FlatBuffers reflection binary schema (see issue #107). Shipping it as
+# package data means the wheel build never has to run flatc to (re)generate it,
+# which is what enables cross-compilation (e.g. Buildroot/aarch64).
+"src/zlmdb/flatbuffers/reflection.bfbs" = "zlmdb/flatbuffers/reflection.bfbs"
 
 [tool.hatch.build.targets.sdist]
 # By default, hatchling includes all git-tracked files
@@ -191,6 +197,7 @@ exclude = [
 # Technical debt list - aim to remove codes over time
 ignore = [
     "E275",  # missing whitespace after keyword
+    "E731",  # lambda assignment (idiomatic in the vendored py-lmdb test helpers)
     "F401",  # imported but unused
     "E402",  # module level import not at top of file
     "F403",  # unable to detect undefined names

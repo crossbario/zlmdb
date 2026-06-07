@@ -20,7 +20,6 @@
 # <http://www.openldap.org/>.
 #
 
-from __future__ import absolute_import
 import unittest
 
 import zlmdb.lmdb as lmdb
@@ -32,39 +31,38 @@ class PackageExportsTest(unittest.TestCase):
     ensure future interface changes to cffi.py and cpython.c don't break
     consistency of "from lmdb import *".
     """
-
     def test_exports(self):
         assert sorted(lmdb.__all__) == [
-            "BadDbiError",
-            "BadRslotError",
-            "BadTxnError",
-            "BadValsizeError",
-            "CorruptedError",
-            "Cursor",
-            "CursorFullError",
-            "DbsFullError",
-            "DiskError",
-            "Environment",
-            "Error",
-            "IncompatibleError",
-            "InvalidError",
-            "InvalidParameterError",
-            "KeyExistsError",
-            "LockError",
-            "MapFullError",
-            "MapResizedError",
-            "MemoryError",
-            "NotFoundError",
-            "PageFullError",
-            "PageNotFoundError",
-            "PanicError",
-            "ReadersFullError",
-            "ReadonlyError",
-            "TlsFullError",
-            "Transaction",
-            "TxnFullError",
-            "VersionMismatchError",
-            "_Database",
-            "enable_drop_gil",
-            "version",
+            'BadDbiError',
+            'BadRslotError',
+            'BadTxnError',
+            'BadValsizeError',
+            'CorruptedError',
+            'Cursor',
+            'CursorFullError',
+            'DbsFullError',
+            'DiskError',
+            'Environment',
+            'Error',
+            'IncompatibleError',
+            'InvalidError',
+            'InvalidParameterError',
+            'KeyExistsError',
+            'LockError',
+            'MapFullError',
+            'MapResizedError',
+            'MemoryError',
+            'NotFoundError',
+            'PageFullError',
+            'PageNotFoundError',
+            'PanicError',
+            'ReadersFullError',
+            'ReadonlyError',
+            'TlsFullError',
+            'Transaction',
+            'TxnFullError',
+            'VersionMismatchError',
+            '_Database',
+            'enable_drop_gil',
+            'version',
         ]

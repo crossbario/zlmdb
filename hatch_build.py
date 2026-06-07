@@ -41,12 +41,15 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Build LMDB CFFI module
         built_lmdb = self._build_lmdb_cffi(build_data)
 
-        # Build flatc compiler
+        # Build flatc compiler.
+        #
+        # We build & bundle flatc into the wheel, but we deliberately do NOT
+        # execute it during the build. reflection.bfbs is committed and shipped
+        # as package data (see issue #107 and the force-include in
+        # pyproject.toml), so cross-compilation never has to run a target-arch
+        # flatc on the build host. Regenerate reflection.bfbs on the host with
+        # `just generate-flatbuffers-reflection` whenever deps/flatbuffers changes.
         built_flatc = self._build_flatc(build_data)
-
-        # Generate reflection.bfbs using the built flatc
-        if built_flatc:
-            self._generate_reflection_bfbs(build_data)
 
         # If we built any extensions, mark this as a platform-specific wheel
         if built_lmdb or built_flatc:
@@ -278,61 +281,11 @@ class LmdbCffiBuildHook(BuildHookInterface):
         self._flatc_path = flatc_dest
         return True
 
-    def _generate_reflection_bfbs(self, build_data):
-        """Generate reflection.bfbs using the built flatc.
-
-        This creates the binary FlatBuffers schema that allows runtime
-        schema introspection.
-        """
-        print("\n" + "=" * 70)
-        print("Generating reflection.bfbs")
-        print("=" * 70)
-
-        if not hasattr(self, "_flatc_path") or not self._flatc_path.exists():
-            print("WARNING: flatc not available, skipping reflection.bfbs generation")
-            return False
-
-        flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
-        reflection_fbs = flatbuffers_dir / "reflection" / "reflection.fbs"
-        output_dir = Path(self.root) / "src" / "zlmdb" / "flatbuffers"
-
-        if not reflection_fbs.exists():
-            print(f"WARNING: {reflection_fbs} not found")
-            return False
-
-        # Generate reflection.bfbs
-        result = subprocess.run(
-            [
-                str(self._flatc_path),
-                "--binary",
-                "--schema",
-                "--bfbs-comments",
-                "--bfbs-builtins",
-                "-o",
-                str(output_dir),
-                str(reflection_fbs),
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
-            print(f"ERROR: flatc failed:\n{result.stderr}")
-            return False
-
-        reflection_bfbs = output_dir / "reflection.bfbs"
-        if reflection_bfbs.exists():
-            print(f"  -> Generated: {reflection_bfbs}")
-
-            # Add to wheel
-            src_file = str(reflection_bfbs)
-            dest_path = "zlmdb/flatbuffers/reflection.bfbs"
-            build_data["force_include"][src_file] = dest_path
-            print(f"  -> Added to wheel: {dest_path}")
-            return True
-        else:
-            print("WARNING: reflection.bfbs not generated")
-            return False
+    # NOTE: reflection.bfbs is no longer generated at build time. It is committed
+    # as source-of-truth and shipped as package data via the force-include in
+    # pyproject.toml. Regenerate it on the host with
+    # `just generate-flatbuffers-reflection`. This avoids executing flatc during
+    # the (potentially cross-compiled) package build -- see issue #107.
 
     def _update_flatbuffers_git_version(self):
         """

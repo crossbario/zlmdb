@@ -18,8 +18,7 @@
 # Additional information about OpenLDAP can be obtained at
 # <http://www.openldap.org/>.
 
-# Hack to support Python >=v2.6 'python -m zlmdb._lmdb_vendor'
-from __future__ import absolute_import
+# zlmdb adaptation: vendored as zlmdb._lmdb_vendor; use a relative import
+# (supports `python -m zlmdb._lmdb_vendor`).
 from . import tool  # type: ignore[import-not-found]
-
 tool.main()

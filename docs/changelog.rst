@@ -8,6 +8,49 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+26.6.1
+------
+
+**Security**
+
+* Vendor py-lmdb's full LMDB corruption-hardening patch set into the CFFI build:
+  the five ``CVE-2019-1622x`` fixes plus the additional ``validate-*`` /
+  ``guard-*`` page/node/overflow validation patches that upstream LMDB does not
+  carry. Add ``cve_test.py`` (vendored from py-lmdb) as a regression suite.
+  Against the previous build, 12 of 25 crafted-corruption tests crashed
+  (SIGSEGV/SIGABRT/SIGBUS/SIGFPE) and 8 silently accepted corruption; all 25
+  now pass. (#111)
+
+**New**
+
+* Bump vendored LMDB ``0.9.33`` → ``0.9.35`` (picks up upstream fixes; the
+  former ``its-10346.patch`` is now incorporated upstream). (#111)
+* Re-fork the vendored py-lmdb wrapper at **py-lmdb 2.2.1** (previously ~1.4.x).
+  The fork stays **CFFI-only** (no CPython C-extension / CPyExt is ever shipped
+  or imported), preserving first-class PyPy support and modern x86-64/ARM64
+  binary wheels. Also vendors the new ``aio`` asyncio API and type stubs. (#111)
+* Bump vendored FlatBuffers ``v25.9.23`` → ``v25.12.19`` (Python runtime and
+  reflection regenerated). (#108)
+
+**Fix**
+
+* Make wheel builds cross-compilation friendly (e.g. Buildroot/aarch64):
+  ``flatc`` is still built and bundled into the wheel, but is no longer
+  *executed* during the build. ``reflection.bfbs`` is now committed and shipped
+  as package data, so packaging never runs a target-architecture ``flatc`` on
+  the build host. (#107)
+
+**Other**
+
+* Add ``setuptools`` to the build-tools install (required by CFFI on
+  Python ≥ 3.12).
+* Follow upstream ``ty`` releases: declare ``ty>=0.0.44`` as a dev dependency
+  and adapt the ``check-typing`` recipe to current ``ty`` rule names.
+* ``generate-flatbuffers-reflection`` now builds a version-matched host
+  ``flatc`` from the vendored ``deps/flatbuffers`` and generates both
+  ``reflection.bfbs`` and the ``reflection/*.py`` wrappers. (#107)
+* Sync the ``.cicd`` and ``.ai`` shared submodules to canonical. (#113)
+
 25.12.3
 -------
 

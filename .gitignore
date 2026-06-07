@@ -123,6 +123,8 @@ src/zlmdb/_flatc/bin/flatc.exe
 # FlatBuffers cmake build directory
 deps/flatbuffers/build/
 
-# Generated reflection binary schema (built from reflection.fbs during wheel build)
-src/zlmdb/flatbuffers/reflection.bfbs
+# Note: src/zlmdb/flatbuffers/reflection.bfbs is now committed (source-of-truth),
+# generated on the host via `just generate-flatbuffers-reflection`. It is NOT
+# generated during the package build, so cross-compilation never has to run flatc
+# (see issue #107).
 

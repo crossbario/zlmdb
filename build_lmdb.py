@@ -48,9 +48,39 @@ def apply_patches():
     shutil.copytree(lmdb_src, build_dir)
 
     # Apply patches
+    #
+    # Canonical hardening patch set, vendored from py-lmdb (jnwatson/py-lmdb,
+    # lib/py-lmdb/*.patch) and authored against upstream LMDB 0.9.35. Order is
+    # significant: each patch's line numbers reflect the state after all
+    # preceding patches have been applied (mirrors py-lmdb setup.py).
+    #
+    # Besides env-copy-txn, this set adds the CVE-2019-1622x fixes and the
+    # additional validate-*/guard-* corruption-rejection hardening that
+    # upstream LMDB does not carry. See zlmdb issue #111 / #113.
+    #
+    # Note: the previous its-10346.patch was dropped — that fix is now
+    # incorporated upstream in LMDB 0.9.35.
     patch_files = [
         'env-copy-txn.patch',
-        'its-10346.patch',
+        'cursor-next-prev-uninitialized.patch',
+        'cve-2019-16224-validate-db-flags.patch',
+        'cve-2019-16225-reject-dirty-pages.patch',
+        'cve-2019-16226-validate-node-del-size.patch',
+        'cve-2019-16227-guard-xcursor-null.patch',
+        'cve-2019-16228-validate-psize.patch',
+        'validate-page-bounds.patch',
+        'validate-node-read-size.patch',
+        'validate-subpage-bounds.patch',
+        'validate-xcursor-nodedsz.patch',
+        'validate-leaf2-keysize.patch',
+        'guard-xcursor-null-d3d4.patch',
+        'validate-nodedsz-page-split.patch',
+        'validate-node-shrink-delta.patch',
+        'validate-overflow-pages.patch',
+        'validate-nodedsz-cursor-put.patch',
+        'validate-md-depth.patch',
+        'validate-md-root.patch',
+        'win32-sparse-file.patch',
     ]
 
     for patch_file in patch_files:
