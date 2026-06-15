@@ -41,6 +41,20 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Build LMDB CFFI module
         built_lmdb = self._build_lmdb_cffi(build_data)
 
+        # The LMDB CFFI extension is mandatory: zlmdb is a binary package, so a
+        # pure-Python (py3-none-any) wheel without the compiled extension is
+        # non-functional. Fail the build hard rather than silently degrading to
+        # a pure-Python wheel, so that a transient compile failure (e.g. a gcc
+        # SIGSEGV under QEMU ARM64 emulation) aborts the build with a non-zero
+        # exit and is retried by CI, instead of being uploaded as a broken but
+        # structurally valid artifact. See issue #116.
+        if not built_lmdb:
+            raise RuntimeError(
+                "LMDB CFFI extension was not built for this wheel - refusing to "
+                "emit a pure-Python (py3-none-any) zlmdb wheel. See the build log "
+                "above for the underlying compile failure."
+            )
+
         # Build flatc compiler.
         #
         # We build & bundle flatc into the wheel, but we deliberately do NOT
@@ -49,12 +63,13 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # pyproject.toml), so cross-compilation never has to run a target-arch
         # flatc on the build host. Regenerate reflection.bfbs on the host with
         # `just generate-flatbuffers-reflection` whenever deps/flatbuffers changes.
-        built_flatc = self._build_flatc(build_data)
+        # flatc is bundled best-effort; its result does not gate the wheel tag.
+        self._build_flatc(build_data)
 
-        # If we built any extensions, mark this as a platform-specific wheel
-        if built_lmdb or built_flatc:
-            build_data["infer_tag"] = True
-            build_data["pure_python"] = False
+        # The mandatory LMDB extension was built above (we would have raised
+        # otherwise), so this is always a platform-specific wheel.
+        build_data["infer_tag"] = True
+        build_data["pure_python"] = False
 
     def _build_lmdb_cffi(self, build_data):
         """Build the LMDB CFFI extension module.

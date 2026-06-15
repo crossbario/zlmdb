@@ -34,6 +34,11 @@ This document contains a reverse-chronological list of changes to zLMDB.
 
 **Fix**
 
+* Fail wheel builds hard when the mandatory LMDB CFFI extension does not
+  compile, instead of silently degrading to a pure-Python (``py3-none-any``)
+  wheel. A transient compile crash (e.g. a ``gcc`` SIGSEGV under QEMU ARM64
+  emulation) now aborts the build with a non-zero exit so CI can retry it,
+  rather than uploading a structurally valid but non-functional artifact. (#116)
 * Make wheel builds cross-compilation friendly (e.g. Buildroot/aarch64):
   ``flatc`` is still built and bundled into the wheel, but is no longer
   *executed* during the build. ``reflection.bfbs`` is now committed and shipped
