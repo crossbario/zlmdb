@@ -8,6 +8,18 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+26.7.1
+------
+
+**Fix**
+
+* Fix ``check_autobahn_flatbuffers_version_in_sync()`` comparing the build-time ``version()`` (which is ``(0, 0, 0, None, None)`` on installed wheels) — it now compares the reliably-stamped ``__version__``. Added a ``test_flatbuffers_version.py`` regression suite (#122)
+* Make ``zlmdb.flatbuffers.version()`` reliable on installed wheels: fall back to the static vendored ``__version__`` when ``__git_version__`` is a bare commit hash or ``"unknown"`` (shallow clone / submodule absent from the sdist), returning ``(major, minor, patch, None, None)`` instead of ``(0, 0, 0, None, None)``. Also hardened ``hatch_build.py`` so it never stamps a non-parseable ``__git_version__``. Return shape unchanged (5-tuple) (#122)
+
+**Other**
+
+* Add CalVer / PEP 440 version-management ``just`` recipes (``file-version``, ``bump-dev``, ``bump-next``, ``prep-release``) mirroring Crossbar.io, and document the versioning policy in ``CONTRIBUTING.md`` (#123)
+
 26.6.1
 ------
 

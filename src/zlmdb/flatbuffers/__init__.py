@@ -24,13 +24,18 @@ from .table import Table
 
 def version() -> tuple[int, int, int, int | None, str | None]:
     """
-    Return the exact git version of the vendored FlatBuffers runtime.
+    Return the version of the vendored FlatBuffers runtime as a 5-tuple
+    ``(major, minor, patch, commits, commit_hash)``.
 
-    Handles:
+    The primary source is ``__git_version__`` (``git describe`` output):
 
     1. "v25.9.23"              -> (25, 9, 23, None, None)       # Release (Named Tag, CalVer Year.Month.Day)
     2. "v25.9.23-71"           -> (25, 9, 23, 71, None)         # 71 commits ahead of the Release v25.9.23
     3. "v25.9.23-71-g19b2300f" -> (25, 9, 23, 71, "19b2300f")   # dito, with Git commit hash
+
+    On installed wheels / shallow clones ``__git_version__`` may be a bare commit hash
+    or "unknown"; in that case fall back to the reliable static ``__version__`` and
+    return ``(major, minor, patch, None, None)``.
     """
 
     # Pattern explanation:
@@ -56,5 +61,13 @@ def version() -> tuple[int, int, int, int | None, str | None]:
 
         return (int(major), int(minor), int(patch), commits_int, commit_hash)
 
-    # Fallback if regex fails entirely (returns 0.0.0 to satisfy type hint)
+    # Fallback: static vendored __version__ ("YY.MM.DD", no 'v' prefix) is reliable on
+    # wheels where __git_version__ may be a bare hash / "unknown". No end-anchor so a
+    # trailing dev suffix is tolerated.
+    fallback = re.match(r"^v?(\d+)\.(\d+)\.(\d+)", __version__)
+    if fallback:
+        major, minor, patch = fallback.groups()
+        return (int(major), int(minor), int(patch), None, None)
+
+    # Last resort: neither __git_version__ nor __version__ parsed.
     return (0, 0, 0, None, None)
