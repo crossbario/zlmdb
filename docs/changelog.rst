@@ -18,6 +18,10 @@ This document contains a reverse-chronological list of changes to zLMDB.
 * Fix the aarch64 CPython 3.14 wheel shipping the free-threaded ABI (``cp314t``) in the GIL ``cp314`` slot (``zlmdb-26.6.1-cp314-cp314t-...aarch64.whl``). Root cause: manylinux images pre-install both the GIL and free-threaded 3.14 under ``/opt/python`` and prepend them to ``PATH``, and ``uv`` resolved ``cpython-3.14`` to the free-threaded interpreter (first on ``PATH``). The ``create`` recipe now drops free-threaded ``…t/bin`` dirs from ``PATH`` for GIL envs so ``uv`` selects the GIL build. As defence-in-depth, ``just build`` also asserts (via ``_check-venv-abi``) that the interpreter's GIL/free-threaded status matches the env and aborts on mismatch, so a wrong-ABI wheel can never be published. A reserved ``cpy314t`` spec (``cpython-3.14t``) is added for a future free-threaded variant (#124)
 * Bump the ``.cicd`` (wamp-cicd) submodule to include exact CPython ABI-tag matching in the shared ``check-release-fileset`` release-gate action, so a wrong-ABI wheel (e.g. ``cp314t`` in the ``cp314`` slot) is also rejected at release-fileset validation, not only by the build-time guard above (wamp-cicd #11, completes #124)
 
+**New**
+
+* Build and publish **musllinux** (Alpine / musl-libc) binary wheels for **CPython 3.11–3.14** on **x86-64 and ARM64** (``musllinux_1_2_{x86_64,aarch64}``). Previously ``pip``/``uv install zlmdb`` on Alpine fell back to a failing source build (the clang-built python-build-standalone interpreter's ``--rtlib=compiler-rt`` CFLAG is rejected by Alpine's gcc); building the LMDB CFFI extension inside the pypa musllinux container fixes this. PyPy-on-musl is tracked separately (#128) (#126)
+
 **Other**
 
 * Add CalVer / PEP 440 version-management ``just`` recipes (``file-version``, ``bump-dev``, ``bump-next``, ``prep-release``) mirroring Crossbar.io, and document the versioning policy in ``CONTRIBUTING.md`` (#123)
