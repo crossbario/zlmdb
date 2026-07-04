@@ -158,6 +158,16 @@ zlmdb provides native binary wheels for the following combinations:
    - ``manylinux_2_34``: Compatible with glibc 2.34+ (RHEL 9+, Ubuntu 22.04+, Debian 12+)
    - ``manylinux_2_36``: Compatible with glibc 2.36+ (for PyPy ARM64 builds)
 
+.. note::
+   **musllinux wheels** target musl-libc distributions (Alpine Linux and
+   Alpine-based containers), for **CPython 3.11–3.14** on **x86-64 and ARM64**:
+
+   - ``musllinux_1_2_x86_64`` / ``musllinux_1_2_aarch64``: Compatible with
+     musl 1.2+ (Alpine 3.12+).
+
+   Without these, ``pip``/``uv install zlmdb`` on Alpine would fall back to a
+   source build. PyPy-on-musl wheels are not yet provided (see zlmdb #128).
+
 
 Platform-Specific Notes
 -----------------------
@@ -178,12 +188,17 @@ zlmdb provides two wheel variants:
    - Recommended for production deployment
    - Works on RHEL 9+, Ubuntu 22.04+, Debian 12+, etc.
 
+3. **musl wheel** (``musllinux_1_2_x86_64``):
+   - For Alpine Linux and other musl-libc distributions (CPython 3.11–3.14)
+   - Recommended for Alpine-based containers
+
 **ARM64 (aarch64)**
 
 zlmdb provides portable wheels built with Docker + QEMU:
 
 - ``manylinux_2_28_aarch64``: For CPython on ARM64 Linux
 - ``manylinux_2_36_aarch64``: For PyPy on ARM64 Linux
+- ``musllinux_1_2_aarch64``: For CPython on ARM64 Alpine / musl-libc Linux
 
 Tested on:
 

@@ -34,6 +34,12 @@ jobs:
       artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
       artifact_arm64_cp314: ${{ steps.check.outputs.artifact_arm64_cp314 }}
       artifact_arm64_pypy311: ${{ steps.check.outputs.artifact_arm64_pypy311 }}
+      # musllinux (Alpine / musl libc) wheels — CPython only. #126
+      artifact_musllinux_x86_64: ${{ steps.check.outputs.artifact_musllinux_x86_64 }}
+      artifact_arm64_musl_cp311: ${{ steps.check.outputs.artifact_arm64_musl_cp311 }}
+      artifact_arm64_musl_cp312: ${{ steps.check.outputs.artifact_arm64_musl_cp312 }}
+      artifact_arm64_musl_cp313: ${{ steps.check.outputs.artifact_arm64_musl_cp313 }}
+      artifact_arm64_musl_cp314: ${{ steps.check.outputs.artifact_arm64_musl_cp314 }}
 
     steps:
       - name: Check all required workflows completed
@@ -142,6 +148,7 @@ jobs:
               // Query artifacts from wheels-docker workflow (Linux x86_64 manylinux wheels)
               const wheelsDockerRunId = latestRuns['wheels-docker']?.id;
               core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-docker-manylinux_2_28_x86_64'));
+              core.setOutput('artifact_musllinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-docker-musllinux_1_2_x86_64'));
 
               // Query artifacts from wheels-arm64 workflow
               const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
@@ -150,6 +157,11 @@ jobs:
               core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_pypy311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-manylinux_2_36_aarch64'));
+              // musllinux aarch64 (CPython only) — #126
+              core.setOutput('artifact_arm64_musl_cp311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_musl_cp312', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_musl_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_musl_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-musllinux_1_2_aarch64'));
 
               console.log('─────────────────────────────────────────────────');
             }
@@ -243,6 +255,16 @@ jobs:
           max-attempts: 5
           retry-delay: 30
 
+      - name: Download and verify musllinux x86_64 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_musllinux_x86_64 }}
+          path: ${{ github.workspace }}/dist-musllinux-x86_64/
+          run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
       - name: Download and verify ARM64 CPython 3.11 wheels
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -288,6 +310,46 @@ jobs:
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
           path: ${{ github.workspace }}/dist-arm64-pypy311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp311 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.12 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp312 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp312/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.13 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp313 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp313/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.14 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp314 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp314/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -375,6 +437,11 @@ jobs:
           verify_directory "${{ github.workspace }}/dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
           verify_directory "${{ github.workspace }}/dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
           verify_directory "${{ github.workspace }}/dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-musllinux-x86_64" "musllinux x86_64 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp311" "ARM64 musllinux CPython 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp312" "ARM64 musllinux CPython 3.12 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp313" "ARM64 musllinux CPython 3.13 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp314" "ARM64 musllinux CPython 3.14 wheels"
 
           if [ $HAS_ERRORS -eq 1 ]; then
             echo "======================================================================"
@@ -421,7 +488,8 @@ jobs:
           mkdir -p ${{ github.workspace }}/dist/
 
           # Copy wheels from all directories (use absolute paths for Docker-built artifacts)
-          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
+          # Note: the dist-arm64-* glob also catches the dist-arm64-musl-cp3NN dirs. #126
+          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-musllinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
             if [ -d "$dir" ]; then
               echo "Copying wheels from $dir/"
               cp -v "$dir"/*.whl ${{ github.workspace }}/dist/ 2>/dev/null || echo "No wheels in $dir/"
@@ -447,6 +515,14 @@ jobs:
             cpy313-linux-aarch64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_34
+            cpy311-linux-x86_64-musllinux_1_2
+            cpy312-linux-x86_64-musllinux_1_2
+            cpy313-linux-x86_64-musllinux_1_2
+            cpy314-linux-x86_64-musllinux_1_2
+            cpy311-linux-aarch64-musllinux_1_2
+            cpy312-linux-aarch64-musllinux_1_2
+            cpy313-linux-aarch64-musllinux_1_2
+            cpy314-linux-aarch64-musllinux_1_2
             cpy311-macos-arm64
             cpy312-macos-arm64
             cpy313-macos-arm64
@@ -496,6 +572,7 @@ jobs:
             Built wheels for:
             - Linux x86_64 (native + manylinux_2_34)
             - Linux ARM64 (manylinux_2_28 + manylinux_2_36 for PyPy)
+            - Linux musllinux_1_2 x86_64 + ARM64 (Alpine / musl, CPython 3.11-3.14)
             - macOS ARM64
             - Windows x86_64
 
@@ -580,6 +657,16 @@ jobs:
           max-attempts: 5
           retry-delay: 30
 
+      - name: Download and verify musllinux x86_64 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_musllinux_x86_64 }}
+          path: ${{ github.workspace }}/dist-musllinux-x86_64/
+          run-id: ${{ needs.check-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
       - name: Download and verify ARM64 CPython 3.11 wheels
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -625,6 +712,46 @@ jobs:
         with:
           name: ${{ needs.check-workflows.outputs.artifact_arm64_pypy311 }}
           path: ${{ github.workspace }}/dist-arm64-pypy311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.11 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp311 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp311/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.12 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp312 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp312/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.13 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp313 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp313/
+          run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+
+      - name: Download and verify ARM64 musllinux CPython 3.14 wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-workflows.outputs.artifact_arm64_musl_cp314 }}
+          path: ${{ github.workspace }}/dist-arm64-musl-cp314/
           run-id: ${{ needs.check-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -712,6 +839,11 @@ jobs:
           verify_directory "${{ github.workspace }}/dist-arm64-cp313" "ARM64 CPython 3.13 wheels"
           verify_directory "${{ github.workspace }}/dist-arm64-cp314" "ARM64 CPython 3.14 wheels"
           verify_directory "${{ github.workspace }}/dist-arm64-pypy311" "ARM64 PyPy 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-musllinux-x86_64" "musllinux x86_64 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp311" "ARM64 musllinux CPython 3.11 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp312" "ARM64 musllinux CPython 3.12 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp313" "ARM64 musllinux CPython 3.13 wheels"
+          verify_directory "${{ github.workspace }}/dist-arm64-musl-cp314" "ARM64 musllinux CPython 3.14 wheels"
 
           if [ $HAS_ERRORS -eq 1 ]; then
             echo "======================================================================"
@@ -758,7 +890,8 @@ jobs:
           mkdir -p ${{ github.workspace }}/dist/
 
           # Copy wheels from all directories (use absolute paths for Docker-built artifacts)
-          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
+          # Note: the dist-arm64-* glob also catches the dist-arm64-musl-cp3NN dirs. #126
+          for dir in ${{ github.workspace }}/dist-manylinux-x86_64 ${{ github.workspace }}/dist-musllinux-x86_64 ${{ github.workspace }}/dist-arm64-*; do
             if [ -d "$dir" ]; then
               echo "Copying wheels from $dir/"
               cp -v "$dir"/*.whl ${{ github.workspace }}/dist/ 2>/dev/null || echo "No wheels in $dir/"
@@ -803,6 +936,7 @@ jobs:
             Built wheels for:
             - Linux x86_64 (native + manylinux_2_34)
             - Linux ARM64 (manylinux_2_28 + manylinux_2_36 for PyPy)
+            - Linux musllinux_1_2 x86_64 + ARM64 (Alpine / musl, CPython 3.11-3.14)
             - macOS ARM64
             - Windows x86_64
 
@@ -835,6 +969,14 @@ jobs:
             cpy313-linux-aarch64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_34
+            cpy311-linux-x86_64-musllinux_1_2
+            cpy312-linux-x86_64-musllinux_1_2
+            cpy313-linux-x86_64-musllinux_1_2
+            cpy314-linux-x86_64-musllinux_1_2
+            cpy311-linux-aarch64-musllinux_1_2
+            cpy312-linux-aarch64-musllinux_1_2
+            cpy313-linux-aarch64-musllinux_1_2
+            cpy314-linux-aarch64-musllinux_1_2
             cpy311-macos-arm64
             cpy312-macos-arm64
             cpy313-macos-arm64
