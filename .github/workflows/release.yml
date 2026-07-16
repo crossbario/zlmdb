@@ -607,6 +607,7 @@ jobs:
     permissions:
       id-token: write    # Required for PyPI trusted publishing (OIDC)
       contents: write    # Required for creating GitHub releases
+      discussions: write # Required for creating the ci-cd release discussion
 
     steps:
       - name: Checkout code
@@ -955,18 +956,34 @@ jobs:
           Also published to PyPI: https://pypi.org/project/zlmdb/
           EOF
 
-          # Create the release AND the ci-cd announcement discussion atomically.
-          # gh creates the discussion at release-creation time, avoiding the
-          # softprops/action-gh-release@v2 "Discussion could not be created"
-          # finalize regression that aborted the 26.7.1 release (see issue #136).
-          gh release create "${TAG}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "Release ${TAG}" \
-            --notes-file release-notes.md \
-            --discussion-category ci-cd \
-            dist/*
-
-          echo "✅ GitHub release ${TAG} created"
+          # Preferred path: create the release AND the ci-cd announcement
+          # discussion (mirrors autobahn-python's proven gh-release step). gh
+          # creates the discussion atomically at release-creation time; this
+          # requires the job's `discussions: write` permission granted above.
+          if gh release create "${TAG}" \
+               --repo "${GITHUB_REPOSITORY}" \
+               --title "Release ${TAG}" \
+               --notes-file release-notes.md \
+               --discussion-category ci-cd \
+               dist/*; then
+            echo "✅ GitHub release ${TAG} + ci-cd discussion created"
+          else
+            # Defense-in-depth: the discussion can still fail on state we do not
+            # control — e.g. an ORPHANED "Release ${TAG}" discussion left behind
+            # when a prior release for this tag was deleted (deleting a release
+            # does NOT delete its linked discussion), which GitHub reports as a
+            # misleading "valid category name" 404. A cosmetic discussion hiccup
+            # must NEVER abort the job before PyPI — that is exactly what broke
+            # 26.7.1. Fall back to a discussion-less release and continue. (#136)
+            echo "::warning::Creating ${TAG} with a ci-cd discussion failed. Creating the release WITHOUT a discussion so the publish proceeds; create/attach the discussion manually if wanted."
+            gh release delete "${TAG}" --repo "${GITHUB_REPOSITORY}" --yes || true
+            gh release create "${TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Release ${TAG}" \
+              --notes-file release-notes.md \
+              dist/*
+            echo "✅ GitHub release ${TAG} created (without discussion)"
+          fi
 
       - name: Validate and clean release fileset for PyPI
         uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
