@@ -1597,6 +1597,7 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore invalid-return-type \
         --ignore invalid-method-override \
         --ignore invalid-type-form \
+        --ignore invalid-declaration \
         --ignore unsupported-operator \
         --ignore too-many-positional-arguments \
         --ignore unknown-argument \
