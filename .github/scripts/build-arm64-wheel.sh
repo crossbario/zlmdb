@@ -14,9 +14,12 @@ if ! command -v curl &> /dev/null || ! command -v gcc &> /dev/null; then
     apt-get install -y curl git build-essential libssl-dev libffi-dev \
       libunwind-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev \
       libncurses5-dev libsnappy-dev \
-      python3-pip python3-dev patchelf
-    # Install auditwheel for converting wheels to manylinux format
-    python3 -m pip install --break-system-packages auditwheel
+      python3-pip python3-dev
+    # Install auditwheel for converting wheels to manylinux format.
+    # patchelf is installed via pip (not apt) so it floats together with auditwheel:
+    # Debian's apt patchelf (0.14.3 on bookworm) lags auditwheel's required minimum
+    # (>= 0.14.5) - same fix as crossbario/autobahn-python#1941.
+    python3 -m pip install --break-system-packages auditwheel patchelf
   fi
 fi
 
