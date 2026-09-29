@@ -75,7 +75,7 @@ _get-spec short_name:
         cpy313)  echo "cpython-3.13";;
         cpy312)  echo "cpython-3.12";;
         cpy311)  echo "cpython-3.11";;
-        pypy311) echo "pypy-3.11";;
+        pypy311) echo "pypy-3.11.15";;  # PyPy 7.3.23 = last pp73 ABI; pinned on purpose (PyPy 8.0 = new pp80 ABI)
         *)       echo "Unknown environment: {{short_name}}" >&2; exit 1;;
     esac
 
