@@ -8,6 +8,16 @@ set unstable := true
 set positional-arguments := true
 set script-interpreter := ['uv', 'run', '--script']
 
+# -----------------------------------------------------------------------------
+# -- Way-A shared workflow recipes (wamp-cicd / .cicd/workflow.just)
+# -----------------------------------------------------------------------------
+# This repo's default branch is `master` (not `main`). Override WORKFLOW_MAIN
+# BEFORE the import so the main-justfile definition wins over workflow.just's
+# default of 'main'. Do NOT also `set allow-duplicate-variables` here —
+# workflow.just owns that setting (setting it twice is a hard `just` error).
+WORKFLOW_MAIN := 'master'
+import '.cicd/workflow.just'
+
 # uv env vars (see: https://docs.astral.sh/uv/reference/environment/)
 
 # Project base directory
@@ -1628,7 +1638,9 @@ dist venv="": clean-build (build venv) (build-sourcedist venv)
     unzip -l dist/zlmdb-*-py*.whl || echo "Wheel not found"
 
 # Publish package to PyPI and Read the Docs (meta-recipe)
-publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
+# NOTE: named `publish-release` (not `publish`) so it does not collide with the
+# Way-A `publish` recipe imported from .cicd/workflow.just (push branch -> exchange).
+publish-release venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
     #!/usr/bin/env bash
     set -e
     TAG="{{ tag }}"

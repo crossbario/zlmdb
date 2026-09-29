@@ -164,7 +164,7 @@ management.
 
 **Publishing:** 🚀
 
--   \[ \] `just publish [venv]` - Upload to PyPI with twine
+-   \[ \] `just publish-release [venv]` - Upload to PyPI with twine
 
 **Documentation:** 📚
 
