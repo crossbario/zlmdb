@@ -1,3 +1,9 @@
+###############################################################################
+#
+#  Copyright (C) typedef int GmbH
+#  SPDX-License-Identifier: MIT
+#
+###############################################################################
 # conftest.py - pytest configuration for zlmdb tests
 #
 # This file is loaded by pytest before any test collection happens.
