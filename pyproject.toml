@@ -171,6 +171,7 @@ exclude = [
 # -----------------------------------------------------------------------------
 
 [tool.ruff]
+extend-exclude = [".ai", ".autobahn-crossbar-ai", ".cicd", "deps/flatbuffers", "lmdb-upstream"]
 # Same as Black
 line-length = 88
 indent-width = 4
