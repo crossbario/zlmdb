@@ -1,8 +1,8 @@
 #
-# Vendored from py-lmdb tests/cve_test.py (jnwatson/py-lmdb master).
+# Vendored from py-lmdb tests/cve_test.py (jnwatson/py-lmdb, tag py-lmdb_3.0.0).
 # Adapted for zlmdb: `import lmdb` -> `import zlmdb.lmdb as lmdb`,
 # `import testlib` -> `from . import testlib`. Logic unchanged.
-# See zlmdb issue #113 / #111.
+# See zlmdb issue #113 / #111 / #169.
 #
 #
 # Copyright 2013-2026 The py-lmdb authors, all rights reserved.
@@ -43,32 +43,124 @@ from . import testlib
 SKIP_PURE = (os.environ.get('LMDB_PURE') is not None or
              os.environ.get('LMDB_FORCE_SYSTEM') is not None)
 
-# Meta page layout (64-bit):
-#   [0..15]   page header
-#   [16..19]  mm_magic (0xBEEFC0DE)
-#   [20..23]  mm_version
-#   [24..31]  mm_address (void*)
-#   [32..39]  mm_mapsize (size_t)
-#   [40..43]  mm_dbs[0].md_pad = mm_psize (FREE_DBI)
-#   [44..45]  mm_dbs[0].md_flags
-# mm_dbs[1] (MAIN_DBI) starts at offset 40+48=88, md_flags at 92.
+# Page and meta layout.  The page header differs between LMDB versions:
 #
-# Page size varies by platform (4096 on x86, 16384 on Apple Silicon).
-# Read from the file rather than hardcoding.
+#   0.9 (PAGEHDRSZ 16, 64-bit):  pgno(8) pad(2) flags(2) lower(2) upper(2)
+#   1.0 (PAGEHDRSZ 24, 64-bit):  pgno(8) txnid(8) pad(2) flags(2)
+#                                lower(2) upper(2)
+#
+# Everything else is identical: MDB_meta follows the header as
+#   magic(4) version(4) address(8) mapsize(size_t) mm_dbs[2]...
+# and MDB_db is 48 bytes on 64-bit in both versions:
+#   md_pad(4) md_flags(2) md_depth(2) md_branch_pages(8) md_leaf_pages(8)
+#   md_overflow_pages(8) md_entries(8) md_root(8)
+#
+# Rather than hardcode a version, detect the header size by locating
+# MDB_MAGIC in a freshly created environment.  That also keeps the tests
+# correct on 32-bit builds, where pgno_t is narrower.
 
-PSIZE_OFFSET = 40       # uint32: mm_psize = mm_dbs[FREE_DBI].md_pad
-FLAGS_FREE_OFFSET = 44  # uint16: mm_dbs[FREE_DBI].md_flags
-FLAGS_MAIN_OFFSET = 92  # uint16: mm_dbs[MAIN_DBI].md_flags
+MDB_MAGIC = 0xBEEFC0DE
+SIZEOF_MDB_DB = 48
 
-# Offsets within each page
-MP_FLAGS_OFFSET = 10    # uint16: mp_flags (after pgno(8) + pad(2))
-MP_PTRS_OFFSET = 16     # first mp_ptrs entry (after 16-byte page header)
 
-MP_LOWER_OFFSET = 12    # uint16: mp_lower (after pgno(8) + pad(2) + flags(2))
-MP_UPPER_OFFSET = 14    # uint16: mp_upper
+def _detect_layout():
+    """Return (PAGEHDRSZ, PAGEBASE) for the LMDB engine backing new
+    environments.
 
+    PAGEHDRSZ is found by locating MDB_MAGIC, the first field of MDB_meta,
+    which directly follows the page header.
+
+    PAGEBASE (ITS#7713) is 0 on 0.9 but PAGEHDRSZ on 1.0, where it graduated
+    out of MDB_DEVEL.  It shifts the frame of reference for mp_lower,
+    mp_upper and every mp_ptrs entry, so it is detected rather than assumed:
+    write a known number of keys to a fresh leaf page, then see whether
+    mp_lower counts from the start of the page or from the end of its
+    header."""
+    path = testlib.temp_dir()
+    env = lmdb.open(path)
+    nkeys = 3
+    try:
+        with env.begin(write=True) as txn:
+            for i in range(nkeys):
+                txn.put(b'%d' % i, b'v')
+    finally:
+        env.close()
+
+    with open(os.path.join(path, 'data.mdb'), 'rb') as fp:
+        raw = fp.read()
+
+    hdrsz = None
+    for off in range(0, 64, 4):
+        if struct.unpack_from('=I', raw, off)[0] == MDB_MAGIC:
+            hdrsz = off
+            break
+    assert hdrsz is not None, 'could not locate MDB_MAGIC in meta page'
+
+    psize = struct.unpack_from('<I', raw, hdrsz + 24)[0]
+    for off in range(psize * 2, len(raw), psize):
+        flags = struct.unpack_from('<H', raw, off + hdrsz - 6)[0]
+        if not (flags & 0x02):          # P_LEAF
+            continue
+        lower = struct.unpack_from('<H', raw, off + hdrsz - 4)[0]
+        if lower == hdrsz + 2 * nkeys:
+            return hdrsz, 0
+        if lower == 2 * nkeys:
+            return hdrsz, hdrsz
+    raise AssertionError('could not determine PAGEBASE from a leaf page')
+
+
+PAGEHDRSZ, PAGEBASE = _detect_layout()
+
+# Offsets within a meta page.
+_META = PAGEHDRSZ                       # MDB_meta starts here
+_MM_DBS = _META + 24                    # magic(4) version(4) address(8)
+                                        #   mapsize(8) -> mm_dbs[0]
+PSIZE_OFFSET = _MM_DBS                  # uint32: mm_dbs[FREE_DBI].md_pad
+FLAGS_FREE_OFFSET = _MM_DBS + 4         # uint16: mm_dbs[FREE_DBI].md_flags
+FLAGS_MAIN_OFFSET = (_MM_DBS + SIZEOF_MDB_DB + 4)  # mm_dbs[MAIN_DBI].md_flags
+
+# Offsets within any page.  lower/upper/ptrs sit at the end of the header.
+MP_FLAGS_OFFSET = PAGEHDRSZ - 6         # uint16: mp_flags
+MP_LOWER_OFFSET = PAGEHDRSZ - 4         # uint16: mp_lower
+MP_UPPER_OFFSET = PAGEHDRSZ - 2         # uint16: mp_upper
+MP_PTRS_OFFSET = PAGEHDRSZ              # first mp_ptrs entry
+
+# uint64: mp_txnid, the second field of the 1.0 page header (pgno, txnid).
+# 1.0 only -- 0.9's header has no such field, and its 8 bytes there are
+# mp_pad/mp_flags/mp_lower/mp_upper.  Guard uses with only_v10.
+MP_TXNID_OFFSET = 8
+
+P_BRANCH = 0x01
 P_LEAF = 0x02
+# 0.9 only; 1.0 derives dirtiness from mp_txnid and reuses 0x10.
 P_DIRTY = 0x10
+
+# Which LMDB engine backs new environments in this run.  Set
+# LMDB_DEFAULT_LIB_VERSION=1 to exercise the tests against the 1.0 engine.
+ENGINE_MAJOR = lmdb.version()[0]
+
+
+def only_v09(reason):
+    """Mark a corruption test whose recipe has not been carried over to the
+    1.0 engine.
+
+    The layout constants above make most of these tests engine-agnostic, but
+    a few depend on structures that 1.0 changed more deeply.  None of them
+    crash on 1.0 — the corruption simply does not reach the code path it
+    reaches on 0.9 — but until each is re-derived for 1.0 the corresponding
+    hardening is verified only on the 0.9 engine.  See
+    lib1/py-lmdb/PATCH-STATUS.md.
+    """
+    return unittest.skipIf(ENGINE_MAJOR >= 1, '0.9 engine only: ' + reason)
+
+
+def only_v10(reason):
+    """Mark a corruption test that applies only to the 1.0 engine.
+
+    The counterpart to only_v09: a few of the fields 1.0 introduced have no
+    0.9 equivalent, so there is nothing for the recipe to corrupt there.
+    """
+    return unittest.skipIf(ENGINE_MAJOR < 1, '1.0 engine only: ' + reason)
 
 
 def _read_page_size(db_path):
@@ -153,6 +245,8 @@ class CVE_2019_16225_Test(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('1.0 removed the P_DIRTY page flag; dirtiness is derived '
+              'from mp_txnid (see PATCH-STATUS.md follow-up)')
     def test_corrupt_leaf_page_dirty_flag(self):
         """Set P_DIRTY on a leaf page on disk; write operations must
         return MDB_CORRUPTED instead of crashing."""
@@ -189,6 +283,88 @@ class CVE_2019_16225_Test(unittest.TestCase):
                 txn.delete(b'1')
                 txn.put(b'3', b'ddd')
 
+    def _forge_txnid(self, new_txnid, writemap):
+        """Rewrite mp_txnid on every mapped B-tree page.  Returns the
+        reopened env.
+
+        sync=False is not incidental: committing a writemap transaction at
+        the default sync=True fails on Windows with "The handle is invalid"
+        on the 1.0 engine, which has nothing to do with what these tests
+        check.  See EnvTest.test_writemap_commit, which pins that down on
+        its own.
+        """
+        path, env = testlib.temp_env(map_size=10*1024*1024,
+                                     writemap=writemap, sync=False)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.put(b'k%04d' % i, b'v' * 100)
+        env.close()
+
+        db_path = _db_path(path)
+        psize = _read_page_size(db_path)
+        with open(db_path, 'rb') as f:
+            raw = bytearray(f.read())
+
+        patched = 0
+        for off in range(psize * 2, len(raw), psize):
+            flags = struct.unpack_from('<H', raw, off + MP_FLAGS_OFFSET)[0]
+            if flags & (P_LEAF | P_BRANCH):
+                struct.pack_into('<Q', raw, off + MP_TXNID_OFFSET, new_txnid)
+                patched += 1
+        self.assertGreater(patched, 0, 'no B-tree pages found to corrupt')
+
+        with open(db_path, 'wb') as f:
+            f.write(raw)
+
+        env = lmdb.open(path, map_size=10*1024*1024, writemap=writemap,
+                        sync=False)
+        testlib._cleanups.append(env.close)
+        return env
+
+    @only_v10('0.9 has no mp_txnid; there it is the P_DIRTY flag above '
+              'that carries this protection')
+    def test_corrupt_leaf_page_mp_txnid(self):
+        """1.0 removed P_DIRTY and derives dirtiness from mp_txnid, so a
+        mapped page claiming a txnid newer than the reader's satisfies
+        IS_WRITABLE() and makes mdb_page_touch() return success without
+        copying.  The caller then writes through the read-only map."""
+        env = self._forge_txnid(0xFFFFFFFFFFFFFFFF, writemap=False)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True) as txn:
+                for i in range(400):
+                    txn.put(b'k%04d' % i, b'W' * 100)
+
+    @only_v10('0.9 has no mp_txnid')
+    def test_corrupt_leaf_page_mp_txnid_writemap(self):
+        """Under MDB_WRITEMAP the map is writable, so the same forgery
+        does not fault -- it silently modifies the page in place, skipping
+        the bookkeeping readers on the old snapshot depend on.  0.9's
+        P_DIRTY check excludes MDB_WRITEMAP entirely; bounding mp_txnid
+        covers it."""
+        env = self._forge_txnid(0xFFFFFFFFFFFFFFFF, writemap=True)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True) as txn:
+                for i in range(400):
+                    txn.put(b'k%04d' % i, b'W' * 100)
+
+    @only_v10('0.9 has no mp_txnid')
+    def test_normal_mp_txnid_still_works(self):
+        """The bound must not reject legitimate pages.  Equality is normal:
+        a page this txn spilled was flushed with mp_txnid = mt_txnid, and a
+        read txn sees pages written by the txn that created its snapshot."""
+        path, env = testlib.temp_env(map_size=64*1024*1024)
+        for round_ in range(4):
+            with env.begin(write=True) as txn:
+                for i in range(500):
+                    txn.put(b'k%04d' % i, bytes([65 + round_]) * 200)
+            with env.begin() as txn:
+                assert sum(1 for _ in txn.cursor()) == 500
+        env.close()
+        env = lmdb.open(path, map_size=64*1024*1024)
+        testlib._cleanups.append(env.close)
+        with env.begin() as txn:
+            assert sum(1 for _ in txn.cursor()) == 500
+
 
 @unittest.skipIf(SKIP_PURE, "CVE tests require patched LMDB")
 class CVE_2019_16226_Test(unittest.TestCase):
@@ -220,7 +396,7 @@ class CVE_2019_16226_Test(unittest.TestCase):
             ptr0 = struct.unpack_from('<H', raw, off + MP_PTRS_OFFSET)[0]
             if ptr0 == 0 or ptr0 >= psize:
                 continue
-            node_off = off + ptr0
+            node_off = off + ptr0 + PAGEBASE
             mn_hi = struct.unpack_from('<H', raw, node_off + 2)[0]
             if mn_hi == 0:
                 struct.pack_into('<H', raw, node_off + 2, 0x0100)
@@ -272,7 +448,7 @@ class CVE_2019_16227_Test(unittest.TestCase):
             ptr0 = struct.unpack_from('<H', raw, off + MP_PTRS_OFFSET)[0]
             if ptr0 == 0 or ptr0 >= psize:
                 continue
-            node_off = off + ptr0
+            node_off = off + ptr0 + PAGEBASE
             mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
             if not (mn_flags & 0x04):
                 struct.pack_into('<H', raw, node_off + 4, mn_flags | 0x04)
@@ -338,6 +514,7 @@ class PageBoundsTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('corruption does not reach mdb_page_get on 1.0')
     def test_corrupt_mp_lower_underflow(self):
         """Set mp_lower to 0 on a leaf page; NUMKEYS wraps to a huge
         value.  Operations must raise CorruptedError."""
@@ -357,7 +534,7 @@ class PageBoundsTest(unittest.TestCase):
         for off in range(psize * 2, len(raw), psize):
             flags = struct.unpack_from('<H', raw, off + MP_FLAGS_OFFSET)[0]
             if flags & P_LEAF:
-                # Set mp_lower to 0, which is < PAGEHDRSZ (16)
+                # Set mp_lower to 0, which is < PAGEHDRSZ
                 struct.pack_into('<H', raw, off + MP_LOWER_OFFSET, 0)
                 patched = True
                 break
@@ -479,7 +656,7 @@ class NodeReadSizeTest(unittest.TestCase):
             ptr0 = struct.unpack_from('<H', raw, off + MP_PTRS_OFFSET)[0]
             if ptr0 == 0 or ptr0 >= psize:
                 continue
-            node_off = off + ptr0
+            node_off = off + ptr0 + PAGEBASE
             # mn_hi is at offset 2 within the MDB_node struct
             mn_hi = struct.unpack_from('<H', raw, node_off + 2)[0]
             if mn_hi == 0:
@@ -514,6 +691,7 @@ class SubpageBoundsTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('sub-page framing differs under 1.0 PAGEBASE')
     def test_corrupt_subpage_mp_upper(self):
         """Corrupt mp_upper on a DUPSORT sub-page; put must raise
         CorruptedError instead of heap overflow."""
@@ -537,13 +715,13 @@ class SubpageBoundsTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1  # PAGEHDRSZ=16, PAGEBASE=0
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             for idx in range(nkeys):
                 ptr = struct.unpack_from('<H', raw,
                                         off + MP_PTRS_OFFSET + idx * 2)[0]
                 if ptr == 0 or ptr >= psize:
                     continue
-                node_off = off + ptr
+                node_off = off + ptr + PAGEBASE
                 mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
                 if not (mn_flags & F_DUPDATA):
                     continue
@@ -609,13 +787,13 @@ class XcursorNodeDszTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             for idx in range(nkeys):
                 ptr = struct.unpack_from('<H', raw,
                                         off + MP_PTRS_OFFSET + idx * 2)[0]
                 if ptr == 0 or ptr >= psize:
                     continue
-                node_off = off + ptr
+                node_off = off + ptr + PAGEBASE
                 mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
                 if (mn_flags & F_SUBDATA) and (mn_flags & F_DUPDATA):
                     # Set mn_lo to 1 (NODEDSZ = 1, which < sizeof(MDB_db)=48)
@@ -659,6 +837,7 @@ class Leaf2KeySizeTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('LEAF2 md_pad recipe not re-derived for 1.0')
     def test_corrupt_mp_pad_zero(self):
         """Set mp_pad to 0 on a LEAF2 page; operations must raise
         CorruptedError."""
@@ -699,6 +878,7 @@ class Leaf2KeySizeTest(unittest.TestCase):
                 cur.first()
                 list(cur.iternext_dup())
 
+    @only_v09('LEAF2 md_pad recipe not re-derived for 1.0')
     def test_corrupt_mp_pad_huge(self):
         """Set mp_pad to a huge value on a LEAF2 page; operations must
         raise CorruptedError."""
@@ -771,7 +951,7 @@ class XcursorNullD3D4Test(unittest.TestCase):
             ptr0 = struct.unpack_from('<H', raw, off + MP_PTRS_OFFSET)[0]
             if ptr0 == 0 or ptr0 >= psize:
                 continue
-            node_off = off + ptr0
+            node_off = off + ptr0 + PAGEBASE
             mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
             if not (mn_flags & F_DUPDATA):
                 struct.pack_into('<H', raw, node_off + 4, mn_flags | F_DUPDATA)
@@ -843,7 +1023,7 @@ class PageSplitNodeDszTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             # Corrupt a middle node's mn_hi
             mid = nkeys // 2
             if mid >= nkeys:
@@ -852,7 +1032,7 @@ class PageSplitNodeDszTest(unittest.TestCase):
                                     off + MP_PTRS_OFFSET + mid * 2)[0]
             if ptr == 0 or ptr >= psize:
                 continue
-            node_off = off + ptr
+            node_off = off + ptr + PAGEBASE
             struct.pack_into('<H', raw, node_off + 2, 0x0100)
             patched += 1
 
@@ -904,13 +1084,13 @@ class NodeShrinkUnderflowTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             for idx in range(nkeys):
                 ptr = struct.unpack_from('<H', raw,
                                         off + MP_PTRS_OFFSET + idx * 2)[0]
                 if ptr == 0 or ptr >= psize:
                     continue
-                node_off = off + ptr
+                node_off = off + ptr + PAGEBASE
                 mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
                 if not (mn_flags & F_DUPDATA) or (mn_flags & F_SUBDATA):
                     continue
@@ -947,7 +1127,9 @@ class NodeShrinkUnderflowTest(unittest.TestCase):
 
 
 P_OVERFLOW = 0x04
-MP_PAGES_OFFSET = 12  # uint32: mp_pages (same offset as mp_lower+mp_upper union)
+# uint32: mp_pages, a union with the mp_lower/mp_upper pair at the tail of
+# the page header.
+MP_PAGES_OFFSET = MP_LOWER_OFFSET
 
 
 @unittest.skipIf(SKIP_PURE, "CVE tests require patched LMDB")
@@ -958,6 +1140,8 @@ class OverflowPagesTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('1.0 reads the overflow page count from the node '
+              '(MDB_ovpage.op_pages), not the page header')
     def test_corrupt_overflow_mp_pages(self):
         """Set mp_pages to a huge value on an overflow page; writing
         must raise CorruptedError."""
@@ -998,6 +1182,78 @@ class OverflowPagesTest(unittest.TestCase):
                 # code path in mdb_cursor_put
                 txn.put(b'big', b'z' * 32000)
 
+    def _forge_ovpage(self, new_pages):
+        """Build a record on overflow pages, then rewrite only the page
+        header's mp_pages.  Returns the reopened env."""
+        path, env = testlib.temp_env(map_size=10*1024*1024)
+        with env.begin(write=True) as txn:
+            # Must exceed 16K to overflow on Apple Silicon's 16K pages.
+            txn.put(b'big', b'x' * 40000)
+            txn.put(b'small', b'y')
+        env.close()
+
+        db_path = _db_path(path)
+        psize = _read_page_size(db_path)
+        with open(db_path, 'rb') as f:
+            raw = bytearray(f.read())
+
+        for off in range(psize * 2, len(raw), psize):
+            flags = struct.unpack_from('<H', raw, off + MP_FLAGS_OFFSET)[0]
+            if flags & P_OVERFLOW:
+                struct.pack_into('<I', raw, off + MP_PAGES_OFFSET, new_pages)
+                break
+        else:
+            self.fail('no overflow page found to corrupt')
+
+        with open(db_path, 'wb') as f:
+            f.write(raw)
+
+        env = lmdb.open(path, map_size=10*1024*1024)
+        testlib._cleanups.append(env.close)
+        return env
+
+    def test_ovpage_free_huge_mp_pages(self):
+        """mdb_ovpage_free takes the extent from the page header and hands
+        it to mdb_midl_append_range.  validate-overflow-pages bounds that
+        in mdb_cursor_put and mdb_drop0 but not here, so the delete path
+        reached it unchecked; 0xFFFFFFFF segfaulted on both engines."""
+        env = self._forge_ovpage(0xFFFFFFFF)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True) as txn:
+                txn.delete(b'big')
+
+    def test_ovpage_free_modest_mp_pages(self):
+        """The dangerous case is not the extreme one: a merely large count
+        committed silently, leaving the free DB holding page numbers past
+        the end of the file for a later transaction to hand out."""
+        env = self._forge_ovpage(100000)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True) as txn:
+                txn.delete(b'big')
+
+    def test_ovpage_free_zero_mp_pages(self):
+        """A real overflow page always spans at least one page, so zero is
+        corrupt; it used to free nothing and leak the extent."""
+        env = self._forge_ovpage(0)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True) as txn:
+                txn.delete(b'big')
+
+    def test_normal_overflow_delete_still_works(self):
+        """The bound must not reject legitimate overflow extents."""
+        path, env = testlib.temp_env(map_size=64*1024*1024)
+        db = env.open_db(b'ov')
+        with env.begin(write=True, db=db) as txn:
+            for i in range(40):
+                txn.put(b'k%03d' % i, b'x' * 300000)
+        with env.begin(db=db) as txn:
+            assert txn.stat(db)['overflow_pages'] > 0
+        with env.begin(write=True, db=db) as txn:
+            for i in range(0, 40, 2):
+                assert txn.delete(b'k%03d' % i)
+        with env.begin(db=db) as txn:
+            assert sum(1 for _ in txn.cursor()) == 20
+
 
 @unittest.skipIf(SKIP_PURE, "CVE tests require patched LMDB")
 class CursorPutNodeDszTest(unittest.TestCase):
@@ -1028,7 +1284,7 @@ class CursorPutNodeDszTest(unittest.TestCase):
             ptr0 = struct.unpack_from('<H', raw, off + MP_PTRS_OFFSET)[0]
             if ptr0 == 0 or ptr0 >= psize:
                 continue
-            node_off = off + ptr0
+            node_off = off + ptr0 + PAGEBASE
             mn_hi = struct.unpack_from('<H', raw, node_off + 2)[0]
             if mn_hi == 0:
                 struct.pack_into('<H', raw, node_off + 2, 0x0100)
@@ -1071,6 +1327,7 @@ class MdDepthTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('md_depth recipe not re-derived for 1.0')
     def test_corrupt_md_depth(self):
         """Set md_depth to 100 (> CURSOR_STACK=32) on a named DB;
         operations must raise error."""
@@ -1092,13 +1349,13 @@ class MdDepthTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             for idx in range(nkeys):
                 ptr = struct.unpack_from('<H', raw,
                                         off + MP_PTRS_OFFSET + idx * 2)[0]
                 if ptr == 0 or ptr >= psize:
                     continue
-                node_off = off + ptr
+                node_off = off + ptr + PAGEBASE
                 mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
                 mn_ksize = struct.unpack_from('<H', raw, node_off + 6)[0]
                 # Check if this is the F_SUBDATA node for our named DB
@@ -1136,6 +1393,7 @@ class MdRootMetaTest(unittest.TestCase):
     def tearDown(self):
         testlib.cleanup()
 
+    @only_v09('md_root recipe not re-derived for 1.0')
     def test_corrupt_md_root_to_meta_page(self):
         """Set md_root to 0 (meta page); operations must raise error."""
         path, env = testlib.temp_env()
@@ -1157,13 +1415,13 @@ class MdRootMetaTest(unittest.TestCase):
             if not (flags & P_LEAF):
                 continue
             lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
-            nkeys = (lower - 16) >> 1
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
             for idx in range(nkeys):
                 ptr = struct.unpack_from('<H', raw,
                                         off + MP_PTRS_OFFSET + idx * 2)[0]
                 if ptr == 0 or ptr >= psize:
                     continue
-                node_off = off + ptr
+                node_off = off + ptr + PAGEBASE
                 mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
                 mn_ksize = struct.unpack_from('<H', raw, node_off + 6)[0]
                 if not (mn_flags & F_SUBDATA):
@@ -1188,6 +1446,379 @@ class MdRootMetaTest(unittest.TestCase):
             db = env.open_db(b'testdb')
             with env.begin(db=db) as txn:
                 txn.get(b'key')
+
+
+F_DUPDATA = 0x04        # node flag: data has duplicates
+
+# mp_pad within any page: pgno(8) [txnid(8) on 1.0] pad(2).  The 0.9-only
+# MP_PAD_OFFSET above assumes the 16-byte header; this one follows the
+# detected layout.
+ANY_MP_PAD_OFFSET = PAGEHDRSZ - 8
+
+
+def _nodedata_off(node_off, ksize):
+    """Offset of a node's data.
+
+    1.0 aligns node data to an even offset (NODEDATA uses EVEN(mn_ksize));
+    0.9 uses mn_ksize as-is.  Getting this wrong shifts the read by one
+    byte for odd-length keys, which silently lands on the wrong field.
+    """
+    if ENGINE_MAJOR >= 1:
+        ksize = (ksize + 1) & ~1
+    return node_off + 8 + ksize
+
+
+def _find_dup_node(raw, psize, want_subdata):
+    """Find a leaf node holding duplicate data.
+
+    Returns (node_off, data_off) for the first F_DUPDATA node whose
+    F_SUBDATA state matches want_subdata: a real sub-DB (an MDB_db record)
+    or an embedded sub-page.  Raises if there is none, so that callers get
+    a non-optional pair.
+    """
+    for off in range(psize * 2, len(raw), psize):
+        flags = struct.unpack_from('<H', raw, off + MP_FLAGS_OFFSET)[0]
+        if not (flags & P_LEAF) or (flags & P_LEAF2):
+            continue
+        lower = struct.unpack_from('<H', raw, off + MP_LOWER_OFFSET)[0]
+        nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
+        for idx in range(nkeys):
+            ptr = struct.unpack_from('<H', raw,
+                                     off + MP_PTRS_OFFSET + idx * 2)[0]
+            if ptr == 0 or ptr >= psize:
+                continue
+            node_off = off + ptr + PAGEBASE
+            mn_flags = struct.unpack_from('<H', raw, node_off + 4)[0]
+            if not (mn_flags & F_DUPDATA):
+                continue
+            if bool(mn_flags & F_SUBDATA) != want_subdata:
+                continue
+            ksize = struct.unpack_from('<H', raw, node_off + 6)[0]
+            return node_off, _nodedata_off(node_off, ksize)
+    raise AssertionError('no %s node found'
+                         % ('sub-DB' if want_subdata else 'sub-page'))
+
+
+@unittest.skipIf(SKIP_PURE, "CVE tests require patched LMDB")
+class MdPadTest(unittest.TestCase):
+    """The LEAF2 fixed key size must be bounded wherever it is read from
+    disk, not just on the page.
+
+    validate-leaf2-keysize bounds a *page's* mp_pad in mdb_page_get, but
+    every LEAF2 computation uses the size held in the *DB record*, and
+    nothing required the two to agree.  Forging only md_pad leaves every
+    page internally consistent, so the page-level checks still pass while
+    the key size becomes arbitrary.  See lib/py-lmdb/validate-md-pad.patch
+    and misc/md_pad_repro.py.
+    """
+
+    def tearDown(self):
+        testlib.cleanup()
+
+    def _forge(self, want_subdata, ndups, new_pad):
+        """Build a DUPFIXED database, then rewrite only its LEAF2 key
+        size.  Returns the reopened env and db handle.
+
+        new_pad may be a callable taking the file's page size.  Several of
+        these values only mean what the test intends relative to it: LMDB
+        takes its page size from the OS, and macOS on arm64 uses 16 KB
+        pages, where a hard-coded 0x1000 is a legitimate key size rather
+        than an oversized one.
+        """
+        path, env = testlib.temp_env()
+        db = env.open_db(b'dfdb', dupsort=True, dupfixed=True)
+        with env.begin(write=True, db=db) as txn:
+            for i in range(ndups):
+                txn.put(b'key0', b'v%06d' % i)
+        env.close()
+
+        db_path = _db_path(path)
+        psize = _read_page_size(db_path)
+        with open(db_path, 'rb') as f:
+            raw = bytearray(f.read())
+
+        data_off = _find_dup_node(raw, psize, want_subdata)[1]
+        if callable(new_pad):
+            new_pad = new_pad(psize)
+
+        if want_subdata:
+            # md_pad is the first field of the MDB_db record.
+            struct.pack_into('<I', raw, data_off, new_pad)
+        else:
+            struct.pack_into('<H', raw, data_off + ANY_MP_PAD_OFFSET,
+                             new_pad)
+
+        with open(db_path, 'wb') as f:
+            f.write(raw)
+
+        env = lmdb.open(path, max_dbs=1)
+        testlib._cleanups.append(env.close)
+        return env, env.open_db(b'dfdb', dupsort=True, dupfixed=True)
+
+    def test_subdb_md_pad_disclosure(self):
+        """A md_pad larger than the page must not become the length of the
+        buffer handed back to the caller."""
+        env, db = self._forge(True, 4000, lambda psize: 8 * psize)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(db=db) as txn:
+                cur = txn.cursor()
+                cur.set_key(b'key0')
+                cur.value()
+
+    def test_subdb_md_pad_huge(self):
+        """md_pad = UINT32_MAX must be refused rather than faulting."""
+        env, db = self._forge(True, 4000, 0xFFFFFFFF)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(db=db) as txn:
+                cur = txn.cursor()
+                cur.set_key(b'key0')
+                cur.value()
+
+    def test_subdb_md_pad_getmulti(self):
+        """mv_size = NUMKEYS(page) * md_pad, in 32-bit arithmetic."""
+        env, db = self._forge(True, 4000, 0xFFFFFFFF)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(db=db) as txn:
+                cur = txn.cursor()
+                cur.set_key(b'key0')
+                cur.getmulti((b'key0',), dupdata=True)
+
+    def test_subdb_md_pad_write(self):
+        """The LEAF2 branch of mdb_node_add uses md_pad as a memmove()/
+        memcpy() length, making this an out-of-bounds write."""
+        env, db = self._forge(True, 4000, lambda psize: psize)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(write=True, db=db) as txn:
+                txn.put(b'key0', b'ZZZZZZZ')
+
+    def test_subdb_md_pad_fits_page_but_not_keys(self):
+        """A key size small enough to fit the page is still corrupt if the
+        page cannot hold that many keys of that size.
+
+        Bounding md_pad on its own leaves this reachable, and it is the
+        more dangerous half: LEAF2KEY() multiplies the size by the key
+        index, so a value comfortably inside the page still addresses
+        megabytes past it by the time the search reaches the middle of a
+        full page.  Found by CI on macOS/arm64, whose 16 KB pages left the
+        4 KB key size this originally used inside the per-key bound.
+        """
+        for pad in (lambda psize: psize // 8,
+                    lambda psize: psize - PAGEHDRSZ):
+            env, db = self._forge(True, 4000, pad)
+            with self.assertRaises(lmdb.Error):
+                with env.begin(db=db) as txn:
+                    cur = txn.cursor()
+                    cur.set_key(b'key0')
+                    cur.value()
+            env, db = self._forge(True, 4000, pad)
+            with self.assertRaises(lmdb.Error):
+                with env.begin(write=True, db=db) as txn:
+                    txn.put(b'key0', b'ZZZZZZZ')
+
+    def test_subpage_mp_pad(self):
+        """For few duplicates the dups live in a sub-page embedded in the
+        node, whose mp_pad never passes through mdb_page_get."""
+        env, db = self._forge(False, 4, 0x4000)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(db=db) as txn:
+                cur = txn.cursor()
+                cur.set_key(b'key0')
+                cur.value()
+
+    def test_subpage_mp_pad_fits_node_but_not_keys(self):
+        """The sub-page equivalent: 14 bytes fits the node data holding
+        four 7-byte dups, but four keys of that size do not."""
+        env, db = self._forge(False, 4, 14)
+        with self.assertRaises(lmdb.Error):
+            with env.begin(db=db) as txn:
+                cur = txn.cursor()
+                cur.set_key(b'key0')
+                cur.value()
+
+    def test_normal_dupfixed_still_works(self):
+        """The bound must not reject legitimate databases.  A DUPFIXED DB
+        record created by mdb_dbi_open has md_pad == 0, so zero cannot be
+        treated as corrupt at the top level."""
+        path, env = testlib.temp_env()
+        db = env.open_db(b'dfdb', dupsort=True, dupfixed=True)
+        with env.begin(write=True, db=db) as txn:
+            for i in range(4000):
+                txn.put(b'key0', b'v%06d' % i)
+        env.close()
+
+        env = lmdb.open(path, max_dbs=1)
+        testlib._cleanups.append(env.close)
+        db = env.open_db(b'dfdb', dupsort=True, dupfixed=True)
+        with env.begin(db=db) as txn:
+            cur = txn.cursor()
+            assert cur.set_key(b'key0')
+            assert cur.value() == b'v000000'
+            assert len(list(cur.iternext_dup())) == 4000
+
+
+@unittest.skipIf(SKIP_PURE, "CVE tests require patched LMDB")
+class FreeDbRecordTest(unittest.TestCase):
+    """validate-freedb-record: mdb_page_alloc trusted a free-DB record's
+    structure completely.  A forged element count read past the node
+    (SIGBUS); a forged page number skipped the me_maxpg bound the fresh-page
+    path applies, so it was handed out directly -- SIGSEGV under writemap, an
+    arbitrary-offset pwrite without it; a duplicate page number tripped an
+    assertion in mdb_page_dirty (abort).  The recipe is engine-agnostic: the
+    reuse path, the skipped bound, and the assertion are common code."""
+
+    # Offsets, relative to a meta page's start, of the fields we need.
+    _MM_DBS_IN_PAGE = PAGEHDRSZ + 24            # -> mm_dbs[0]
+    _FREE_ROOT_IN_PAGE = _MM_DBS_IN_PAGE + 40   # mm_dbs[FREE_DBI].md_root
+    _TXNID_IN_PAGE = _MM_DBS_IN_PAGE + 2 * SIZEOF_MDB_DB + 8  # mm_txnid
+
+    F_BIGDATA = 0x01
+    NODESIZE = 8                                 # mn_lo,mn_hi,mn_flags,mn_ksize
+
+    def tearDown(self):
+        testlib.cleanup()
+
+    def _build_with_freedb_record(self):
+        """Write a batch, free it in one txn (creating a free-DB record),
+        then churn so the record is settled on disk."""
+        path, env = testlib.temp_env(map_size=16 * 1024 * 1024)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.put(b'k%05d' % i, (b'V' * 200) + b'%d' % i)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.delete(b'k%05d' % i)
+        with env.begin(write=True) as txn:
+            for i in range(50):
+                txn.put(b'x%05d' % i, b'y')
+        env.close()
+        return path
+
+    def _find_freedb_idl(self, raw, psize):
+        """Locate the first inline free-DB record (an IDL) in the file.
+        Returns (data_off, count) or None."""
+        # Pick the valid meta page (higher mm_txnid).
+        best = None
+        for pg in (0, 1):
+            base = pg * psize
+            t = struct.unpack_from('<Q', raw, base + self._TXNID_IN_PAGE)[0]
+            r = struct.unpack_from('<q', raw, base + self._FREE_ROOT_IN_PAGE)[0]
+            if best is None or t >= best[0]:
+                best = (t, r)
+        assert best is not None
+        root = best[1]
+        if root < 0:
+            return None
+        # Descend to a leaf (leftmost); the tree is shallow here.
+        pg = root
+        for _ in range(8):
+            base = pg * psize
+            flags = struct.unpack_from('<H', raw, base + MP_FLAGS_OFFSET)[0]
+            lower = struct.unpack_from('<H', raw, base + MP_LOWER_OFFSET)[0]
+            nkeys = (lower - (PAGEHDRSZ - PAGEBASE)) >> 1
+            if flags & P_LEAF:
+                for i in range(nkeys):
+                    ptr = struct.unpack_from(
+                        '<H', raw, base + MP_PTRS_OFFSET + 2 * i)[0]
+                    noff = base + PAGEBASE + ptr
+                    lo, hi, nf, ks = struct.unpack_from('<HHHH', raw, noff)
+                    if nf & self.F_BIGDATA:
+                        continue            # data is on an overflow page
+                    dsize = lo | (hi << 16)
+                    doff = noff + self.NODESIZE + ks
+                    if dsize >= 16 and dsize % 8 == 0:
+                        cnt = struct.unpack_from('<Q', raw, doff)[0]
+                        if 0 < cnt <= dsize // 8 - 1 and cnt < 100000:
+                            return doff, cnt
+                return None
+            # Branch: follow the leftmost child.
+            ptr = struct.unpack_from('<H', raw, base + MP_PTRS_OFFSET)[0]
+            noff = base + PAGEBASE + ptr
+            lo, hi, nf, ks = struct.unpack_from('<HHHH', raw, noff)
+            pg = lo | (hi << 16) | (nf << 32)
+        return None
+
+    def _forge(self, kind, writemap=False):
+        """Build a db, forge its free-DB record per kind, reopen it."""
+        path = self._build_with_freedb_record()
+        db_path = _db_path(path)
+        psize = _read_page_size(db_path)
+        with open(db_path, 'rb') as f:
+            raw = bytearray(f.read())
+
+        found = self._find_freedb_idl(raw, psize)
+        self.assertIsNotNone(found, 'no inline free-DB record found to forge')
+        assert found is not None            # narrow for the type checker
+        doff, cnt = found
+
+        if kind == 'count':
+            struct.pack_into('<Q', raw, doff, 200000)          # count >> node
+        elif kind == 'pgno':
+            p1 = struct.unpack_from('<Q', raw, doff + 8)[0]
+            struct.pack_into('<Q', raw, doff + 8, p1 + 100000)  # out of range
+        elif kind == 'dup':
+            self.assertGreaterEqual(cnt, 2, 'need >=2 entries to duplicate')
+            p1 = struct.unpack_from('<Q', raw, doff + 8)[0]
+            struct.pack_into('<Q', raw, doff + 16, p1)          # duplicate pgno
+        else:
+            self.fail('unknown kind')
+
+        with open(db_path, 'wb') as f:
+            f.write(raw)
+
+        env = lmdb.open(path, map_size=16 * 1024 * 1024, writemap=writemap)
+        testlib._cleanups.append(env.close)
+        return env
+
+    def _drive_allocation(self, env):
+        """Force mdb_page_alloc to consume the free-DB record."""
+        with env.begin(write=True) as txn:
+            for i in range(300):
+                txn.put(b'z%05d' % i, b'W' * 300)
+
+    def test_forged_element_count(self):
+        """A count larger than the record read past the node (SIGBUS)."""
+        env = self._forge('count')
+        with self.assertRaises(lmdb.Error):
+            self._drive_allocation(env)
+
+    def test_forged_pgno_out_of_range(self):
+        """A page number past the high-water mark was handed out and
+        pwritten at an arbitrary file offset, committing silently."""
+        env = self._forge('pgno')
+        with self.assertRaises(lmdb.Error):
+            self._drive_allocation(env)
+
+    def test_forged_pgno_out_of_range_writemap(self):
+        """Same forged page number under writemap stored outside the map
+        (SIGSEGV); the range check refuses it first."""
+        env = self._forge('pgno', writemap=True)
+        with self.assertRaises(lmdb.Error):
+            self._drive_allocation(env)
+
+    def test_forged_duplicate_pgno(self):
+        """A page number listed twice tripped an assertion in
+        mdb_page_dirty (abort); it now returns MDB_CORRUPTED."""
+        env = self._forge('dup')
+        with self.assertRaises(lmdb.Error):
+            self._drive_allocation(env)
+
+    def test_normal_freelist_reuse_still_works(self):
+        """The checks must not reject legitimate free-DB records: a plain
+        write/delete/write cycle reuses freed pages and reads back intact."""
+        path, env = testlib.temp_env(map_size=16 * 1024 * 1024)
+        testlib._cleanups.append(env.close)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.put(b'k%05d' % i, b'V' * 200)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.delete(b'k%05d' % i)
+        with env.begin(write=True) as txn:
+            for i in range(400):
+                txn.put(b'r%05d' % i, b'W' * 200)   # reuses the freed pages
+        with env.begin() as txn:
+            assert sum(1 for _ in txn.cursor()) == 400
+            assert txn.get(b'r00042') == b'W' * 200
 
 
 if __name__ == '__main__':
