@@ -933,8 +933,11 @@ test-lmdb venv="": (install-tools venv) (install-dev venv)
     # (--timeout), so a test that segfaults or deadlocks fails on its own rather
     # than aborting the session, and a module that fails to import is reported
     # without stopping the others (--continue-on-collection-errors), see #169.
+    # timeout_func_only puts the timer around the test function, which runs in
+    # the forked child: otherwise it runs in the parent pytest process, and a
+    # timeout would end the whole session instead of the one test.
     ${VENV_PYTHON} -m pytest -v --forked --timeout=120 --timeout-method=thread \
-        --continue-on-collection-errors src/zlmdb/tests/lmdb/
+        -o timeout_func_only=true --continue-on-collection-errors src/zlmdb/tests/lmdb/
 
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install-dev venv)
