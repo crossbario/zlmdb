@@ -1,0 +1,28 @@
+diff --git a/libraries/liblmdb/mdb.c b/libraries/liblmdb/mdb.c
+--- a/libraries/liblmdb/mdb.c
++++ b/libraries/liblmdb/mdb.c
+@@ -9456,10 +9456,11 @@
+ 	int toggle = 0, rc;
+ 	size_t wsize;
+ #ifdef _WIN32
+-	DWORD len;
++	DWORD len, w2;
+ #define DO_WRITE(rc, fd, ptr, w2, len)	rc = WriteFile(fd, ptr, w2, &len, NULL)
+ #else
+ 	int len;
++	size_t w2;
+ #define DO_WRITE(rc, fd, ptr, w2, len)	len = write(fd, ptr, w2); rc = (len >= 0)
+ #ifdef F_SETNOSIGPIPE
+ 	/* OS X delivers SIGPIPE to the whole process, not the thread that caused it.
+@@ -9488,7 +9489,10 @@
+ again:
+ 		rc = MDB_SUCCESS;
+ 		while (wsize > 0 && !my->mc_error) {
+-			DO_WRITE(rc, my->mc_fd, ptr, wsize, len);
++			/* WriteFile()'s length is a 32-bit DWORD and write() transfers
++			 * at most ~2GiB, so cap each call as mdb_env_copyfd1() does. */
++			w2 = (wsize > MAX_WRITE) ? MAX_WRITE : wsize;
++			DO_WRITE(rc, my->mc_fd, ptr, w2, len);
+ 			if (!rc) {
+ 				rc = ErrCode();
+ 				break;
