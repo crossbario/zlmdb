@@ -176,7 +176,7 @@ exclude = [
 # -----------------------------------------------------------------------------
 
 [tool.ruff]
-extend-exclude = [".ai", ".autobahn-crossbar-ai", ".cicd", "deps/flatbuffers", "lmdb-upstream"]
+extend-exclude = [".ai", ".autobahn-crossbar-ai", ".cicd", "deps/flatbuffers", "lmdb-upstream", "lmdb-upstream-1.0"]
 # Same as Black
 line-length = 88
 indent-width = 4
@@ -260,8 +260,10 @@ norecursedirs = [
     "dist",         # Distribution artifacts
     "src/zlmdb/_lmdb_vendor",   # Vendored LMDB bindings
     "src/zlmdb/flatbuffers",  # Vendored flatbuffers runtime
-    "lmdb-upstream", # LMDB upstream submodule
-    "lmdb-patches", # LMDB patches
+    "lmdb-upstream", # LMDB upstream submodule (0.9.x)
+    "lmdb-upstream-1.0", # LMDB upstream submodule (1.0.x)
+    "lmdb-patches", # LMDB patches (0.9.x)
+    "lmdb-patches-1.0", # LMDB patches (1.0.x)
     "deps",         # Dependencies
     "docs",         # Documentation
     "*.egg-info",   # Egg info directories

@@ -170,7 +170,7 @@ distclean: clean-build clean-pyc clean-test
     echo "--> Searching for and removing setuptools egg-info directories..."
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
     echo "--> Removing CFFI build artifacts..."
-    rm -f src/zlmdb/_lmdb_vendor/_lmdb_cffi.c src/zlmdb/_lmdb_vendor/_lmdb_cffi.o src/zlmdb/_lmdb_vendor/_lmdb_cffi*.so src/zlmdb/_lmdb_vendor/_lmdb_cffi*.pyd
+    rm -f src/zlmdb/_lmdb_vendor/_lmdb*.c src/zlmdb/_lmdb_vendor/_lmdb*.o src/zlmdb/_lmdb_vendor/_lmdb*.so src/zlmdb/_lmdb_vendor/_lmdb*.pyd
     echo "==> Distclean complete. The project is now pristine."
 
 # -----------------------------------------------------------------------------
@@ -1107,15 +1107,17 @@ verify-wheels venv="": (install-tools venv)
 
         # Check wheel contents for CFFI extension
         echo ""
-        echo "Checking for CFFI extension (.so file):"
-        if ${VENV_PYTHON} -m zipfile -l "$wheel" | grep -q "_lmdb_cffi.*\.so"; then
-            SO_FILE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $1}')
-            SO_SIZE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "_lmdb_cffi.*\.so" | awk '{print $NF}')
-            echo "  ✓ Found: $SO_FILE ($(numfmt --to=iec-i --suffix=B $SO_SIZE 2>/dev/null || echo "$SO_SIZE bytes"))"
-        else
-            echo "  ❌ FAIL: No CFFI extension found in wheel"
-            ((++FAILURES))
-        fi
+        echo "Checking for CFFI extensions (.so files): shared types + one per LMDB engine:"
+        for MOD in _lmdb_types _lmdb_cffi _lmdb1_cffi; do
+            if ${VENV_PYTHON} -m zipfile -l "$wheel" | grep -q "/${MOD}\..*\.so"; then
+                SO_FILE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "/${MOD}\..*\.so" | awk '{print $1}')
+                SO_SIZE=$(${VENV_PYTHON} -m zipfile -l "$wheel" | grep "/${MOD}\..*\.so" | awk '{print $NF}')
+                echo "  ✓ Found: $SO_FILE ($(numfmt --to=iec-i --suffix=B $SO_SIZE 2>/dev/null || echo "$SO_SIZE bytes"))"
+            else
+                echo "  ❌ FAIL: CFFI extension ${MOD} not found in wheel"
+                ((++FAILURES))
+            fi
+        done
 
         # Run auditwheel check (only for Linux wheels)
         if [[ "$WHEEL_NAME" == *"-linux_"* ]]; then
@@ -1396,7 +1398,7 @@ clean-build:
     find . -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true
     find . -name '*.egg' -delete 2>/dev/null || true
     echo "==> Removing CFFI build artifacts..."
-    rm -f src/zlmdb/_lmdb_vendor/_lmdb_cffi.c src/zlmdb/_lmdb_vendor/_lmdb_cffi.o src/zlmdb/_lmdb_vendor/_lmdb_cffi*.so src/zlmdb/_lmdb_vendor/_lmdb_cffi*.pyd
+    rm -f src/zlmdb/_lmdb_vendor/_lmdb*.c src/zlmdb/_lmdb_vendor/_lmdb*.o src/zlmdb/_lmdb_vendor/_lmdb*.so src/zlmdb/_lmdb_vendor/_lmdb*.pyd
 
 # Clean test and coverage artifacts
 clean-test:
