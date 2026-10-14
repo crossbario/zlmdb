@@ -929,7 +929,12 @@ test-lmdb venv="": (install-tools venv) (install-dev venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running LMDB tests in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/lmdb/
+    # Each test runs in its own forked process (--forked) with a time limit
+    # (--timeout), so a test that segfaults or deadlocks fails on its own rather
+    # than aborting the session, and a module that fails to import is reported
+    # without stopping the others (--continue-on-collection-errors), see #169.
+    ${VENV_PYTHON} -m pytest -v --forked --timeout=120 --timeout-method=thread \
+        --continue-on-collection-errors src/zlmdb/tests/lmdb/
 
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install-dev venv)

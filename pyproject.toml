@@ -55,6 +55,11 @@ dev = [
     "wheel>=0.36.2",
     "pytest>=3.4.2",
     "pytest-runner>=2.11.1",
+    # Run each low-level LMDB test in its own forked process with a time limit, so a
+    # test that crashes (segfault) or deadlocks fails alone instead of taking the
+    # whole session down (see `just test-lmdb` and #169).
+    "pytest-forked>=1.6.0",
+    "pytest-timeout>=2.3.0",
     "twisted>=20.3.0",  # Required for running tests that use txaio with Twisted
     "sphinx>=1.7.1",
     "sphinx-rtd-theme>=0.1.9",
@@ -240,6 +245,9 @@ docstring-code-format = false
 # -----------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
+# Markers used by the low-level LMDB tests vendored from py-lmdb
+markers = ["mdb_layout: low-level LMDB data layout validation tests"]
+
 # Only search for tests in these directories (non-recursive into subdirs outside these)
 testpaths = [
     "src/zlmdb/tests",

@@ -94,6 +94,8 @@ jobs:
     name: Test Suite
     needs: identifiers
     runs-on: ubuntu-24.04
+    # a deadlocked test must not hold the runner for GitHub's 6h default (#169)
+    timeout-minutes: 60
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
