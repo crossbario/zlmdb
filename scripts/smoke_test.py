@@ -11,9 +11,10 @@ This script verifies that a zlmdb installation is functional by testing:
 1. Import zlmdb and check version
 2. Import zlmdb.lmdb (CFFI extension) and check version
 3. Basic LMDB operations (open/put/get/close)
-4. Import zlmdb.flatbuffers and check version (shared test)
-5. Verify flatc binary is available and executable (shared test)
-6. Verify reflection files are present (shared test)
+4. Both bundled LMDB engines (0.9 and 1.0) load, and each writes its data format
+5. Import zlmdb.flatbuffers and check version (shared test)
+6. Verify flatc binary is available and executable (shared test)
+7. Verify reflection files are present (shared test)
 
 ALL TESTS ARE REQUIRED. Both wheel installs and sdist installs MUST
 provide identical functionality including the flatc binary and
@@ -23,6 +24,8 @@ Note: FlatBuffers/flatc tests use shared functions from smoke_test_flatc.py
       (source: wamp-cicd/scripts/flatc/smoke_test_flatc.py)
 """
 
+import os
+import struct
 import sys
 import tempfile
 
@@ -87,6 +90,41 @@ def test_lmdb_operations():
         return False
 
 
+def test_lmdb_engines():
+    """Test 4: Both bundled LMDB engines load, and each writes its data format."""
+    print("Test 4: Both bundled LMDB engines (0.9 and 1.0)...")
+    try:
+        import zlmdb.lmdb as lmdb
+
+        # engine (LMDB major version) -> data format it writes (#170)
+        for engine, data_format in ((0, 1), (1, 3)):
+            version = lmdb.version(lib_version=engine)
+            assert version[0] == engine, f"engine {engine} reports version {version}"
+            with tempfile.TemporaryDirectory() as tmpdir:
+                env = lmdb.open(tmpdir, lib_version=engine, map_size=1024 * 1024)
+                assert env.lib_version()[0] == engine, f"uses {env.lib_version()}"
+                with env.begin(write=True) as txn:
+                    txn.put(b"key1", b"value1")
+                with env.begin() as txn:
+                    assert txn.get(b"key1") == b"value1", "key1 mismatch"
+                env.close()
+                # the meta page holds the magic 0xBEEFC0DE, followed by the data format
+                with open(os.path.join(tmpdir, "data.mdb"), "rb") as f:
+                    head = f.read(64)
+                found = [
+                    struct.unpack_from("=I", head, off + 4)[0]
+                    for off in range(0, len(head) - 7, 4)
+                    if struct.unpack_from("=I", head, off)[0] == 0xBEEFC0DE
+                ]
+                assert found[:1] == [data_format], f"data format {found[:1]}"
+            print(f"  LMDB {'.'.join(map(str, version))}: data format v{data_format}")
+        print("  PASS")
+        return True
+    except Exception as e:
+        print(f"  FAIL: LMDB engines: {e}")
+        return False
+
+
 def main():
     """Run all smoke tests."""
     print("=" * 72)
@@ -97,14 +135,15 @@ def main():
     print()
 
     # All tests are REQUIRED - sdist MUST provide same functionality as wheels
-    # Tests 4-6 use shared functions from smoke_test_flatc.py
+    # Tests 5-7 use shared functions from smoke_test_flatc.py
     tests = [
         ("Test 1", test_import_zlmdb),
         ("Test 2", test_import_lmdb),
         ("Test 3", test_lmdb_operations),
-        ("Test 4", lambda: test_import_flatbuffers(PACKAGE_NAME)),
-        ("Test 5", lambda: test_flatc_binary(PACKAGE_NAME)),
-        ("Test 6", lambda: test_reflection_files(PACKAGE_NAME)),
+        ("Test 4", test_lmdb_engines),
+        ("Test 5", lambda: test_import_flatbuffers(PACKAGE_NAME)),
+        ("Test 6", lambda: test_flatc_binary(PACKAGE_NAME)),
+        ("Test 7", lambda: test_reflection_files(PACKAGE_NAME)),
     ]
 
     failures = 0
