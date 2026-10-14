@@ -936,8 +936,18 @@ test-lmdb venv="": (install-tools venv) (install-dev venv)
     # timeout_func_only puts the timer around the test function, which runs in
     # the forked child: otherwise it runs in the parent pytest process, and a
     # timeout would end the whole session instead of the one test.
-    ${VENV_PYTHON} -m pytest -v --forked --timeout=120 --timeout-method=thread \
-        -o timeout_func_only=true --continue-on-collection-errors src/zlmdb/tests/lmdb/
+    #
+    # The suite runs once per bundled LMDB engine (#170): LMDB_DEFAULT_LIB_VERSION
+    # selects the engine new environments use (0: LMDB 0.9.x, 1: LMDB 1.0.x).
+    # Both passes always run; the recipe fails if either does.
+    rc=0
+    for engine in 0 1; do
+        echo "==> LMDB engine ${engine} (LMDB_DEFAULT_LIB_VERSION=${engine})"
+        LMDB_DEFAULT_LIB_VERSION=${engine} ${VENV_PYTHON} -m pytest -v --forked \
+            --timeout=120 --timeout-method=thread -o timeout_func_only=true \
+            --continue-on-collection-errors src/zlmdb/tests/lmdb/ || rc=1
+    done
+    exit ${rc}
 
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install-dev venv)
