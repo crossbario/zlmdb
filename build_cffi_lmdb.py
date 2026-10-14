@@ -40,8 +40,14 @@ if _config_vars is None:
 _have_patched_lmdb = '-DHAVE_PATCHED_LMDB=1' in _config_vars['extra_compile_args']
 
 
-# CFFI C definitions (from lmdb/cffi.py)
-_CFFI_CDEF = '''
+# CFFI C definitions (from lmdb/cffi.py), in two parts (#170):
+#
+# - _CFFI_CDEF_TYPES: the C types. Compiled once, into zlmdb._lmdb_vendor._lmdb_types,
+#   which each engine module includes (ffi.include), so all engines share the same
+#   types and one ffi serves them all - as upstream's single FFI does for its
+#   per-engine verifier modules.
+# - _CFFI_CDEF: the functions and constants, compiled into each engine's module.
+_CFFI_CDEF_TYPES = '''
     typedef int mode_t;
     typedef ... MDB_env;
     typedef struct MDB_txn MDB_txn;
@@ -98,6 +104,11 @@ _CFFI_CDEF = '''
         unsigned int me_numreaders;
     } MDB_envinfo;
 
+    typedef void (*MDB_assert_func)(MDB_env *env, const char *msg);
+    typedef int (*MDB_msg_func)(const char *msg, void *ctx);
+'''
+
+_CFFI_CDEF = '''
     char *mdb_version(int *major, int *minor, int *patch);
     char *mdb_strerror(int err);
 
@@ -122,10 +133,8 @@ _CFFI_CDEF = '''
     int mdb_env_set_userctx(MDB_env *env, void *ctx);
     void *mdb_env_get_userctx(MDB_env *env);
 
-    typedef void (*MDB_assert_func)(MDB_env *env, const char *msg);
     int mdb_env_set_assert(MDB_env *env, MDB_assert_func func);
 
-    typedef int (*MDB_msg_func)(const char *msg, void *ctx);
 
     int mdb_txn_begin(MDB_env *env, MDB_txn *parent, unsigned int flags,
         MDB_txn **txn);
@@ -340,21 +349,45 @@ _CFFI_VERIFY = '''
 '''
 
 
-# Create FFI instance
+# Create the FFI instances: the shared types module, and one module per bundled LMDB
+# engine (build_lmdb.py: 'lmdb' is LMDB 0.9.x, 'lmdb1' LMDB 1.0.x). Each engine module
+# compiles that engine's patched LMDB tree. The modules are separate shared objects,
+# loaded with local symbol scope, so the two trees' identical symbol names never meet.
 import cffi
-ffi = cffi.FFI()
-ffi.cdef(_CFFI_CDEF)
 
-# Set source using modern CFFI API
-ffi.set_source(
-    "zlmdb._lmdb_vendor._lmdb_cffi",
-    _CFFI_VERIFY,
-    sources=_config_vars['extra_sources'],
-    include_dirs=_config_vars['extra_include_dirs'],
+_engines = _config_vars.get('engines') or [{
+    'name': 'lmdb',
+    'sources': _config_vars['extra_sources'],
+    'include_dirs': _config_vars['extra_include_dirs'],
+}]
+
+ffi_types = cffi.FFI()
+ffi_types.cdef(_CFFI_CDEF_TYPES)
+ffi_types.set_source(
+    "zlmdb._lmdb_vendor._lmdb_types",
+    "#include <sys/types.h>\n#include \"lmdb.h\"\n",
+    include_dirs=_engines[0]['include_dirs'],
     extra_compile_args=_config_vars['extra_compile_args'],
-    libraries=_config_vars['libraries'],
-    library_dirs=_config_vars['extra_library_dirs'],
 )
+
+engine_ffis = {}
+for _engine in _engines:
+    _ffi = cffi.FFI()
+    _ffi.include(ffi_types)
+    _ffi.cdef(_CFFI_CDEF)
+    _ffi.set_source(
+        f"zlmdb._lmdb_vendor._{_engine['name']}_cffi",
+        _CFFI_VERIFY,
+        sources=_engine['sources'],
+        include_dirs=_engine['include_dirs'],
+        extra_compile_args=_config_vars['extra_compile_args'],
+        libraries=_config_vars['libraries'],
+        library_dirs=_config_vars['extra_library_dirs'],
+    )
+    engine_ffis[_engine['name']] = _ffi
+
+# the LMDB 0.9 engine's module, as before
+ffi = engine_ffis['lmdb']
 
 # This script exports 'ffi' for setuptools cffi_modules
 if __name__ == '__main__':
@@ -362,16 +395,17 @@ if __name__ == '__main__':
     import shutil
     import sysconfig
 
-    # Compile in project root (where LMDB sources are available)
-    ffi.compile(verbose=True)
-
-    # Move the compiled extension to src layout for wheel packaging
+    # Compile in project root (where LMDB sources are available), then move each
+    # compiled extension to the src layout for wheel packaging
     ext_suffix = sysconfig.get_config_var('EXT_SUFFIX') or '.so'
-    src_file = f'zlmdb/_lmdb_vendor/_lmdb_cffi{ext_suffix}'
     dst_dir = 'src/zlmdb/_lmdb_vendor'
-    dst_file = os.path.join(dst_dir, f'_lmdb_cffi{ext_suffix}')
-
-    if os.path.exists(src_file):
-        os.makedirs(dst_dir, exist_ok=True)
+    os.makedirs(dst_dir, exist_ok=True)
+    for name, module_ffi in [('_lmdb_types', ffi_types)] + [
+            (f"_{n}_cffi", f) for n, f in engine_ffis.items()]:
+        module_ffi.compile(verbose=True)
+        src_file = f'zlmdb/_lmdb_vendor/{name}{ext_suffix}'
+        dst_file = os.path.join(dst_dir, f'{name}{ext_suffix}')
+        if not os.path.exists(src_file):
+            sys.exit(f"ERROR: compiled extension not found: {src_file}")
         shutil.copy2(src_file, dst_file)
         print(f"Copied {src_file} -> {dst_file}")

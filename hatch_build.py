@@ -124,20 +124,24 @@ class LmdbCffiBuildHook(BuildHookInterface):
         print("=" * 70)
 
         vendor_dir = Path(self.root) / "src" / "zlmdb" / "_lmdb_vendor"
-        expected_so = vendor_dir / f"_lmdb_cffi{ext_suffix}"
-
-        if expected_so.exists():
-            src_file = str(expected_so)
+        # The shared types module and one module per bundled LMDB engine (#170):
+        # LMDB 0.9.x (_lmdb_cffi) and LMDB 1.0.x (_lmdb1_cffi).
+        modules = ["_lmdb_types", "_lmdb_cffi", "_lmdb1_cffi"]
+        missing = []
+        for name in modules:
+            expected_so = vendor_dir / f"{name}{ext_suffix}"
+            if not expected_so.exists():
+                missing.append(expected_so.name)
+                continue
             dest_path = f"zlmdb/_lmdb_vendor/{expected_so.name}"
-            build_data["force_include"][src_file] = dest_path
+            build_data["force_include"][str(expected_so)] = dest_path
             print(f"  -> Added artifact: {expected_so.name} -> {dest_path}")
-            return True
-        else:
-            print(f"WARNING: Expected CFFI extension not found: {expected_so}")
-            # Check what .so files exist
-            for so_file in vendor_dir.glob("_lmdb_cffi*.so"):
+        if missing:
+            print(f"WARNING: Expected CFFI extension(s) not found: {', '.join(missing)}")
+            for so_file in vendor_dir.glob("_lmdb*.so"):
                 print(f"  Found: {so_file.name}")
             return False
+        return True
 
     def _build_flatc(self, build_data):
         """Build the FlatBuffers compiler (flatc) from deps/flatbuffers.

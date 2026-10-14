@@ -7,4 +7,5 @@ CONFIG = {
     'extra_library_dirs': [],
     'extra_include_dirs': ['build/lmdb-src', 'lmdb-patches'],
     'libraries': [],
+    'engines': [{'name': 'lmdb', 'sources': ['build/lmdb-src/mdb.c', 'build/lmdb-src/midl.c'], 'include_dirs': ['build/lmdb-src', 'lmdb-patches']}, {'name': 'lmdb1', 'sources': ['build/lmdb1-src/mdb.c', 'build/lmdb1-src/midl.c'], 'include_dirs': ['build/lmdb1-src', 'lmdb-patches']}],
 }

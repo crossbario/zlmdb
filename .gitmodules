@@ -13,3 +13,6 @@
 [submodule ".autobahn-crossbar-ai"]
 	path = .autobahn-crossbar-ai
 	url = https://github.com/crossbario/autobahn-crossbar-ai.git
+[submodule "lmdb-upstream-1.0"]
+	path = lmdb-upstream-1.0
+	url = https://github.com/LMDB/lmdb.git

@@ -18,49 +18,23 @@ import subprocess
 import platform
 
 
-def apply_patches():
-    """Copy LMDB sources and apply patches."""
-    print("=" * 70)
-    print("Building vendored LMDB with CFFI")
-    print("=" * 70)
-
-    # Source and destination paths
-    lmdb_src = os.path.join('lmdb-upstream', 'libraries', 'liblmdb')
-    build_dir = os.path.join('build', 'lmdb-src')
-    patches_dir = 'lmdb-patches'
-
-    if not os.path.exists(lmdb_src):
-        print(f"ERROR: LMDB source not found at {lmdb_src}")
-        print("Did you initialize git submodules?")
-        print("Run: git submodule update --init --recursive")
-        sys.exit(1)
-
-    # Create build directory
-    os.makedirs('build', exist_ok=True)
-
-    # Clean old build directory
-    if os.path.exists(build_dir):
-        print(f"Removing old build directory: {build_dir}")
-        shutil.rmtree(build_dir)
-
-    # Copy LMDB sources to build directory
-    print(f"Copying LMDB sources from {lmdb_src} to {build_dir}")
-    shutil.copytree(lmdb_src, build_dir)
-
-    # Apply patches
-    #
-    # Canonical hardening patch set, vendored from py-lmdb 3.0.0 (jnwatson/py-lmdb,
-    # lib/py-lmdb/*.patch) and authored against upstream LMDB 0.9.36. Order is
-    # significant: each patch's line numbers reflect the state after all
-    # preceding patches have been applied (mirrors py-lmdb setup.py, engine v09).
-    #
-    # Besides env-copy-txn, this set adds the CVE-2019-1622x fixes and the
-    # additional validate-*/guard-* corruption-rejection hardening that
-    # upstream LMDB does not carry. See zlmdb issue #111 / #113.
-    #
-    # Note: the previous its-10346.patch was dropped — that fix is now
-    # incorporated upstream in LMDB 0.9.35.
-    patch_files = [
+# The bundled LMDB release lines (#170). Each is copied from its submodule into its own
+# build directory and patched there; build_cffi_lmdb.py compiles one CFFI module per
+# engine. LMDB 0.9.x writes data format v1, LMDB 1.0.x data format v3.
+#
+# Both patch series are vendored from py-lmdb 3.0.0 (jnwatson/py-lmdb, lib/py-lmdb/ and
+# lib1/py-lmdb/; see the PATCH-STATUS.md in each patch directory), and the lists below
+# mirror py-lmdb's setup.py (engines v09 / v10). Order is significant: each patch's line
+# numbers reflect the state after all preceding patches have been applied.
+ENGINES = [
+    {
+        'name': 'lmdb',   # LMDB 0.9.x -> zlmdb._lmdb_vendor._lmdb_cffi
+        'src': os.path.join('lmdb-upstream', 'libraries', 'liblmdb'),
+        'build_dir': os.path.join('build', 'lmdb-src'),
+        'patches_dir': 'lmdb-patches',
+        # Note: the previous its-10346.patch was dropped - that fix is
+        # incorporated upstream since LMDB 0.9.35.
+        'patch_files': [
         'env-copy-txn.patch',
         'cursor-next-prev-uninitialized.patch',
         'cve-2019-16224-validate-db-flags.patch',
@@ -88,7 +62,83 @@ def apply_patches():
         'validate-md-pad.patch',
         'validate-ovpage-free.patch',
         'validate-freedb-record.patch',
-    ]
+        ],
+    },
+    {
+        'name': 'lmdb1',  # LMDB 1.0.x -> zlmdb._lmdb_vendor._lmdb1_cffi
+        'src': os.path.join('lmdb-upstream-1.0', 'libraries', 'liblmdb'),
+        'build_dir': os.path.join('build', 'lmdb1-src'),
+        'patches_dir': 'lmdb-patches-1.0',
+        # The 1.0 series omits two patches carried for 0.9: fix-large-write's
+        # remaining hunk landed upstream as ITS#9223, and win32-sparse-file's
+        # defect was designed away by 1.0's incremental file growth. A third,
+        # cve-2019-16225-reject-dirty-pages, keys on the P_DIRTY page flag, which
+        # 1.0 removed; cve-2019-16225-validate-mp-txnid carries the protection
+        # forward. rename.h (in lmdb-patches-1.0/) is only needed to link both
+        # trees into one module, which this CFFI-only build never does.
+        'patch_files': [
+            'env-copy-txn.patch',
+            'cursor-next-prev-uninitialized.patch',
+            'cve-2019-16224-validate-db-flags.patch',
+            'cve-2019-16226-validate-node-del-size.patch',
+            'cve-2019-16227-guard-xcursor-null.patch',
+            'cve-2019-16228-validate-psize.patch',
+            'validate-page-bounds.patch',
+            'validate-node-read-size.patch',
+            'validate-subpage-bounds.patch',
+            'validate-xcursor-nodedsz.patch',
+            'validate-leaf2-keysize.patch',
+            'guard-xcursor-null-d3d4.patch',
+            'validate-nodedsz-page-split.patch',
+            'validate-node-shrink-delta.patch',
+            'validate-overflow-pages.patch',
+            'validate-nodedsz-cursor-put.patch',
+            'validate-md-depth.patch',
+            'validate-md-root.patch',
+            'fix-overflow-page-size-mul.patch',
+            # Appended for the same reason as in the 0.9 series.
+            'validate-md-pad.patch',
+            'validate-ovpage-free.patch',
+            # 1.0 only: 0.9 gets this protection from
+            # cve-2019-16225-reject-dirty-pages, which keys on P_DIRTY.
+            'cve-2019-16225-validate-mp-txnid.patch',
+            'validate-freedb-record.patch',
+        ],
+    },
+]
+
+
+def apply_patches(engine):
+    """Copy one engine's LMDB sources to its build directory and apply its patches."""
+    print("=" * 70)
+    print("Building vendored LMDB with CFFI")
+    print("=" * 70)
+
+    # Source and destination paths
+    lmdb_src = engine['src']
+    build_dir = engine['build_dir']
+    patches_dir = engine['patches_dir']
+
+    if not os.path.exists(lmdb_src):
+        print(f"ERROR: LMDB source not found at {lmdb_src}")
+        print("Did you initialize git submodules?")
+        print("Run: git submodule update --init --recursive")
+        sys.exit(1)
+
+    # Create build directory
+    os.makedirs('build', exist_ok=True)
+
+    # Clean old build directory
+    if os.path.exists(build_dir):
+        print(f"Removing old build directory: {build_dir}")
+        shutil.rmtree(build_dir)
+
+    # Copy LMDB sources to build directory
+    print(f"Copying LMDB sources from {lmdb_src} to {build_dir}")
+    shutil.copytree(lmdb_src, build_dir)
+
+    # Apply patches (see ENGINES for the series and why its order matters)
+    patch_files = engine['patch_files']
 
     for patch_file in patch_files:
         patch_path = os.path.join(patches_dir, patch_file)
@@ -191,21 +241,33 @@ def apply_patches():
     return build_dir
 
 
-def generate_config(build_dir):
+def generate_config(build_dirs):
     """Generate src/zlmdb/_lmdb_vendor/_config.py with build configuration."""
     print("\nGenerating src/zlmdb/_lmdb_vendor/_config.py")
 
-    # Source files to compile
-    extra_sources = [
-        os.path.join(build_dir, 'mdb.c'),
-        os.path.join(build_dir, 'midl.c'),
+    # Per engine: the sources to compile and the include directories. The top-level
+    # extra_sources / extra_include_dirs below are the first engine's (LMDB 0.9),
+    # which the single-engine ffi.verify() fallback in cffi.py uses.
+    engines = [
+        {
+            'name': engine['name'],
+            'sources': [
+                os.path.join(build_dirs[engine['name']], 'mdb.c'),
+                os.path.join(build_dirs[engine['name']], 'midl.c'),
+            ],
+            'include_dirs': [
+                build_dirs[engine['name']],
+                'lmdb-patches',  # for preload.h
+            ],
+        }
+        for engine in ENGINES
     ]
 
+    # Source files to compile
+    extra_sources = engines[0]['sources']
+
     # Include directories
-    extra_include_dirs = [
-        build_dir,
-        'lmdb-patches',  # for preload.h
-    ]
+    extra_include_dirs = list(engines[0]['include_dirs'])
 
     # Compile args
     extra_compile_args = [
@@ -238,6 +300,7 @@ def generate_config(build_dir):
         'extra_library_dirs': [],
         'extra_include_dirs': extra_include_dirs,
         'libraries': libraries,
+        'engines': engines,
     }
 
     config_file = os.path.join('src', 'zlmdb', '_lmdb_vendor', '_config.py')
@@ -265,11 +328,11 @@ def main():
     print(f"Working directory: {os.getcwd()}")
     print()
 
-    # Step 1: Apply patches
-    build_dir = apply_patches()
+    # Step 1: Apply patches, per engine
+    build_dirs = {engine['name']: apply_patches(engine) for engine in ENGINES}
 
     # Step 2: Generate config
-    config = generate_config(build_dir)
+    config = generate_config(build_dirs)
 
     print("\n" + "=" * 70)
     print("LMDB build preparation complete")

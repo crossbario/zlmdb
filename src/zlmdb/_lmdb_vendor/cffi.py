@@ -392,20 +392,25 @@ if not _reading_docs():
     if _have_patched_lmdb:
         _CFFI_CDEF += _CFFI_CDEF_PATCHED
 
-    # zlmdb adaptation: one engine, the bundled LMDB 0.9 tree, taken from the
-    # ahead-of-time compiled CFFI API-mode extension (built by build_cffi_lmdb.py
-    # via ffi.set_source) shipped in binary wheels. This gives clean wheels and
-    # first-class PyPy support with no compiler needed at import time. Fall back
-    # to ffi.verify() only for source builds where the precompiled extension is
-    # absent. Upstream builds one verifier module per bundled LMDB version
-    # instead; the engine list below keeps upstream's shape for that.
-    _l = None
+    # zlmdb adaptation: one engine per bundled LMDB release line (LMDB 0.9.x in
+    # _lmdb_cffi, LMDB 1.0.x in _lmdb1_cffi), taken from the ahead-of-time compiled
+    # CFFI API-mode extensions (built by build_cffi_lmdb.py via ffi.set_source)
+    # shipped in binary wheels. This gives clean wheels and first-class PyPy
+    # support with no compiler needed at import time. Both engine modules include
+    # the shared _lmdb_types module, so one ffi serves both, as upstream's single
+    # FFI does for its per-engine verifier modules. Fall back to ffi.verify(),
+    # with the LMDB 0.9 engine only, for source builds where the precompiled
+    # extensions are absent.
+    _libs = []
     _ffi = None
     try:
         from zlmdb._lmdb_vendor import _lmdb_cffi  # type: ignore[attr-defined]
 
-        _l = _lmdb_cffi.lib
         _ffi = _lmdb_cffi.ffi
+        _libs.append(_lmdb_cffi.lib)
+        from zlmdb._lmdb_vendor import _lmdb1_cffi  # type: ignore[attr-defined]
+
+        _libs.append(_lmdb1_cffi.lib)
     except ImportError:
         pass
 
@@ -413,15 +418,15 @@ if not _reading_docs():
         _ffi = cffi.FFI()
         _ffi.cdef(_CFFI_CDEF)
 
-    if _l is None:
-        _l = _ffi.verify(_CFFI_VERIFY,
-                         modulename='lmdb_cffi',
-                         ext_package='lmdb',
-                         sources=_config_vars['extra_sources'],
-                         extra_compile_args=_config_vars['extra_compile_args'],
-                         include_dirs=_config_vars['extra_include_dirs'],
-                         libraries=_config_vars['libraries'],
-                         library_dirs=_config_vars['extra_library_dirs'])
+    if not _libs:
+        _libs.append(_ffi.verify(_CFFI_VERIFY,
+                                 modulename='lmdb_cffi',
+                                 ext_package='lmdb',
+                                 sources=_config_vars['extra_sources'],
+                                 extra_compile_args=_config_vars['extra_compile_args'],
+                                 include_dirs=_config_vars['extra_include_dirs'],
+                                 libraries=_config_vars['libraries'],
+                                 library_dirs=_config_vars['extra_library_dirs']))
 
     _engines = [dict(
         lib=_l,
@@ -431,8 +436,8 @@ if not _reading_docs():
         # Data format the engine reads/writes: 1 for 0.9.x, 3 for 1.0.x.
         data_version=(
             3 if _l.MDB_VERSION_MAJOR >= 1 else 1),  # type: ignore[attr-defined]
-    )]
-    del _l
+    ) for _l in _libs]
+    del _libs
 
     # Engine used for new environments when lib_version= is unspecified:
     # normally the first (oldest) engine, or the engine named by
