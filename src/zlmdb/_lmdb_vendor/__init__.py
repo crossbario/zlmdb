@@ -52,5 +52,5 @@ from zlmdb._lmdb_vendor.cffi import __doc__
 
 # Upstream py-lmdb version this fork was last synced from. Bump this whenever
 # re-forking against a newer py-lmdb release (see zlmdb issue #111).
-__version__ = '2.2.1'
-__forked_from__ = 'py-lmdb 2.2.1'
+__version__ = '3.0.0'
+__forked_from__ = 'py-lmdb 3.0.0'

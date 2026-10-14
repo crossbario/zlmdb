@@ -28,10 +28,11 @@ import stat
 import tempfile
 import traceback
 import unittest
+from collections.abc import Callable
 
 import zlmdb.lmdb as lmdb
 
-_cleanups = []
+_cleanups: list[Callable[[], object]] = []
 
 def cleanup():
     while _cleanups:

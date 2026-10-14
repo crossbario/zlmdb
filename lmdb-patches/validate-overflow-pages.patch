@@ -1,23 +1,23 @@
 diff --git a/libraries/liblmdb/mdb.c b/libraries/liblmdb/mdb.c
 --- a/libraries/liblmdb/mdb.c
 +++ b/libraries/liblmdb/mdb.c
-@@ -7052,6 +7052,11 @@
+@@ -7131,6 +7131,11 @@
  			if ((rc2 = mdb_page_get(mc, pg, &omp, &level)) != 0)
  				return rc2;
  			ovpages = omp->mp_pages;
 +			/* Validate overflow extent stays within the database. */
-+			if (pg + ovpages > mc->mc_txn->mt_next_pgno) {
++			if (ovpages > mc->mc_txn->mt_next_pgno || pg > mc->mc_txn->mt_next_pgno - ovpages) {
 +				mc->mc_txn->mt_flags |= MDB_TXN_ERROR;
 +				return MDB_CORRUPTED;
 +			}
 
  			/* Is the ov page large enough? */
  			if (ovpages >= dpages) {
-@@ -10236,6 +10241,10 @@
+@@ -10315,6 +10320,10 @@
  						if (rc != 0)
  							goto done;
  						mdb_cassert(mc, IS_OVERFLOW(omp));
-+						if (pg + omp->mp_pages > txn->mt_next_pgno) {
++						if (omp->mp_pages > txn->mt_next_pgno || pg > txn->mt_next_pgno - omp->mp_pages) {
 +							rc = MDB_CORRUPTED;
 +							goto done;
 +						}

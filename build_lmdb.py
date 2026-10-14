@@ -49,10 +49,10 @@ def apply_patches():
 
     # Apply patches
     #
-    # Canonical hardening patch set, vendored from py-lmdb (jnwatson/py-lmdb,
-    # lib/py-lmdb/*.patch) and authored against upstream LMDB 0.9.35. Order is
+    # Canonical hardening patch set, vendored from py-lmdb 3.0.0 (jnwatson/py-lmdb,
+    # lib/py-lmdb/*.patch) and authored against upstream LMDB 0.9.36. Order is
     # significant: each patch's line numbers reflect the state after all
-    # preceding patches have been applied (mirrors py-lmdb setup.py).
+    # preceding patches have been applied (mirrors py-lmdb setup.py, engine v09).
     #
     # Besides env-copy-txn, this set adds the CVE-2019-1622x fixes and the
     # additional validate-*/guard-* corruption-rejection hardening that
@@ -81,6 +81,13 @@ def apply_patches():
         'validate-md-depth.patch',
         'validate-md-root.patch',
         'win32-sparse-file.patch',
+        'fix-large-write.patch',
+        'fix-overflow-page-size-mul.patch',
+        # Appended, not slotted in with the other validate-* patches: each
+        # patch's line numbers reflect the state after all preceding ones.
+        'validate-md-pad.patch',
+        'validate-ovpage-free.patch',
+        'validate-freedb-record.patch',
     ]
 
     for patch_file in patch_files:
