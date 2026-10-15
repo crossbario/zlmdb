@@ -11,7 +11,8 @@ if ! command -v curl &> /dev/null || ! command -v gcc &> /dev/null; then
   elif command -v apt-get &> /dev/null; then
     # Debian based images (PyPy)
     apt-get update
-    apt-get install -y curl git build-essential libssl-dev libffi-dev \
+    # cmake: required to build the bundled flatc (#181)
+    apt-get install -y curl git build-essential cmake libssl-dev libffi-dev \
       libunwind-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev \
       libncurses5-dev libsnappy-dev \
       python3-pip python3-dev

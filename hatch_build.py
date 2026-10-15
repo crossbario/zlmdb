@@ -271,24 +271,27 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Verify ISA level on Linux (check for x86_64_v2 instructions)
         if sys.platform.startswith("linux"):
             print("  -> Verifying ISA level...")
-            readelf_result = subprocess.run(
-                ["readelf", "-A", str(flatc_dest)],
-                capture_output=True,
-                text=True,
-            )
-            if readelf_result.returncode == 0:
-                # Look for ISA info in output
-                for line in readelf_result.stdout.splitlines():
-                    if "ISA" in line or "x86" in line.lower():
-                        print(f"     {line.strip()}")
+            # readelf/file are diagnostics only: skip whichever is not installed
+            if shutil.which("readelf"):
+                readelf_result = subprocess.run(
+                    ["readelf", "-A", str(flatc_dest)],
+                    capture_output=True,
+                    text=True,
+                )
+                if readelf_result.returncode == 0:
+                    # Look for ISA info in output
+                    for line in readelf_result.stdout.splitlines():
+                        if "ISA" in line or "x86" in line.lower():
+                            print(f"     {line.strip()}")
             # Also check file command for architecture info
-            file_result = subprocess.run(
-                ["file", str(flatc_dest)],
-                capture_output=True,
-                text=True,
-            )
-            if file_result.returncode == 0:
-                print(f"     {file_result.stdout.strip()}")
+            if shutil.which("file"):
+                file_result = subprocess.run(
+                    ["file", str(flatc_dest)],
+                    capture_output=True,
+                    text=True,
+                )
+                if file_result.returncode == 0:
+                    print(f"     {file_result.stdout.strip()}")
 
         # Add flatc to wheel
         src_file = str(flatc_dest)
