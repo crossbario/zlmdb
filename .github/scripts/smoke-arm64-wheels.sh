@@ -1,5 +1,5 @@
 #!/bin/bash
-# Smoke-test ARM64 wheels inside Docker container with QEMU emulation
+# Smoke-test ARM64 wheels inside Docker container on a native ARM64 runner
 # This script runs INSIDE the same ARM64 container image that built the wheels
 # (see build-arm64-wheel.sh): every wheel in /io/wheelhouse is installed in its
 # own fresh venv and smoke-tested, including both bundled LMDB engines (#171).

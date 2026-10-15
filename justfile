@@ -700,43 +700,29 @@ test-wheel-install wheel_path:
     EPHEMERAL_VENV="smoke-wheel-$$"
     EPHEMERAL_PATH="{{ VENV_DIR }}/${EPHEMERAL_VENV}"
 
-    # Extract Python version from wheel filename
+    # Map the wheel's python tag to one of our env names, and pick the interpreter
+    # exactly as `just create` does for that env: the same _get-spec (e.g. PyPy pinned
+    # to 3.11.15, the last pp73 ABI) and the same PATH without free-threaded CPython
+    # dirs (manylinux images put e.g. cp314t ahead of cp314, #124).
     # Wheel format: {name}-{version}-{python tag}-{abi tag}-{platform tag}.whl
-    # Python tag examples: cp312, cp311, pp311, py3
     # (a bash regex, not sed: BSD sed on macOS has no \| alternation)
     PYTAG=""
     if [[ "${WHEEL_NAME}" =~ -((cp|pp|py)[0-9]+)- ]]; then
         PYTAG="${BASH_REMATCH[1]}"
     fi
-
-    if [[ "${PYTAG}" =~ ^cp([0-9])([0-9]+)$ ]]; then
-        # CPython wheel (e.g., cp312 -> 3.12)
-        MAJOR="${BASH_REMATCH[1]}"
-        MINOR="${BASH_REMATCH[2]}"
-        PYTHON_SPEC="cpython-${MAJOR}.${MINOR}"
-        echo "Detected CPython ${MAJOR}.${MINOR} wheel"
-    elif [[ "${PYTAG}" =~ ^pp([0-9])([0-9]+)$ ]]; then
-        # PyPy wheel (e.g., pp311 -> pypy-3.11)
-        MAJOR="${BASH_REMATCH[1]}"
-        MINOR="${BASH_REMATCH[2]}"
-        PYTHON_SPEC="pypy-${MAJOR}.${MINOR}"
-        echo "Detected PyPy ${MAJOR}.${MINOR} wheel"
-    elif [[ "${PYTAG}" =~ ^py([0-9])$ ]]; then
-        # Pure Python wheel (e.g., py3) - use system Python
-        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
-        echo "Pure Python wheel, using system Python ${SYSTEM_VERSION}"
-    else
-        # Fallback to system Python
-        SYSTEM_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-        PYTHON_SPEC="cpython-${SYSTEM_VERSION}"
-        echo "Could not detect Python version from wheel, using system Python ${SYSTEM_VERSION}"
-    fi
+    case "${PYTAG}" in
+        cp3*) ENV_NAME="cpy${PYTAG#cp}" ;;
+        pp3*) ENV_NAME="pypy${PYTAG#pp}" ;;
+        *)    echo "ERROR: cannot map python tag '${PYTAG}' of ${WHEEL_NAME} to an env" >&2; exit 1 ;;
+    esac
+    PYTHON_SPEC=$(just --quiet _get-spec "${ENV_NAME}")
+    echo "Detected ${PYTAG} wheel -> ${ENV_NAME} (${PYTHON_SPEC})"
+    CREATE_PATH="$(printf '%s' "${PATH}" | tr ':' '\n' | grep -vE '/opt/python/[^/]*t/bin$' | paste -sd: -)"
 
     echo "Creating ephemeral venv with ${PYTHON_SPEC}..."
 
     mkdir -p "{{ VENV_DIR }}"
-    uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
+    PATH="${CREATE_PATH}" uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
 
     if [[ "$OS" == "Windows_NT" ]]; then
         EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/Scripts/python.exe"
