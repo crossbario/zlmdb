@@ -264,6 +264,14 @@ jobs:
           fi
         shell: bash
 
+      - name: Verify every wheel installs and works (macOS only)
+        # Each wheel is installed in its own fresh venv and smoke-tested, including
+        # both bundled LMDB engines (#170, #171).
+        if: matrix.platform == 'macos'
+        run: |
+          just test-wheels-install dist
+        shell: bash
+
       - name: Generate SHA256 checksums (macOS only)
         if: matrix.platform == 'macos'
         run: |
@@ -370,6 +378,14 @@ jobs:
             "RESULT: ALL VALIDATIONS PASSED" | Out-File -FilePath $validationFile -Append -Encoding UTF8
             Write-Host "✅ All wheels validated successfully"
           }
+        shell: pwsh
+
+      - name: Verify every wheel installs and works (Windows only)
+        # Each wheel is installed in its own fresh venv and smoke-tested, including
+        # both bundled LMDB engines (#170, #171).
+        if: matrix.platform == 'windows'
+        run: |
+          just test-wheels-install dist
         shell: pwsh
 
       - name: Generate SHA256 checksums (Windows only)
