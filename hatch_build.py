@@ -63,8 +63,18 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # pyproject.toml), so cross-compilation never has to run a target-arch
         # flatc on the build host. Regenerate reflection.bfbs on the host with
         # `just generate-flatbuffers-reflection` whenever deps/flatbuffers changes.
-        # flatc is bundled best-effort; its result does not gate the wheel tag.
-        self._build_flatc(build_data)
+        #
+        # flatc is mandatory too, for the same reason as the LMDB extension above:
+        # every zlmdb install provides the bundled flatc (see scripts/smoke_test.py).
+        # Fail the build hard rather than silently emitting a wheel without flatc,
+        # so that a transient compile failure (e.g. a cc1plus SIGSEGV under QEMU
+        # ARM64 emulation) is retried by CI instead of being uploaded. See #181.
+        if not self._build_flatc(build_data):
+            raise RuntimeError(
+                "flatc was not built for this wheel - refusing to emit a zlmdb "
+                "wheel without the bundled flatc. See the build log above for the "
+                "underlying failure (cmake is required to build flatc)."
+            )
 
         # The mandatory LMDB extension was built above (we would have raised
         # otherwise), so this is always a platform-specific wheel.
@@ -162,13 +172,13 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Check if cmake is available
         cmake_path = shutil.which("cmake")
         if not cmake_path:
-            print("WARNING: cmake not found, skipping flatc build")
-            print("  -> Install cmake to enable flatc bundling")
+            print("ERROR: cmake not found, cannot build flatc")
+            print("  -> Install cmake: it is required to build zlmdb")
             return False
 
         # Check if flatbuffers source exists
         if not flatbuffers_dir.exists():
-            print(f"WARNING: {flatbuffers_dir} not found")
+            print(f"ERROR: {flatbuffers_dir} not found")
             print("  -> Initialize git submodule: git submodule update --init")
             return False
 
@@ -271,24 +281,27 @@ class LmdbCffiBuildHook(BuildHookInterface):
         # Verify ISA level on Linux (check for x86_64_v2 instructions)
         if sys.platform.startswith("linux"):
             print("  -> Verifying ISA level...")
-            readelf_result = subprocess.run(
-                ["readelf", "-A", str(flatc_dest)],
-                capture_output=True,
-                text=True,
-            )
-            if readelf_result.returncode == 0:
-                # Look for ISA info in output
-                for line in readelf_result.stdout.splitlines():
-                    if "ISA" in line or "x86" in line.lower():
-                        print(f"     {line.strip()}")
+            # readelf/file are diagnostics only: skip whichever is not installed
+            if shutil.which("readelf"):
+                readelf_result = subprocess.run(
+                    ["readelf", "-A", str(flatc_dest)],
+                    capture_output=True,
+                    text=True,
+                )
+                if readelf_result.returncode == 0:
+                    # Look for ISA info in output
+                    for line in readelf_result.stdout.splitlines():
+                        if "ISA" in line or "x86" in line.lower():
+                            print(f"     {line.strip()}")
             # Also check file command for architecture info
-            file_result = subprocess.run(
-                ["file", str(flatc_dest)],
-                capture_output=True,
-                text=True,
-            )
-            if file_result.returncode == 0:
-                print(f"     {file_result.stdout.strip()}")
+            if shutil.which("file"):
+                file_result = subprocess.run(
+                    ["file", str(flatc_dest)],
+                    capture_output=True,
+                    text=True,
+                )
+                if file_result.returncode == 0:
+                    print(f"     {file_result.stdout.strip()}")
 
         # Add flatc to wheel
         src_file = str(flatc_dest)
