@@ -21,10 +21,13 @@ jobs:
   identifiers:
     uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
 
+  # Built natively on GitHub-hosted ARM64 runners, not under QEMU on x86_64 (#183):
+  # under emulation cc1/cc1plus, auditwheel and Python itself segfaulted
+  # intermittently, and a build with the bundled flatc took 16-30 minutes.
   build-wheels:
     name: Build ARM64 wheels (${{ matrix.target.name }})
     needs: identifiers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
@@ -138,34 +141,21 @@ jobs:
         with:
           submodules: recursive
 
-      # ============================================================
-      # QEMU + Docker Buildx Setup
-      # ============================================================
-
-      - name: Set up QEMU for ARM64 emulation
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Verify QEMU setup
+      - name: Verify the runner is native ARM64
         run: |
-          echo "==> QEMU platforms available:"
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          docker buildx ls
+          echo "==> Runner architecture: $(uname -m)"
+          test "$(uname -m)" = "aarch64" || { echo "ERROR: expected a native aarch64 runner (#183)"; exit 1; }
 
       # ============================================================
       # Build wheels inside ARM64 containers
       # ============================================================
 
-      - name: Build ARM64 wheels with LMDB extension (with retry for QEMU flakiness)
+      - name: Build ARM64 wheels with LMDB extension (with retry)
         uses: nick-fields/retry@v3
         with:
-          # Compilation under QEMU ARM64 emulation is very slow: a build that
-          # includes the (mandatory) bundled flatc takes 16-30 minutes (#181).
-          # A timeout is not retried (retry_on: error), so leave ample headroom.
+          # Kept from the QEMU builds (16-30 minutes each, intermittent compiler
+          # crashes) until native runs have been measured; then reduce (#183).
+          # A timeout is not retried (retry_on: error).
           timeout_minutes: 60
           max_attempts: 3
           retry_on: error
@@ -181,7 +171,8 @@ jobs:
             # Create wheelhouse directory on host
             mkdir -p wheelhouse
 
-            # Run build script inside ARM64 container via QEMU
+            # Run build script inside the ARM64 container (natively; the
+            # platform flag only asserts the image architecture)
             docker run --rm \
               --platform linux/arm64 \
               -v $PWD:/io \
@@ -309,7 +300,7 @@ jobs:
           echo "Manylinux Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
           echo "glibc Version: ${{ matrix.target.glibc_version }}" >> $BUILD_INFO
           echo "Python Implementation: ${{ matrix.target.python_impl }}" >> $BUILD_INFO
-          echo "Build Method: GitHub Actions + QEMU + Docker (ARM64 emulation)" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions native ARM64 runner (ubuntu-24.04-arm) + Docker" >> $BUILD_INFO
           echo "LMDB: CFFI binary wheels with vendored LMDB sources" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
           echo "Wheels Built:" >> $BUILD_INFO
