@@ -35,6 +35,7 @@ import time
 from typing import Dict, Any, Tuple, List, Optional, Callable, Type
 
 import zlmdb.lmdb as lmdb
+from zlmdb._lmdb_vendor.cffi import _sniff_data_version
 import yaml
 import cbor2
 
@@ -60,6 +61,14 @@ KV_TYPE_TO_CLASS = {
 }
 
 _LMDB_MYPID_ENVS: Dict[str, Tuple["Database", int]] = {}
+
+# LMDB formats selectable with Database(lib_version=...) (#171): the format name, the
+# low-level binding's engine (LMDB major version) and the on-disk data format version.
+_LIB_VERSION_TO_MAJOR = {"0.9": 0, "1.0": 1}
+_DATA_VERSION_TO_LIB_VERSION = {1: "0.9", 3: "1.0"}
+
+# Format of a new database when lib_version is not given.
+DEFAULT_LIB_VERSION = "1.0"
 
 
 class ConfigurationElement(object):
@@ -327,6 +336,7 @@ class Database(object):
         "_create",
         "_open_now",
         "_writemap",
+        "_lib_version",
         "_context",
         "_slots",
         "_slots_by_index",
@@ -345,6 +355,7 @@ class Database(object):
         writemap: bool = False,
         context: Any = None,
         log: Optional[txaio.interfaces.ILogger] = None,
+        lib_version: Optional[str] = None,
     ):
         """
 
@@ -361,7 +372,21 @@ class Database(object):
             using any storage other than locally attached filesystem/drive.
         :param context: Optional context within which this database instance is created.
         :param log: Log object to use for logging from this class.
+        :param lib_version: LMDB format of the database: ``"1.0"`` (LMDB 1.0.x, data format v3)
+            or ``"0.9"`` (LMDB 0.9.x, data format v1). If not given, a new database is created
+            in ``"1.0"`` format and an existing database opens in its own format. If given and
+            an existing database has the other format, :class:`ValueError` is raised.
         """
+        if lib_version is not None and (
+            not isinstance(lib_version, str) or lib_version not in _LIB_VERSION_TO_MAJOR
+        ):
+            raise ValueError(
+                'invalid lib_version {!r}: must be "1.0" or "0.9" (or omitted)'.format(
+                    lib_version
+                )
+            )
+        self._lib_version = lib_version
+
         self._context = context
 
         if log:
@@ -422,6 +447,25 @@ class Database(object):
         :return: This database instance (in open state).
         """
         if not self._env:
+            # the LMDB format of an existing database (None if there is none yet)
+            existing = _DATA_VERSION_TO_LIB_VERSION.get(
+                _sniff_data_version(self._dbpath, True)
+            )
+            if (
+                self._lib_version is not None
+                and existing is not None
+                and existing != self._lib_version
+            ):
+                raise ValueError(
+                    'database "{}" has LMDB format {}, but lib_version="{}" was requested: '
+                    "omit lib_version to open it in its own format, or convert the database".format(
+                        self._dbpath, existing, self._lib_version
+                    )
+                )
+            major: Optional[int] = None
+            if existing is None:
+                major = _LIB_VERSION_TO_MAJOR[self._lib_version or DEFAULT_LIB_VERSION]
+
             # protect against opening the same database file multiple times within the same process:
             #    "It is a serious error to have open (multiple times) the same LMDB file in
             #     the same process at the same time. Failure to heed this may lead to data
@@ -468,6 +512,16 @@ class Database(object):
                         subdir=True,
                         lock=self._lock,
                         writemap=self._writemap,
+                        lib_version=major,
+                    )
+                    self._lib_version = (
+                        "1.0" if self._env.lib_version()[0] >= 1 else "0.9"
+                    )
+                    self.log.debug(
+                        'opened database "{dbpath}" in LMDB format {lib_version} ({how})',
+                        dbpath=self._dbpath,
+                        lib_version=self._lib_version,
+                        how="existing" if existing else "new",
                     )
 
                     # ok, good: we've got a LMDB env
@@ -526,6 +580,7 @@ class Database(object):
         writemap: bool = False,
         context: Any = None,
         log: Optional[txaio.interfaces.ILogger] = None,
+        lib_version: Optional[str] = None,
     ) -> "Database":
         if dbpath is not None and dbpath in _LMDB_MYPID_ENVS:
             db, _ = _LMDB_MYPID_ENVS[dbpath]
@@ -546,6 +601,7 @@ class Database(object):
                 writemap=writemap,
                 context=context,
                 log=log,
+                lib_version=lib_version,
             )
             print(
                 '{}: creating new database instance for path "{}" in context {}'.format(
@@ -561,6 +617,16 @@ class Database(object):
         :return:
         """
         return self._context
+
+    @property
+    def lib_version(self) -> Optional[str]:
+        """
+        LMDB format of this database, ``"1.0"`` or ``"0.9"`` (``None`` before it was first opened
+        when no ``lib_version`` was given).
+
+        :return:
+        """
+        return self._lib_version
 
     @property
     def dbpath(self) -> Optional[str]:
