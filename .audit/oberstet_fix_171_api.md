@@ -4,5 +4,5 @@
 
 Submitted by: @oberstet
 Date: 2026-10-15
-Related issue(s): #171_api
+Related issue(s): #171
 Branch: oberstet:fix_171_api
