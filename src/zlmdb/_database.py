@@ -770,6 +770,9 @@ class Database(object):
             "free": 1.0 - float(used) / float(self._maxsize),
             "read_only": self._readonly,
             "sync_enabled": self._sync,
+            # LMDB format of the database and the LMDB library servicing it (#171)
+            "lib_version": self._lib_version,
+            "lmdb_version": "{}.{}.{}".format(*self._env.lib_version()),
         }
         res.update(stats)
 
