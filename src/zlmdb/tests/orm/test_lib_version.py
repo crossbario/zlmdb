@@ -57,6 +57,10 @@ def _create_lowlevel(dbpath: str, major: int) -> None:
     env.close()
 
 
+@pytest.mark.skipif(
+    os.environ.get("ZLMDB_TEST_LIB_VERSION", "1.0") != "1.0",
+    reason="ZLMDB_TEST_LIB_VERSION overrides the default for this test run",
+)
 def test_new_database_defaults_to_1_0():
     with TemporaryDirectory() as dbpath:
         with zlmdb.Database(dbpath) as db:

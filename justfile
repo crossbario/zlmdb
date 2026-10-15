@@ -863,7 +863,12 @@ test-examples-lmdb-addressbook venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    ${VENV_PYTHON} examples/lmdb/address-book.py
+    # Once per bundled LMDB engine (#171): LMDB_DEFAULT_LIB_VERSION selects the engine
+    # new environments use (0: LMDB 0.9.x, 1: LMDB 1.0.x).
+    for engine in 0 1; do
+        echo "==> LMDB engine ${engine} (LMDB_DEFAULT_LIB_VERSION=${engine})"
+        LMDB_DEFAULT_LIB_VERSION=${engine} ${VENV_PYTHON} examples/lmdb/address-book.py
+    done
 
 # Test example LMDB dirtybench-gdbm
 test-examples-lmdb-dirtybench-gdbm venv="": (install venv)
@@ -892,7 +897,12 @@ test-examples-lmdb-dirtybench venv="": (install venv)
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
     # This benchmark takes ~3 minutes on fast hardware, allow 5 minutes for CI
-    timeout 300 ${VENV_PYTHON} examples/lmdb/dirtybench.py
+    # Once per bundled LMDB engine (#171): LMDB_DEFAULT_LIB_VERSION selects the engine
+    # new environments use (0: LMDB 0.9.x, 1: LMDB 1.0.x).
+    for engine in 0 1; do
+        echo "==> LMDB engine ${engine} (LMDB_DEFAULT_LIB_VERSION=${engine})"
+        LMDB_DEFAULT_LIB_VERSION=${engine} timeout 300 ${VENV_PYTHON} examples/lmdb/dirtybench.py
+    done
 
 # Test example LMDB nastybench
 test-examples-lmdb-nastybench venv="": (install venv)
@@ -906,7 +916,12 @@ test-examples-lmdb-nastybench venv="": (install venv)
     echo ""
     echo "==> Testing in ${VENV_NAME} ..."
     echo ""
-    timeout 60 ${VENV_PYTHON} examples/lmdb/nastybench.py
+    # Once per bundled LMDB engine (#171): LMDB_DEFAULT_LIB_VERSION selects the engine
+    # new environments use (0: LMDB 0.9.x, 1: LMDB 1.0.x).
+    for engine in 0 1; do
+        echo "==> LMDB engine ${engine} (LMDB_DEFAULT_LIB_VERSION=${engine})"
+        LMDB_DEFAULT_LIB_VERSION=${engine} timeout 60 ${VENV_PYTHON} examples/lmdb/nastybench.py
+    done
 
 # Test example LMDB parabench (parallel benchmark, generates 4M keys then runs benchmark)
 test-examples-lmdb-parabench venv="": (install venv)
@@ -923,7 +938,12 @@ test-examples-lmdb-parabench venv="": (install venv)
     # Run with 2 processes for 10 seconds
     # Key generation takes ~15-20 seconds, benchmark runs for 10 seconds
     # Allow 90 seconds total for CI
-    timeout 90 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
+    # Once per bundled LMDB engine (#171): LMDB_DEFAULT_LIB_VERSION selects the engine
+    # new environments use (0: LMDB 0.9.x, 1: LMDB 1.0.x).
+    for engine in 0 1; do
+        echo "==> LMDB engine ${engine} (LMDB_DEFAULT_LIB_VERSION=${engine})"
+        LMDB_DEFAULT_LIB_VERSION=${engine} timeout 90 ${VENV_PYTHON} examples/lmdb/parabench.py 2 10
+    done
 
 # Run test suite for ORM.
 test-orm venv="": (install-tools venv) (install-dev venv)
@@ -935,7 +955,15 @@ test-orm venv="": (install-tools venv) (install-dev venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running test suite in ${VENV_NAME}..."
-    QUICK=1 ${VENV_PYTHON} -m pytest --log-cli-level=INFO -v src/zlmdb/tests/orm/
+    # The suite runs once per LMDB format (#171): ZLMDB_TEST_LIB_VERSION sets the format
+    # zlmdb.Database gives new databases during the run (see src/zlmdb/tests/orm/conftest.py).
+    # Both passes always run; the recipe fails if either does.
+    rc=0
+    for fmt in 0.9 1.0; do
+        echo "==> LMDB format ${fmt} (ZLMDB_TEST_LIB_VERSION=${fmt})"
+        ZLMDB_TEST_LIB_VERSION=${fmt} QUICK=1 ${VENV_PYTHON} -m pytest --log-cli-level=INFO -v src/zlmdb/tests/orm/ || rc=1
+    done
+    exit ${rc}
 
 # Run LMDB low-level API tests
 test-lmdb venv="": (install-tools venv) (install-dev venv)
