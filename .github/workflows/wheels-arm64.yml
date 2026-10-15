@@ -375,7 +375,14 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: artifacts-arm64-${{ matrix.target.name }}
-          path: wheelhouse/
+          # must be absolute: the action changes into its staging directory, so a
+          # relative path ends up there and is deleted with it (files silently lost)
+          path: ${{ github.workspace }}/wheelhouse/
+
+      - name: List downloaded wheels
+        run: |
+          ls -la wheelhouse/
+          ls wheelhouse/*.whl
 
       - name: Verify every wheel installs and works
         run: |
