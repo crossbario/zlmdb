@@ -272,19 +272,6 @@ jobs:
             echo "[OK] All wheels validated successfully"
           fi
 
-      - name: Verify every wheel installs and works
-        # Each wheel is installed in its own fresh venv, in the image that built it,
-        # and smoke-tested, including both bundled LMDB engines (#170, #171). Not
-        # inside the retry above: a failing smoke test is a finding, not QEMU flakiness.
-        timeout-minutes: 60
-        run: |
-          docker run --rm \
-            --platform linux/arm64 \
-            -v $PWD:/io \
-            -w /io \
-            ${{ matrix.target.base_image }} \
-            /bin/bash /io/.github/scripts/smoke-arm64-wheels.sh
-
       - name: Generate SHA256 checksums (chain of custody)
         run: |
           echo "======================================================================"
@@ -342,3 +329,59 @@ jobs:
           name: artifacts-arm64-${{ matrix.target.name }}
           path: wheelhouse/
           retention-days: 30
+
+  # Smoke-test the wheels on native ARM64 hardware (GitHub-hosted ubuntu-24.04-arm),
+  # not under QEMU: QEMU user-mode does not implement every syscall the wheels use
+  # (on musllinux, LMDB's robust mutexes fail with ENOSYS there). Each wheel is
+  # installed in its own fresh venv, in the image that built it, and smoke-tested,
+  # including both bundled LMDB engines (#170, #171).
+  smoke-wheels:
+    name: Smoke-test ARM64 wheels natively (${{ matrix.target.name }})
+    needs: build-wheels
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: "cpython-3.11-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+          - name: "cpython-3.12-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+          - name: "cpython-3.13-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+          - name: "cpython-3.14-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+          - name: "cpython-3.11-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+          - name: "cpython-3.12-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+          - name: "cpython-3.13-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+          - name: "cpython-3.14-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+          - name: "pypy-3.11-manylinux_2_36_aarch64"
+            base_image: "debian:12"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download and verify wheels
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-${{ matrix.target.name }}
+          path: wheelhouse/
+
+      - name: Verify every wheel installs and works
+        run: |
+          uname -m
+          docker run --rm \
+            -v $PWD:/io \
+            -w /io \
+            ${{ matrix.target.base_image }} \
+            /bin/bash /io/.github/scripts/smoke-arm64-wheels.sh
