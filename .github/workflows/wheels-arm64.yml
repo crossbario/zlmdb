@@ -163,9 +163,10 @@ jobs:
       - name: Build ARM64 wheels with LMDB extension (with retry for QEMU flakiness)
         uses: nick-fields/retry@v3
         with:
-          # CFFI compilation under QEMU ARM64 emulation is very slow
-          # CPython builds can take 20+ minutes due to emulation overhead
-          timeout_minutes: 30
+          # Compilation under QEMU ARM64 emulation is very slow: a build that
+          # includes the (mandatory) bundled flatc takes 16-30 minutes (#181).
+          # A timeout is not retried (retry_on: error), so leave ample headroom.
+          timeout_minutes: 60
           max_attempts: 3
           retry_on: error
           warning_on_retry: true
