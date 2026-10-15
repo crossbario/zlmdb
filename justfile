@@ -703,7 +703,11 @@ test-wheel-install wheel_path:
     # Extract Python version from wheel filename
     # Wheel format: {name}-{version}-{python tag}-{abi tag}-{platform tag}.whl
     # Python tag examples: cp312, cp311, pp311, py3
-    PYTAG=$(echo "${WHEEL_NAME}" | sed -n 's/.*-\(cp[0-9]*\|pp[0-9]*\|py[0-9]*\)-.*/\1/p')
+    # (a bash regex, not sed: BSD sed on macOS has no \| alternation)
+    PYTAG=""
+    if [[ "${WHEEL_NAME}" =~ -((cp|pp|py)[0-9]+)- ]]; then
+        PYTAG="${BASH_REMATCH[1]}"
+    fi
 
     if [[ "${PYTAG}" =~ ^cp([0-9])([0-9]+)$ ]]; then
         # CPython wheel (e.g., cp312 -> 3.12)
@@ -734,7 +738,11 @@ test-wheel-install wheel_path:
     mkdir -p "{{ VENV_DIR }}"
     uv venv --seed --python "${PYTHON_SPEC}" "${EPHEMERAL_PATH}"
 
-    EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+    if [[ "$OS" == "Windows_NT" ]]; then
+        EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/Scripts/python.exe"
+    else
+        EPHEMERAL_PYTHON="${EPHEMERAL_PATH}/bin/python3"
+    fi
 
     # Install the wheel
     echo ""
@@ -754,6 +762,30 @@ test-wheel-install wheel_path:
     echo "========================================================================"
     echo "✅ WHEEL INSTALL TEST PASSED: ${WHEEL_NAME}"
     echo "========================================================================"
+
+# Test installing and verifying every wheel in a directory, each in its own fresh venv
+# (used in CI for artifact verification). Fails if any wheel fails, after testing all.
+# Usage: just test-wheels-install dist
+test-wheels-install wheel_dir:
+    #!/usr/bin/env bash
+    shopt -s nullglob
+    WHEELS=("{{ wheel_dir }}"/*.whl)
+    if [ ${#WHEELS[@]} -eq 0 ]; then
+        echo "ERROR: no wheels found in {{ wheel_dir }}"
+        exit 1
+    fi
+    FAILED=()
+    for WHEEL in "${WHEELS[@]}"; do
+        just test-wheel-install "${WHEEL}" || FAILED+=("$(basename "${WHEEL}")")
+    done
+    echo ""
+    echo "========================================================================"
+    echo "  Wheels tested: ${#WHEELS[@]}, failed: ${#FAILED[@]}"
+    for NAME in "${FAILED[@]}"; do
+        echo "  ❌ ${NAME}"
+    done
+    echo "========================================================================"
+    [ ${#FAILED[@]} -eq 0 ]
 
 # Test installing and verifying a source distribution (used in CI for artifact verification)
 # Usage: just test-sdist-install /path/to/zlmdb-*.tar.gz

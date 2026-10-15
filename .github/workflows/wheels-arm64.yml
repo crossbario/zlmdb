@@ -272,6 +272,19 @@ jobs:
             echo "[OK] All wheels validated successfully"
           fi
 
+      - name: Verify every wheel installs and works
+        # Each wheel is installed in its own fresh venv, in the image that built it,
+        # and smoke-tested, including both bundled LMDB engines (#170, #171). Not
+        # inside the retry above: a failing smoke test is a finding, not QEMU flakiness.
+        timeout-minutes: 60
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            -v $PWD:/io \
+            -w /io \
+            ${{ matrix.target.base_image }} \
+            /bin/bash /io/.github/scripts/smoke-arm64-wheels.sh
+
       - name: Generate SHA256 checksums (chain of custody)
         run: |
           echo "======================================================================"

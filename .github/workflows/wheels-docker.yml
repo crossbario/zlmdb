@@ -307,52 +307,13 @@ jobs:
           sync
           echo "[OK] All buffers flushed to disk"
 
-      - name: Verify manylinux wheels install and work
-        # This in-container smoke test (uv-seeded venv + `just test-wheel-install`,
-        # bash-shebang recipes) was written for the glibc manylinux image. On the
-        # Alpine musllinux image the wheels are still validated (ZIP/zipfile/twine) and
-        # auditwheel-tagged above; functional install-verify on musl is out of scope for
-        # #126 (matches autobahn-python, which has no such step). #126
-        if: ${{ !contains(matrix.target.name, 'musllinux') }}
+      - name: Verify every wheel installs and works
+        # Every wheel built here (manylinux: CPython + PyPy, musllinux: CPython) is
+        # installed in its own fresh venv and smoke-tested, including both bundled
+        # LMDB engines (#170, #171).
         run: |
           export PATH="/root/.cargo/bin:$PATH"
-
-          echo "======================================================================"
-          echo "==> Verifying Manylinux Wheels Install and Work"
-          echo "======================================================================"
-          echo ""
-          echo "This test installs each wheel in a fresh venv and runs smoke tests"
-          echo "to verify LMDB CFFI extension and FlatBuffers work correctly."
-          echo ""
-
-          # Test one wheel (the system Python version wheel)
-          # We pick cp312 as it's commonly available
-          SYSTEM_PYVER=$(python3 -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          echo "System Python: $SYSTEM_PYVER"
-          echo ""
-
-          # Find a wheel matching the system Python version
-          TEST_WHEEL=$(ls wheelhouse/zlmdb-*-${SYSTEM_PYVER}-*.whl 2>/dev/null | head -1)
-          if [ -z "$TEST_WHEEL" ]; then
-            # Fall back to any wheel
-            TEST_WHEEL=$(ls wheelhouse/*.whl 2>/dev/null | head -1)
-          fi
-
-          if [ -z "$TEST_WHEEL" ]; then
-            echo "❌ No wheels found in wheelhouse/"
-            exit 1
-          fi
-
-          echo "Testing: $(basename $TEST_WHEEL)"
-          echo ""
-
-          # Run the smoke test via just recipe
-          just test-wheel-install "$TEST_WHEEL"
-
-          echo ""
-          echo "======================================================================"
-          echo "✅ Manylinux wheel verification PASSED"
-          echo "======================================================================"
+          just test-wheels-install wheelhouse
 
       - name: Generate build metadata
         run: |
