@@ -793,12 +793,12 @@ test-sdist-install sdist_path:
     echo "Source dist: ${SDIST_NAME}"
     echo ""
 
-    # Check if cmake is available (required for full functionality)
+    # cmake is required: building zlmdb from source builds the bundled flatc (#181)
     if command -v cmake >/dev/null 2>&1; then
         echo "cmake: $(cmake --version | head -1)"
     else
-        echo "WARNING: cmake not found - flatc binary will not be built"
-        echo "         Install cmake for full functionality"
+        echo "ERROR: cmake not found - it is required to build zlmdb (bundled flatc)"
+        exit 1
     fi
     echo ""
 
