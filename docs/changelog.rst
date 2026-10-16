@@ -15,6 +15,8 @@ Unreleased
 
 * Re-sync the vendored py-lmdb fork from 2.2.1 to **py-lmdb 3.0.0**, on **LMDB 0.9.36** (was 0.9.35). The LMDB 0.9 patch set is byte-identical to py-lmdb 3.0.0's, with five new hardening and fix patches: ``fix-large-write``, ``fix-overflow-page-size-mul``, ``validate-md-pad``, ``validate-ovpage-free`` and ``validate-freedb-record``. This fixes valid writes being rejected: an ``MDB_DUPFIXED`` database with 1-byte values failed from the fifth duplicate on with ``MDB_CORRUPTED`` (upstream jnwatson/py-lmdb#481; zLMDB 26.7.1 is affected). New in the binding: the offline verifier (``verify.py``) (#169)
 * Wheels could ship without the bundled ``flatc`` when its build failed: 3 of the 27 zLMDB 26.7.1 wheels on PyPI lack it. A failed ``flatc`` build now fails the wheel build. **cmake is therefore required to build zLMDB from source** (sdist installs) (#181)
+* A failed ``lmdb.open()`` (and so ``zlmdb.Database``) no longer prints an unraisable ``AttributeError: 'Environment' object has no attribute '_pid'`` from ``Transaction.__del__`` next to the real error, e.g. ``ReadersFullError``. The bug is inherited from py-lmdb 3.0.0's CFFI backend and reported upstream as jnwatson/py-lmdb#512 (#197)
+* The ReadTheDocs build installs zLMDB with all its sources again (the LMDB and flatc submodules, and cmake), so the API reference is generated instead of left empty (#144)
 
 **New**
 
@@ -22,6 +24,8 @@ Unreleased
 * On PyPy, zLMDB depends on ``cbor2==5.9.0`` (pure Python), on CPython on ``cbor2>=6.1.0`` (the Rust extension), the same split as Autobahn|Python. Installing zLMDB on PyPy no longer needs a Rust toolchain. Data at rest is byte-identical between the two lines: a new test checks the CBOR encoding against golden vectors on every interpreter (#177)
 * ``zlmdb.Database(..., lib_version=...)`` chooses the LMDB format of a database: ``"1.0"`` (LMDB 1.0.x, data format v3) or ``"0.9"`` (LMDB 0.9.x, data format v1). An existing database opens in its own format when ``lib_version`` is not given; an explicit ``lib_version`` that does not match it raises ``ValueError``. ``db.lib_version`` and ``Database.stats()`` (``"lib_version"``, ``"lmdb_version"``) report the format and the LMDB library in use. The new command ``zlmdb info DBPATH [--lib-version 1.0|0.9]`` shows them, and exits with 1 on a format mismatch. See :doc:`lmdb-formats` (#171)
 * **Behaviour change:** new databases are created in **LMDB 1.0 format**. Such a file cannot be read by zLMDB before 26.10.1 or by LMDB 0.9 tools; pass ``lib_version="0.9"`` where that matters. Existing databases are not affected and are never converted; :doc:`lmdb-formats` shows how to convert one (#171)
+* When ``zlmdb.Database`` cannot open a database because a process with the same PID in another PID namespace has it open (e.g. PID 1 in two containers sharing a volume), the ``RuntimeError`` now names this cause and the remedy, a shared PID namespace, instead of only "giving up after 3 retries". The exception type is unchanged (#196)
+* New documentation page :doc:`deployment`: the supported storage and concurrency topologies (one kernel; containers with a shared PID namespace; local filesystems, including on network block devices) and the unsupported ones (several kernels or hosts, NFS), with the requirements, including that all processes sharing a database use the same C library family: a glibc and a musl process were found to hang on each other's lock file (#196)
 
 **Other**
 
@@ -35,6 +39,9 @@ Unreleased
 * PyPy is pinned to **PyPy 3.11.15** (PyPy 7.3.23, the last release with the ``pp73`` ABI; PyPy 8.0 brings the new ``pp80`` ABI). ARM64 PyPy wheel builds install ``patchelf`` via pip instead of apt (#149)
 * Add the missing SPDX / license headers to four source files (#152, #154)
 * Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; project-specific notes moved to a new ``DEVELOPMENT.md``. ``.cicd`` and ``.ai`` are pinned to the same commits across the WAMP fleet, and the shared workflow recipes (``just where``, ``new-branch``, ``publish``, ``land``) are imported; the release meta-recipe ``publish`` is renamed ``publish-release`` (#149)
+* The bundled ``flatc`` is built on all cores (``cmake --build --parallel``; ``CMAKE_BUILD_PARALLEL_LEVEL`` still wins): 237 s serial, 25 s with 16 jobs (#174)
+* A multi-writer stress test (8 processes, 6,000 write transactions on one database) runs in CI, contributed by @p-r-a-v-i-n (#194, #53)
+* The test matrix allows unprivileged user namespaces (Ubuntu 24.04 restricts them), so the PID-namespace tests run in CI instead of skipping (#196)
 
 26.7.1
 ------
