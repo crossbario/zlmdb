@@ -9,5 +9,6 @@ database applications.
 
    ../lmdb/index
    ../orm/index
+   ../lmdb-formats
    ../performance
    ../reference

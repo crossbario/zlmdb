@@ -25,16 +25,46 @@
 ###############################################################################
 """Console script for zlmdb."""
 
+import os
 import sys
+
 import click
 
+from zlmdb._database import Database
 
-@click.command()
-def main(args=None):
-    """Console script for zlmdb."""
-    click.echo("Replace this message by putting your code into zlmdb.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
-    return 0
+
+@click.group()
+def main():
+    """zlmdb command line tool."""
+
+
+@main.command()
+@click.argument("dbpath", type=click.Path(file_okay=False))
+@click.option(
+    "--lib-version",
+    type=click.Choice(["1.0", "0.9"]),
+    default=None,
+    help="Require this LMDB format; exit with 1 if the database has the other one.",
+)
+def info(dbpath, lib_version):
+    """Show the LMDB format, LMDB version and statistics of the database at DBPATH.
+
+    The database is opened read-only, and nothing is created. Exit code 0 if the
+    database was opened, 1 if there is none or it has another format than --lib-version.
+    """
+    if not os.path.exists(os.path.join(dbpath, "data.mdb")):
+        click.echo('error: no database at "{}"'.format(dbpath), err=True)
+        sys.exit(1)
+    try:
+        with Database(
+            dbpath, readonly=True, create=False, lib_version=lib_version
+        ) as db:
+            stats = db.stats()
+    except ValueError as e:
+        click.echo("error: {}".format(e), err=True)
+        sys.exit(1)
+    for key in sorted(stats):
+        click.echo("{}: {}".format(key, stats[key]))
 
 
 if __name__ == "__main__":
