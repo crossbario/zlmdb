@@ -11,14 +11,25 @@ This document contains a reverse-chronological list of changes to zLMDB.
 Unreleased
 ----------
 
+**Fix**
+
+* Re-sync the vendored py-lmdb fork from 2.2.1 to **py-lmdb 3.0.0**, on **LMDB 0.9.36** (was 0.9.35). The LMDB 0.9 patch set is byte-identical to py-lmdb 3.0.0's, with five new hardening and fix patches: ``fix-large-write``, ``fix-overflow-page-size-mul``, ``validate-md-pad``, ``validate-ovpage-free`` and ``validate-freedb-record``. This fixes valid writes being rejected: an ``MDB_DUPFIXED`` database with 1-byte values failed from the fifth duplicate on with ``MDB_CORRUPTED`` (upstream jnwatson/py-lmdb#481; zLMDB 26.7.1 is affected). New in the binding: the offline verifier (``verify.py``) (#169)
+* Wheels could ship without the bundled ``flatc`` when its build failed: 3 of the 27 zLMDB 26.7.1 wheels on PyPI lack it. A failed ``flatc`` build now fails the wheel build. **cmake is therefore required to build zLMDB from source** (sdist installs) (#181)
+
 **New**
 
+* zLMDB bundles **both LMDB release lines**: LMDB 0.9.36 (data format v1) and LMDB 1.0.2 (data format v3), as py-lmdb 3.0.0 does, CFFI-only, in every wheel. An existing database is opened with the engine matching its format; the low-level ``zlmdb.lmdb`` API selects the engine for new environments with ``lib_version=`` or ``LMDB_DEFAULT_LIB_VERSION`` (#170)
+* On PyPy, zLMDB depends on ``cbor2==5.9.0`` (pure Python), on CPython on ``cbor2>=6.1.0`` (the Rust extension), the same split as Autobahn|Python. Installing zLMDB on PyPy no longer needs a Rust toolchain. Data at rest is byte-identical between the two lines: a new test checks the CBOR encoding against golden vectors on every interpreter (#177)
 * ``zlmdb.Database(..., lib_version=...)`` chooses the LMDB format of a database: ``"1.0"`` (LMDB 1.0.x, data format v3) or ``"0.9"`` (LMDB 0.9.x, data format v1). An existing database opens in its own format when ``lib_version`` is not given; an explicit ``lib_version`` that does not match it raises ``ValueError``. ``db.lib_version`` and ``Database.stats()`` (``"lib_version"``, ``"lmdb_version"``) report the format and the LMDB library in use. The new command ``zlmdb info DBPATH [--lib-version 1.0|0.9]`` shows them, and exits with 1 on a format mismatch. See :doc:`lmdb-formats` (#171)
 * **Behaviour change:** new databases are created in **LMDB 1.0 format**. Such a file cannot be read by zLMDB before 26.10.1 or by LMDB 0.9 tools; pass ``lib_version="0.9"`` where that matters. Existing databases are not affected and are never converted; :doc:`lmdb-formats` shows how to convert one (#171)
 
 **Other**
 
 * The ORM test suite and the LMDB examples run on both LMDB formats (#171)
+* ARM64 Linux wheels are built natively on GitHub's ``ubuntu-24.04-arm`` runners instead of under QEMU emulation: build time per wheel went from 16-31 minutes to 3-5 minutes, and the intermittent compiler segfaults under QEMU are gone (#183)
+* Every built wheel is smoke-tested in CI on every platform: installed into a fresh venv, both LMDB engines load and write their format, and the bundled ``flatc`` runs. ARM64 wheels are smoke-tested natively (#176, #180)
+* The LMDB test suite runs once per bundled engine, each test in its own forked process with a time limit (#169, #170)
+* Apply the ``zlmdb-py-lmdb-fork`` aspect, which checks the fork against a pinned upstream baseline (#178)
 * Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; project-specific notes moved to a new ``DEVELOPMENT.md``. ``.cicd`` and ``.ai`` are pinned to the same commits across the WAMP fleet, and the shared workflow recipes (``just where``, ``new-branch``, ``publish``, ``land``) are imported; the release meta-recipe ``publish`` is renamed ``publish-release`` (#149)
 
 26.7.1
