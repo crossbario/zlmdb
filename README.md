@@ -91,6 +91,17 @@ with db.begin(write=True) as txn:
     schema.users[txn, user.oid] = user
 ```
 
+## Cross-compilation and embedded targets
+
+**Status: roadmap.** Building zLMDB from source with a cross toolchain (e.g.
+Buildroot or Yocto, for riscv64) is intended to work, but is **not yet tested
+in CI**. What already holds: the source distribution is self-contained (both
+LMDB engines with their patches, and the FlatBuffers sources; CI builds it
+from source on every commit), and zLMDB passes no architecture flags of its
+own (no `-march`), so the toolchain's own flags apply unchanged. See
+[Native Build and Vendored Code](https://zlmdb.readthedocs.io/en/latest/native-build.html#cross-compilation)
+and [Installation](https://zlmdb.readthedocs.io/en/latest/installation.html).
+
 # Development Workflow
 
 This project uses [just](https://github.com/casey/just) as a modern task
