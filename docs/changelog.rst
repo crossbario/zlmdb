@@ -8,8 +8,8 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
-Unreleased
-----------
+26.10.1
+-------
 
 **Fix**
 
