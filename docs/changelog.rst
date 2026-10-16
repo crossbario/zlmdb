@@ -11,8 +11,14 @@ This document contains a reverse-chronological list of changes to zLMDB.
 Unreleased
 ----------
 
+**New**
+
+* ``zlmdb.Database(..., lib_version=...)`` chooses the LMDB format of a database: ``"1.0"`` (LMDB 1.0.x, data format v3) or ``"0.9"`` (LMDB 0.9.x, data format v1). An existing database opens in its own format when ``lib_version`` is not given; an explicit ``lib_version`` that does not match it raises ``ValueError``. ``db.lib_version`` and ``Database.stats()`` (``"lib_version"``, ``"lmdb_version"``) report the format and the LMDB library in use. The new command ``zlmdb info DBPATH [--lib-version 1.0|0.9]`` shows them, and exits with 1 on a format mismatch. See :doc:`lmdb-formats` (#171)
+* **Behaviour change:** new databases are created in **LMDB 1.0 format**. Such a file cannot be read by zLMDB before 26.10.1 or by LMDB 0.9 tools; pass ``lib_version="0.9"`` where that matters. Existing databases are not affected and are never converted; :doc:`lmdb-formats` shows how to convert one (#171)
+
 **Other**
 
+* The ORM test suite and the LMDB examples run on both LMDB formats (#171)
 * Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; project-specific notes moved to a new ``DEVELOPMENT.md``. ``.cicd`` and ``.ai`` are pinned to the same commits across the WAMP fleet, and the shared workflow recipes (``just where``, ``new-branch``, ``publish``, ``land``) are imported; the release meta-recipe ``publish`` is renamed ``publish-release`` (#149)
 
 26.7.1
