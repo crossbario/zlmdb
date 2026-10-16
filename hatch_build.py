@@ -225,8 +225,9 @@ class LmdbCffiBuildHook(BuildHookInterface):
             print(f"ERROR: cmake configure failed:\n{result.stderr}")
             return False
 
-        # Step 2: Build flatc
-        print("  -> Building flatc...")
+        # Step 2: Build flatc, on all cores (#174). An explicit
+        # CMAKE_BUILD_PARALLEL_LEVEL in the environment wins: cmake reads it
+        # itself when --parallel is given without a job count.
         build_args = [
             cmake_path,
             "--build",
@@ -235,7 +236,15 @@ class LmdbCffiBuildHook(BuildHookInterface):
             "Release",
             "--target",
             "flatc",
+            "--parallel",
         ]
+        jobs = os.environ.get("CMAKE_BUILD_PARALLEL_LEVEL")
+        if jobs:
+            print(f"  -> Building flatc ({jobs} jobs, CMAKE_BUILD_PARALLEL_LEVEL)...")
+        else:
+            jobs = str(os.cpu_count() or 1)
+            build_args.append(jobs)
+            print(f"  -> Building flatc ({jobs} parallel jobs)...")
 
         result = subprocess.run(
             build_args,
