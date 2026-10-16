@@ -43,6 +43,7 @@ Contents
 
    overview
    installation
+   native-build
    getting-started
    programming-guide/index
    flatbuffers/index
