@@ -1992,7 +1992,10 @@ class Transaction:
         self._env = _invalid
 
     def __del__(self):
-        if _cached_pid != self._pyenv._pid:
+        # The environment has no _pid while its __init__ is still running: its
+        # first transaction (opening the main database) may fail and be
+        # collected before then (#197), as Environment.__del__ also allows.
+        if _cached_pid != getattr(self._pyenv, '_pid', None):
             return
         self.abort()
 
