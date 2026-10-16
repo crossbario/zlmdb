@@ -168,6 +168,69 @@ jobs:
       - name: Test FlatBuffers reflection imports
         run: just test-reflection ${{ matrix.python-env }}
 
+  multi-writer-stress:
+    name: Stress Test Multi Writers Single Database
+    needs: identifiers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    env:
+      ZLMDB_RUN_MULTIWRITER_STRESS: 1
+      ZLMDB_STRESS_WRITERS: 8
+      ZLMDB_STRESS_WRITES: 250
+      ZLMDB_STRESS_ROUNDS: 3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev libffi-dev libunwind-dev \
+            libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+            libsnappy-dev
+
+      - name: Verify test environment
+        run: |
+          just --version
+          uv --version
+          uname -a
+          findmnt -T "$GITHUB_WORKSPACE" -o TARGET,SOURCE,FSTYPE,OPTIONS
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-ubuntu-multiwriter-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-multiwriter-
+
+      - name: Create Python environment and install package
+        run: |
+          just create cpy312
+          just install-dev cpy312
+
+      - name: Run multi-writer stress test
+        run: just test-multiwriter cpy312
+
   documentation:
     name: Documentation Build
     needs: identifiers

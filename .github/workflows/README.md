@@ -7,7 +7,7 @@ including artifact production and consumption flow.
 
 | Workflow | Purpose | Trigger |
 |----------|---------|---------|
-| `main.yml` | Code quality, tests, documentation | Push, PR |
+| `main.yml` | Code quality, tests, multi-writer stress, documentation | Push, PR |
 | `wheels.yml` | macOS/Windows wheels + source dist | Push, PR, tags |
 | `wheels-docker.yml` | Linux x86_64 manylinux wheels | Push, PR, tags |
 | `wheels-arm64.yml` | Linux ARM64 manylinux wheels | Push, PR, tags |
