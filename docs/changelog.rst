@@ -30,6 +30,10 @@ Unreleased
 * Every built wheel is smoke-tested in CI on every platform: installed into a fresh venv, both LMDB engines load and write their format, and the bundled ``flatc`` runs. ARM64 wheels are smoke-tested natively (#176, #180)
 * The LMDB test suite runs once per bundled engine, each test in its own forked process with a time limit (#169, #170)
 * Apply the ``zlmdb-py-lmdb-fork`` aspect, which checks the fork against a pinned upstream baseline (#178)
+* Apply the ``python-package`` and ``way-a`` aspects: ``aspects.toml`` records the aspects zLMDB is a member of, the ``.autobahn-crossbar-ai`` submodule is added, ``.cicd`` and ``.ai`` are bumped, and ruff skips the vendored and submodule trees (#156, #160, #162, #164, #166)
+* The release workflow can create the ``ci-cd`` release discussion (``discussions: write``), and a failure to create the discussion no longer aborts the job before the PyPI upload. This fixes what aborted the 26.7.1 release (#136)
+* PyPy is pinned to **PyPy 3.11.15** (PyPy 7.3.23, the last release with the ``pp73`` ABI; PyPy 8.0 brings the new ``pp80`` ABI). ARM64 PyPy wheel builds install ``patchelf`` via pip instead of apt (#149)
+* Add the missing SPDX / license headers to four source files (#152, #154)
 * Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; project-specific notes moved to a new ``DEVELOPMENT.md``. ``.cicd`` and ``.ai`` are pinned to the same commits across the WAMP fleet, and the shared workflow recipes (``just where``, ``new-branch``, ``publish``, ``land``) are imported; the release meta-recipe ``publish`` is renamed ``publish-release`` (#149)
 
 26.7.1

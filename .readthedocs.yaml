@@ -6,10 +6,20 @@ version: 2
 
 # Include .ai submodule for AI/audit related docs to be included in built docs (via symlinks)
 # Include .cicd submodule for shared Sphinx extensions (sphinx_auto_section_anchors)
+#
+# The docs are built from an installed zlmdb (`pip install .[docs]` below), not from the
+# source tree alone: docs/reference.rst uses sphinx.ext.autodoc (`.. autoclass::`), which
+# imports zlmdb, and that needs the compiled LMDB CFFI engines. Without an install, the
+# reference page renders empty (measured: 0 of 376 signatures) while the build still passes
+# (#144). Building zlmdb needs the sources of both LMDB engines and of the bundled flatc:
+# lmdb-upstream (LMDB 0.9), lmdb-upstream-1.0 (LMDB 1.0, #170), deps/flatbuffers (#181).
 submodules:
   include:
     - .ai
     - .cicd
+    - lmdb-upstream
+    - lmdb-upstream-1.0
+    - deps/flatbuffers
   recursive: false
 
 build:
@@ -17,9 +27,11 @@ build:
   tools:
     python: "3.11"
   # Install system packages for spell checking and LMDB/CFFI build
+  # (cmake: required to build the bundled flatc, without which no zlmdb wheel is built, #181)
   apt_packages:
     - libenchant-2-2
     - build-essential
+    - cmake
     - libffi-dev
     - libbz2-dev
     - libsnappy-dev
