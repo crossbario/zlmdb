@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+import errno
 import os
 import shutil
 import tempfile
@@ -69,6 +70,36 @@ _DATA_VERSION_TO_LIB_VERSION = {1: "0.9", 3: "1.0"}
 
 # Format of a new database when lib_version is not given.
 DEFAULT_LIB_VERSION = "1.0"
+
+
+def _pid_lock_held_by_other(dbpath: str) -> bool:
+    """
+    Whether another process holds the lock LMDB uses to mark this process as a live
+    reader: an fcntl lock on the byte at offset = our PID in ``lock.mdb``. A process
+    with the same PID in another PID namespace (e.g. in another container) holds it
+    for as long as it has the database open (#196).
+
+    Closing a file descriptor drops *all* of this process's fcntl locks on that file.
+    That is safe here only because this process has no environment open on
+    ``dbpath`` (``_LMDB_MYPID_ENVS``), and the failed one is closed already.
+    """
+    try:
+        import fcntl
+    except ImportError:  # Windows: LMDB does not lock by PID there
+        return False
+    try:
+        fd = os.open(os.path.join(dbpath, "lock.mdb"), os.O_RDWR)
+    except OSError:
+        return False
+    try:
+        fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB, 1, os.getpid())
+    except OSError as e:
+        return e.errno in (errno.EACCES, errno.EAGAIN)
+    else:
+        fcntl.lockf(fd, fcntl.LOCK_UN, 1, os.getpid())
+        return False
+    finally:
+        os.close(fd)
 
 
 class ConfigurationElement(object):
@@ -531,6 +562,17 @@ class Database(object):
                 except lmdb.LockError as e:
                     retries += 1
                     if retries >= 3:
+                        # not transient: a process with our PID in another PID namespace (#196)
+                        if _pid_lock_held_by_other(self._dbpath):
+                            raise RuntimeError(
+                                'cannot open LMDB environment "{}": another process with the same PID ({}) '
+                                "has it open. That happens when processes in different PID namespaces "
+                                "(e.g. containers) share a database: processes sharing a zLMDB database "
+                                "must share a PID namespace (e.g. docker run --pid=host), see "
+                                "https://zlmdb.readthedocs.io/en/latest/deployment.html".format(
+                                    self._dbpath, os.getpid()
+                                )
+                            ) from e
                         # give up and signal to user code
                         raise RuntimeError(
                             "cannot open LMDB environment (giving up "
