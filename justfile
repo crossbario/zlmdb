@@ -931,6 +931,19 @@ test-lmdb venv="": (install-tools venv) (install-dev venv)
     echo "==> Running LMDB tests in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pytest -v src/zlmdb/tests/lmdb/
 
+# Run the opt-in multi-process/single-database stress test used by CI.
+test-multiwriter venv="": (install-tools venv) (install-dev venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running multi-writer stress test in ${VENV_NAME}..."
+    ZLMDB_RUN_MULTIWRITER_STRESS=1 ${VENV_PYTHON} -m pytest -s -v \
+        src/zlmdb/tests/orm/test_multiwriter_stress.py
+
 # Run the test suite (both zlmdb/tests and tests directories)
 test venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
