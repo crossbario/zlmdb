@@ -86,9 +86,13 @@ Compiling on a "modern" host can silently introduce:
 Therefore:
 
 * Builds are done in **manylinux containers**
-* Baseline architecture flags are enforced
+* zLMDB passes no architecture flags of its own (no ``-march``), so the
+  toolchain's baseline applies
 * Toolchains are chosen carefully
 * Wheels are verified with ``auditwheel repair``
+
+:doc:`../native-build` shows the result: no instructions beyond the x86-64
+baseline in any native file of the wheels.
 
 This ensures wheels are installable on older systems, not just CI hosts.
 
@@ -181,15 +185,20 @@ Build Infrastructure
 Wheels are built using:
 
 * **GitHub Actions** for CI/CD
-* **manylinux containers** (``manylinux_2_28``) for Linux builds
-* **cibuildwheel** for cross-platform wheel building
+* the PyPA **manylinux** (``manylinux_2_28``) and **musllinux**
+  (``musllinux_1_2``) containers for Linux builds; ARM64 natively, on ARM64
+  runners
+* native GitHub runners for macOS and Windows
 * **auditwheel** for verification
 
 The build matrix includes:
 
 * CPython 3.11, 3.12, 3.13, 3.14
-* PyPy 3.11
-* Linux x86-64 and ARM64
+* PyPy 3.11 (glibc Linux and macOS)
+* Linux x86-64 and ARM64 (glibc and musl), macOS ARM64, Windows x86-64
+
+See :doc:`../native-build` for the vendored LMDB, the build from source and
+cross-compilation.
 
 Version Synchronization
 -----------------------
