@@ -79,7 +79,9 @@ dev = [
     # ty: Astral's type checker (standalone Rust binary, shipped as a wheel).
     # Pre-1.0 and fast-moving: we deliberately follow latest upstream releases
     # rather than pinning, accepting occasional rule-name/default adjustments.
-    "ty>=0.0.44",
+    # Floor 0.0.98: the justfile uses the rule name `import-not-found` (ty 0.0.97
+    # renamed `unresolved-import`); an older ty rejects it as an unknown rule (#205).
+    "ty>=0.0.98",
     "coverage>=5.0.0",
 ]
 

@@ -8,6 +8,13 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+26.11.1
+-------
+
+**Other**
+
+* ``just check-typing`` passes again with ty 0.0.98 and later: ty 0.0.97 renamed the rule ``unresolved-import`` to ``import-not-found``, and since 0.0.98 the old name in the ``--ignore`` list is reported as ``renamed-rule``, which failed the check. The ``dev`` extra now requires ``ty>=0.0.98`` (#205)
+
 26.10.1
 -------
 
