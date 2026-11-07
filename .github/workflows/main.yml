@@ -55,7 +55,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -127,7 +129,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -210,7 +214,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -273,7 +279,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
