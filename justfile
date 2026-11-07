@@ -1674,7 +1674,7 @@ check-typing venv="": (install-tools venv) (install-dev venv)
     # Only check core zlmdb package, exclude tests and vendored packages
     "${VENV_PATH}/bin/ty" check \
         --python "${VENV_PATH}/bin/python" \
-        --ignore unresolved-import \
+        --ignore import-not-found \
         --ignore unresolved-attribute \
         --ignore unresolved-reference \
         --ignore unresolved-global \

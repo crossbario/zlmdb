@@ -55,7 +55,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -127,7 +129,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -159,9 +163,13 @@ jobs:
       # Ubuntu 24.04 restricts unprivileged user namespaces (AppArmor), and the
       # PID-namespace tests (#196) need them (`unshare -Urpf`). `unshare` fails this
       # step if they are still unavailable, so the tests cannot silently skip.
+      # The sysctl exists only on Ubuntu kernels; elsewhere (e.g. Debian) there is
+      # nothing to switch on, and `unshare` alone decides (#207).
       - name: Allow unprivileged user namespaces
         run: |
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
           unshare -Urpf true
 
       - name: Run unit tests (PyTest) - zLMDB LMDB ("low-level")
@@ -206,7 +214,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies
@@ -269,7 +279,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          # uv installs to ~/.local/bin; do not depend on ~/.cargo/env (Rust), which the
+          # macos-15 arm64 runner image no longer provides (#208)
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install system dependencies

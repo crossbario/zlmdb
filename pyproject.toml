@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "zlmdb"
-version = "26.10.1"
+version = "26.11.1.dev1"
 description = "Object-relational zero-copy in-memory database layer for LMDB"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -58,7 +58,13 @@ dependencies = [
 dev = [
     "build>=1.0.0",
     "wheel>=0.36.2",
-    "pytest>=3.4.2",
+    # Cap below 9.2: pytest 9.2.0 (2026-10-27) adds TestReport._id, which
+    # pytest-forked 1.7.5 (latest release) cannot marshal, so every test run
+    # with --forked (`just test-lmdb`, #169) fails with "EXITED with status 3".
+    # Upstream as of 2026-11-06: issue pytest-dev/pytest-forked#113 and fix PR
+    # pytest-dev/pytest-forked#112 are both open, no release yet. Remove this
+    # cap once a pytest-forked release with the fix is out.
+    "pytest>=3.4.2,<9.2",
     "pytest-runner>=2.11.1",
     # Run each low-level LMDB test in its own forked process with a time limit, so a
     # test that crashes (segfault) or deadlocks fails alone instead of taking the
@@ -79,7 +85,9 @@ dev = [
     # ty: Astral's type checker (standalone Rust binary, shipped as a wheel).
     # Pre-1.0 and fast-moving: we deliberately follow latest upstream releases
     # rather than pinning, accepting occasional rule-name/default adjustments.
-    "ty>=0.0.44",
+    # Floor 0.0.98: the justfile uses the rule name `import-not-found` (ty 0.0.97
+    # renamed `unresolved-import`); an older ty rejects it as an unknown rule (#205).
+    "ty>=0.0.98",
     "coverage>=5.0.0",
 ]
 

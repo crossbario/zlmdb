@@ -8,6 +8,16 @@ This document contains a reverse-chronological list of changes to zLMDB.
     For detailed release information including artifacts,
     see :doc:`releases`.
 
+26.11.1
+-------
+
+**Other**
+
+* ``just check-typing`` passes again with ty 0.0.98 and later: ty 0.0.97 renamed the rule ``unresolved-import`` to ``import-not-found``, and since 0.0.98 the old name in the ``--ignore`` list is reported as ``renamed-rule``, which failed the check. The ``dev`` extra now requires ``ty>=0.0.98`` (#205)
+* The ``dev`` extra caps ``pytest<9.2``: with pytest 9.2.0, every test of ``just test-lmdb`` (which runs with ``--forked``) fails with "EXITED with status 3", because pytest-forked 1.7.5 cannot serialize the new ``TestReport._id`` (pytest-dev/pytest-forked#113, fix pending in pytest-dev/pytest-forked#112). The cap is removed once a fixed pytest-forked is released (#205)
+* CI: the ``test`` job's "Allow unprivileged user namespaces" step runs the Ubuntu-only ``sysctl kernel.apparmor_restrict_unprivileged_userns`` only where that setting exists. On other kernels (e.g. Debian) the step failed before ``unshare -Urpf true``, and all test steps after it were skipped. ``unshare`` still fails the step if user namespaces are unavailable (#207)
+* CI: "Install uv" no longer sources ``~/.cargo/env``, which the macos-15 arm64 runner image no longer provides (it comes from a Rust installation, not from uv); the step adds ``~/.local/bin``, where the uv installer puts ``uv``, to ``$GITHUB_PATH`` instead, as in autobahn-python #2034 (#208)
+
 26.10.1
 -------
 
