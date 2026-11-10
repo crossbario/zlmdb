@@ -1672,10 +1672,20 @@ check-typing venv="": (install-tools venv) (install-dev venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
     # Only check core zlmdb package, exclude tests and vendored packages
+    # missing-union-attribute and lost-keyword-for-regular-parameter: new in ty 0.0.100, ignored until their sites are fixed (#211).
+    #
+    # CI installs the newest ty, on purpose: we follow it as it moves (#210). ty
+    # renames rules now and then, and an --ignore naming an old name then silences
+    # nothing, so the rule comes back with many errors and the one warning that
+    # explains them is lost among them. The warnings are repeated at the end.
+    echo "    ty: $("${VENV_PATH}/bin/ty" --version)"
+    TY_OUT=$(mktemp)
+    trap 'rm -f "${TY_OUT}" "${TY_OUT}.names"' EXIT
+    set +e
     "${VENV_PATH}/bin/ty" check \
         --python "${VENV_PATH}/bin/python" \
         --ignore import-not-found \
-        --ignore unresolved-attribute \
+        --ignore missing-attribute \
         --ignore unresolved-reference \
         --ignore unresolved-global \
         --ignore possibly-missing-attribute \
@@ -1684,7 +1694,7 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore invalid-assignment \
         --ignore invalid-argument-type \
         --ignore invalid-return-type \
-        --ignore invalid-method-override \
+        --ignore incompatible-method-override \
         --ignore invalid-type-form \
         --ignore invalid-declaration \
         --ignore unsupported-operator \
@@ -1698,7 +1708,19 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore deprecated \
         --ignore unused-type-ignore-comment \
         --ignore possibly-missing-submodule \
-        src/zlmdb/
+        --ignore missing-union-attribute \
+        --ignore lost-keyword-for-regular-parameter \
+        src/zlmdb/ 2>&1 | tee "${TY_OUT}"
+    rc=${PIPESTATUS[0]}
+    set -e
+    if grep -E '^warning\[(unknown-rule|renamed-rule|renamed-rule-in-ignore-comment)\]' "${TY_OUT}" > "${TY_OUT}.names"; then
+        echo ""
+        echo "==> ty does not know a rule name this recipe or a ty: ignore comment uses:"
+        sed 's/^/    /' "${TY_OUT}.names"
+        echo "    Rename it to ty's current name (the errors above may be that rule, back on)."
+        exit 1
+    fi
+    exit ${rc}
 
 # Run all checks in single environment (usage: `just check cpy314`)
 check venv="": (check-format venv) (check-typing venv)
