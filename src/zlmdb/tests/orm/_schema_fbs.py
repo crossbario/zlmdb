@@ -49,9 +49,16 @@ class User(object):
         self._friends_cached = None
         self._referred_by = None
 
+    def _fbs(self, getter):
+        # The field from the FlatBuffers object this User wraps, or None for a new
+        # User that wraps none: that was an AttributeError on None (zlmdb#211).
+        if self._from_fbs is None:
+            return None
+        return getattr(self._from_fbs, getter)()
+
     @property
     def name(self):
-        return self._name or self._from_fbs.Name()
+        return self._name or self._fbs("Name")
 
     @name.setter
     def name(self, value):
@@ -59,7 +66,7 @@ class User(object):
 
     @property
     def authid(self):
-        return self._authid or self._from_fbs.Authid()
+        return self._authid or self._fbs("Authid")
 
     @authid.setter
     def authid(self, value):
@@ -67,7 +74,7 @@ class User(object):
 
     @property
     def uuid(self):
-        return self._uuid or self._from_fbs.Uuid()
+        return self._uuid or self._fbs("Uuid")
 
     @uuid.setter
     def uuid(self, value):
@@ -75,7 +82,7 @@ class User(object):
 
     @property
     def email(self):
-        return self._email or self._from_fbs.Email()
+        return self._email or self._fbs("Email")
 
     @email.setter
     def email(self, value):
@@ -83,7 +90,7 @@ class User(object):
 
     @property
     def birthday(self):
-        return self._birthday or self._from_fbs.Birthday()
+        return self._birthday or self._fbs("Birthday")
 
     @birthday.setter
     def birthday(self, value):
@@ -91,7 +98,7 @@ class User(object):
 
     @property
     def is_friendly(self):
-        return self._is_friendly or self._from_fbs.IsFriendly()
+        return self._is_friendly or self._fbs("IsFriendly")
 
     @is_friendly.setter
     def is_friendly(self, value):
@@ -104,7 +111,7 @@ class User(object):
         if self._ratings_cached is None:
             self._ratings_cached = {}
             if self._from_fbs:
-                for i in range(self._from_fbs.RatingsLength()):
+                for i in range(self._fbs("RatingsLength")):
                     rat = self._from_fbs.Ratings(i)
                     self._ratings_cached[rat.Name()] = rat.Rating()
         return self._ratings_cached
@@ -120,7 +127,7 @@ class User(object):
         if self._friends_cached is None:
             self._friends_cached = []
             if self._from_fbs:
-                for i in range(self._from_fbs.FriendsLength()):
+                for i in range(self._fbs("FriendsLength")):
                     friend_oid = self._from_fbs.Friends(i)
                     self._friends_cached.append(friend_oid)
         return self._friends_cached
@@ -131,7 +138,7 @@ class User(object):
 
     @property
     def referred_by(self):
-        return self._referred_by or self._from_fbs.ReferredBy()
+        return self._referred_by or self._fbs("ReferredBy")
 
     @referred_by.setter
     def referred_by(self, value):
@@ -141,17 +148,17 @@ class User(object):
         if self._name is not None:
             name = builder.CreateString(self._name)
         else:
-            name = builder.CreateString(self._from_fbs.Name())
+            name = builder.CreateString(self._fbs("Name"))
 
         if self._authid is not None:
             authid = builder.CreateString(self._authid)
         else:
-            authid = builder.CreateString(self._from_fbs.Authid())
+            authid = builder.CreateString(self._fbs("Authid"))
 
         if self._email is not None:
             email = builder.CreateString(self._email)
         else:
-            email = builder.CreateString(self._from_fbs.Email())
+            email = builder.CreateString(self._fbs("Email"))
 
         _user.UserStart(builder)
         _user.UserAddName(builder, name)
@@ -169,7 +176,7 @@ class User(object):
                 ),
             )
         else:
-            bd = self._from_fbs.Birthday()
+            bd = self._fbs("Birthday")
             _user.UserAddBirthday(
                 builder, _date.CreateDate(builder, bd.Year(), bd.Month(), bd.Day())
             )
@@ -181,12 +188,12 @@ class User(object):
         if self._is_friendly is not None:
             _user.UserAddIsFriendly(builder, self._is_friendly)
         else:
-            _user.UserAddIsFriendly(builder, self._from_fbs.IsFriendly())
+            _user.UserAddIsFriendly(builder, self._fbs("IsFriendly"))
 
         if self._referred_by is not None:
             _user.UserAddReferredBy(builder, self._referred_by)
         else:
-            _user.UserAddReferredBy(builder, self._from_fbs.ReferredBy())
+            _user.UserAddReferredBy(builder, self._fbs("ReferredBy"))
 
         return _user.UserEnd(builder)
 

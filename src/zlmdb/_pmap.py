@@ -686,8 +686,12 @@ class PersistentMapIterator(object):
             raise StopIteration
         self._read += 1
 
+        # _found is only truthy after __iter__, which opened the cursor (#211)
+        cursor = self._cursor
+        assert cursor is not None
+
         # stop criteria: end of key-range reached
-        _key = self._cursor.key()
+        _key = cursor.key()
         if self._reverse:
             if _key < self._from_key:
                 raise StopIteration
@@ -699,7 +703,7 @@ class PersistentMapIterator(object):
         _key = self._pmap._deserialize_key(_key[2:])
 
         if self._return_values:
-            _data = self._cursor.value()
+            _data = cursor.value()
             if _data:
                 if self._pmap._decompress:
                     _data = self._pmap._decompress(_data)
@@ -709,9 +713,9 @@ class PersistentMapIterator(object):
 
         # move the cursor
         if self._reverse:
-            self._found = self._cursor.prev()
+            self._found = cursor.prev()
         else:
-            self._found = self._cursor.next()
+            self._found = cursor.next()
 
         # return app key-value
         if self._return_keys and self._return_values:

@@ -49,6 +49,8 @@ def test_failed_open_raises_only_its_error(tmp_path, monkeypatch, engine):
         stdout=subprocess.PIPE,
         text=True,
     )
+    # stdin and stdout are PIPEs, so both are set (#211)
+    assert holder.stdin is not None and holder.stdout is not None
     try:
         assert holder.stdout.readline().strip() == "ready"
 

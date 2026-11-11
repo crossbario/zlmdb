@@ -86,6 +86,8 @@ def _open_while_held(dbpath: str, lib_version: str, prefix: list) -> str:
         stdout=subprocess.PIPE,
         text=True,
     )
+    # stdin and stdout are PIPEs, so both are set (#211)
+    assert holder.stdin is not None and holder.stdout is not None
     try:
         assert holder.stdout.readline().strip() == "ready"
         opener = subprocess.run(

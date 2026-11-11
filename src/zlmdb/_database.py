@@ -237,13 +237,13 @@ class Slot(ConfigurationElement):
         return obj
 
     @staticmethod
-    def parse(data: Dict[str, Any]) -> "Slot":
-        assert type(data) == dict
+    def parse(value: Dict[str, Any]) -> "Slot":
+        assert type(value) == dict
 
-        obj = ConfigurationElement.parse(data)
+        obj = ConfigurationElement.parse(value)
 
-        slot = data.get("slot", None)
-        creator = data.get("creator", None)
+        slot = value.get("slot", None)
+        creator = value.get("creator", None)
 
         drvd_obj = Slot(
             oid=obj.oid,
