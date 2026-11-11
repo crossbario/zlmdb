@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -71,7 +71,7 @@ jobs:
           uv --version
 
       - name: Setup uv cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-cache-ubuntu-quality-${{ hashFiles('pyproject.toml') }}
@@ -113,7 +113,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -147,7 +147,7 @@ jobs:
           uv --version
 
       - name: Setup uv cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-cache-ubuntu-test-${{ matrix.python-env }}-${{ hashFiles('pyproject.toml') }}
@@ -198,7 +198,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -234,7 +234,7 @@ jobs:
           findmnt -T "$GITHUB_WORKSPACE" -o TARGET,SOURCE,FSTYPE,OPTIONS
 
       - name: Setup uv cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-cache-ubuntu-multiwriter-${{ hashFiles('pyproject.toml') }}
@@ -263,7 +263,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -295,7 +295,7 @@ jobs:
           uv --version
 
       - name: Setup uv cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key: uv-cache-ubuntu-docs-${{ hashFiles('pyproject.toml') }}

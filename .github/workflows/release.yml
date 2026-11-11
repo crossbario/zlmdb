@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: Check all required workflows completed
         id: check
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const requiredWorkflows = ['wheels', 'wheels-docker', 'wheels-arm64', 'main'];
@@ -208,7 +208,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -558,7 +558,7 @@ jobs:
           cd ..
 
       - name: Create Development Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: dev-${{ github.sha }}
           name: Development Build ${{ github.sha }}
@@ -611,7 +611,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -1149,7 +1149,7 @@ jobs:
 
       - name: Publish to PyPI (OIDC trusted publishing)
         if: steps.pypi_check.outputs.exists == 'false'
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           # Tokenless OIDC trusted publishing (no PYPI_API_TOKEN); also generates
           # and uploads PEP 740 attestations. By this point the "Validate and
