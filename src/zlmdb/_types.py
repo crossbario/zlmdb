@@ -149,10 +149,10 @@ class _OidOidKeysMixin(object):
             secure=secure
         )
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple
-        assert len(keys) == 2
-        key1, key2 = keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple
+        assert len(key) == 2
+        key1, key2 = key
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert type(key2) == int
@@ -173,10 +173,10 @@ class _Oid3KeysMixin(object):
             _OidKeysMixin.new_key(secure=secure),
         )
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple
-        assert len(keys) == 3
-        key1, key2, key3 = keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple
+        assert len(key) == 3
+        key1, key2, key3 = key
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert type(key2) == int
@@ -195,10 +195,10 @@ class _OidTimestampKeysMixin(object):
     def new_key(secure=False):
         return _OidKeysMixin.new_key(secure=secure), 0
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple
-        assert len(keys) == 2
-        key1, key2 = keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple
+        assert len(key) == 2
+        key1, key2 = key
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert isinstance(key2, np.datetime64)
@@ -216,10 +216,10 @@ class _OidTimestampStringKeysMixin(object):
     def new_key(secure=False):
         return _OidKeysMixin.new_key(secure=secure), 0, ""
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple
-        assert len(keys) == 3
-        key1, key2, key3 = keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple
+        assert len(key) == 3
+        key1, key2, key3 = key
         assert type(key1) == int
         assert key1 >= 0 and key1 <= _OidKeysMixin.MAX_OID
         assert isinstance(key2, np.datetime64)
@@ -241,9 +241,9 @@ class _OidStringKeysMixin(object):
     def new_key(secure=False):
         return _OidKeysMixin.new_key(secure=secure), ""
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == int
         assert type(key2) == str
@@ -264,9 +264,9 @@ class _StringOidKeysMixin(object):
     def new_key(secure=False):
         return _random_string(), _OidKeysMixin.new_key(secure=secure)
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == str
         assert type(key2) == int
@@ -303,9 +303,9 @@ class _StringStringKeysMixin(object):
     def new_key():
         return _random_string(), _random_string()
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == str
         assert type(key2) == str
@@ -325,9 +325,9 @@ class _StringStringStringKeysMixin(object):
     def new_key():
         return _random_string(), _random_string(), _random_string()
 
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         assert type(key1) == str
         assert type(key2) == str
@@ -372,9 +372,9 @@ class _UuidKeysMixin(object):
 
 
 class _UuidUuidKeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -395,9 +395,9 @@ class _UuidUuidKeysMixin(object):
 
 
 class _UuidUuidUuidKeysMixin(object):
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -421,9 +421,9 @@ class _UuidUuidUuidKeysMixin(object):
 
 
 class _UuidUuidUuidUuidKeysMixin(object):
-    def _serialize_key(self, key1_key2_key3_key4):
-        assert type(key1_key2_key3_key4) == tuple and len(key1_key2_key3_key4) == 4
-        key1, key2, key3, key4 = key1_key2_key3_key4
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 4
+        key1, key2, key3, key4 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -459,9 +459,9 @@ class _Uint16UuidTimestampKeysMixin(object):
     def new_key():
         return random.randint(0, 2**16), uuid.uuid4(), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         if key1 is None:
             key1 = 0
@@ -492,9 +492,9 @@ class _UuidBytes20Uint8KeysMixin(object):
     def new_key():
         return uuid.uuid4(), os.urandom(20), random.randint(0, 255)
 
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -529,9 +529,9 @@ class _UuidBytes20Uint8UuidKeysMixin(object):
     def new_key():
         return uuid.uuid4(), os.urandom(20), random.randint(0, 255), uuid.uuid4()
 
-    def _serialize_key(self, key1_key2_key3_key4):
-        assert type(key1_key2_key3_key4) == tuple and len(key1_key2_key3_key4) == 4
-        key1, key2, key3, key4 = key1_key2_key3_key4
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 4
+        key1, key2, key3, key4 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -572,12 +572,12 @@ class _UuidBytes20Bytes20Uint8UuidKeysMixin(object):
             uuid.uuid4(),
         )
 
-    def _serialize_key(self, key1_key2_key3_key4_key5):
+    def _serialize_key(self, key):
         assert (
-            type(key1_key2_key3_key4_key5) == tuple
-            and len(key1_key2_key3_key4_key5) == 5
+            type(key) == tuple
+            and len(key) == 5
         )
-        key1, key2, key3, key4, key5 = key1_key2_key3_key4_key5
+        key1, key2, key3, key4, key5 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -622,10 +622,10 @@ class _TimestampKeysMixin(object):
     def new_key():
         return np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, key1):
-        assert isinstance(key1, np.datetime64)
+    def _serialize_key(self, key):
+        assert isinstance(key, np.datetime64)
 
-        return dt_to_bytes(key1)
+        return dt_to_bytes(key)
 
     def _deserialize_key(self, data):
         assert type(data) == bytes
@@ -639,9 +639,9 @@ class _TimestampUuidKeysMixin(object):
     def new_key():
         return np.datetime64(time_ns(), "ns"), uuid.uuid4()
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = np.datetime64(0, "ns")
@@ -669,9 +669,9 @@ class _UuidTimestampUuidKeysMixin(object):
     def new_key():
         return uuid.uuid4(), np.datetime64(time_ns(), "ns"), uuid.uuid4()
 
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -703,9 +703,9 @@ class _TimestampUuidStringKeysMixin(object):
     def new_key():
         return np.datetime64(time_ns(), "ns"), uuid.uuid4(), ""
 
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         if key1 is None:
             key1 = np.datetime64(0, "ns")
@@ -737,9 +737,9 @@ class _TimestampBytes32KeysMixin(object):
     def new_key():
         return np.datetime64(time_ns(), "ns"), os.urandom(32)
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = np.datetime64(0, "ns")
@@ -768,9 +768,9 @@ class _TimestampStringKeysMixin(object):
     def new_key():
         return np.datetime64(time_ns(), "ns"), _StringKeysMixin.new_key()
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = np.datetime64(0, "ns")
@@ -797,9 +797,9 @@ class _StringTimestampKeysMixin(object):
     def new_key():
         return _StringKeysMixin.new_key(), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = ""
@@ -827,9 +827,9 @@ class _UuidTimestampKeysMixin(object):
     def new_key():
         return uuid.uuid4(), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -856,9 +856,9 @@ class _Uint64TimestampKeysMixin(object):
     def new_key():
         return random.randint(1, 2**64 - 1), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = 0
@@ -883,9 +883,9 @@ class _Uint64TimestampKeysMixin(object):
 
 
 class _UuidStringKeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         if key1 is None:
             key1 = uuid.UUID(bytes=b"\x00" * 16)
@@ -915,9 +915,9 @@ class _UuidStringKeysMixin(object):
 
 
 class _SlotUuidKeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == int
         assert key1 >= 0 and key1 < 2**16
@@ -952,9 +952,9 @@ class _Bytes32KeysMixin(object):
 
 
 class _Bytes32Bytes32KeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == bytes
         assert len(key1) == 32
@@ -973,9 +973,9 @@ class _Bytes32Bytes32KeysMixin(object):
 
 
 class _Bytes32UuidKeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == bytes
         assert len(key1) == 32
@@ -993,9 +993,9 @@ class _Bytes32UuidKeysMixin(object):
 
 
 class _UuidBytes32KeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert isinstance(key1, uuid.UUID)
 
@@ -1013,9 +1013,9 @@ class _UuidBytes32KeysMixin(object):
 
 
 class _Bytes32StringKeysMixin(object):
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == bytes
         assert len(key1) == 32
@@ -1034,9 +1034,9 @@ class _Bytes32StringKeysMixin(object):
 
 
 class _UuidUuidStringKeysMixin(object):
-    def _serialize_key(self, key1_key2_key3):
-        assert type(key1_key2_key3) == tuple and len(key1_key2_key3) == 3
-        key1, key2, key3 = key1_key2_key3
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 3
+        key1, key2, key3 = key
 
         assert isinstance(key1, uuid.UUID)
         assert isinstance(key2, uuid.UUID)
@@ -1053,9 +1053,9 @@ class _UuidUuidStringKeysMixin(object):
 
 
 class _UuidUuidUuidStringKeysMixin(object):
-    def _serialize_key(self, key1_key2_key3_key4):
-        assert type(key1_key2_key3_key4) == tuple and len(key1_key2_key3_key4) == 4
-        key1, key2, key3, key4 = key1_key2_key3_key4
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 4
+        key1, key2, key3, key4 = key
 
         assert isinstance(key1, uuid.UUID), "key1 must be a UUID, was {}: {}".format(
             type(key1), key1
@@ -1130,9 +1130,9 @@ class _Bytes20Bytes20KeysMixin(object):
     def new_key():
         return os.urandom(20), os.urandom(20)
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == bytes
         assert len(key1) == 20
@@ -1155,9 +1155,9 @@ class _Bytes20StringKeysMixin(object):
     def new_key():
         return os.urandom(20), binascii.b2a_base64(os.urandom(8)).decode().strip()
 
-    def _serialize_key(self, key1_key2):
-        assert type(key1_key2) == tuple and len(key1_key2) == 2
-        key1, key2 = key1_key2
+    def _serialize_key(self, key):
+        assert type(key) == tuple and len(key) == 2
+        key1, key2 = key
 
         assert type(key1) == bytes
         assert len(key1) == 20
@@ -1180,14 +1180,14 @@ class _Bytes20TimestampKeysMixin(object):
     def new_key():
         return os.urandom(20), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple, (
-            'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
-                self.__class__.__name__, keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple, (
+            'key in {}._serialize_key must be a tuple, was: "{}"'.format(
+                self.__class__.__name__, key
             )
         )
-        assert len(keys) == 2
-        key1, key2 = keys
+        assert len(key) == 2
+        key1, key2 = key
 
         if not key1:
             key1 = b"\x00" * 20
@@ -1215,14 +1215,14 @@ class _Bytes16TimestampKeysMixin(object):
     def new_key():
         return os.urandom(20), np.datetime64(time_ns(), "ns")
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple, (
-            'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
-                self.__class__.__name__, keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple, (
+            'key in {}._serialize_key must be a tuple, was: "{}"'.format(
+                self.__class__.__name__, key
             )
         )
-        assert len(keys) == 2
-        key1, key2 = keys
+        assert len(key) == 2
+        key1, key2 = key
 
         if not key1:
             key1 = b"\x00" * 16
@@ -1250,14 +1250,14 @@ class _Bytes16TimestampUuidKeysMixin(object):
     def new_key():
         return os.urandom(20), np.datetime64(time_ns(), "ns"), uuid.uuid4()
 
-    def _serialize_key(self, keys):
-        assert type(keys) == tuple, (
-            'keys in {}._serialize_key must be a tuple, was: "{}"'.format(
-                self.__class__.__name__, keys
+    def _serialize_key(self, key):
+        assert type(key) == tuple, (
+            'key in {}._serialize_key must be a tuple, was: "{}"'.format(
+                self.__class__.__name__, key
             )
         )
-        assert len(keys) == 3
-        key1, key2, key3 = keys
+        assert len(key) == 3
+        key1, key2, key3 = key
 
         if not key1:
             key1 = b"\x00" * 16
@@ -1305,13 +1305,13 @@ class _StringValuesMixin(object):
 
 
 class _StringSetValuesMixin(object):
-    def _serialize_value(self, value_set):
-        assert type(value_set) == set
-        for v in value_set:
+    def _serialize_value(self, value):
+        assert type(value) == set
+        for v in value:
             assert v is None or type(v) == str
 
         return b"\0".join(
-            [(value.encode("utf8") if value else b"") for value in value_set]
+            [(item.encode("utf8") if item else b"") for item in value]
         )
 
     def _deserialize_value(self, data):
@@ -1331,11 +1331,11 @@ class _OidValuesMixin(object):
 
 
 class _OidSetValuesMixin(object):
-    def _serialize_value(self, value_set):
-        assert type(value_set) == set
-        for value in value_set:
-            assert value >= 0 and value <= _OidKeysMixin.MAX_OID
-        return b"".join([struct.pack(">Q", value) for value in value_set])
+    def _serialize_value(self, value):
+        assert type(value) == set
+        for item in value:
+            assert item >= 0 and item <= _OidKeysMixin.MAX_OID
+        return b"".join([struct.pack(">Q", item) for item in value])
 
     def _deserialize_value(self, data):
         VLEN = 8
@@ -1419,10 +1419,10 @@ class _Bytes20ValuesMixin(object):
 
 
 class _Bytes20TimestampValuesMixin(object):
-    def _serialize_value(self, values):
-        assert type(values) == tuple
-        assert len(values) == 2
-        value1, value2 = values
+    def _serialize_value(self, value):
+        assert type(value) == tuple
+        assert len(value) == 2
+        value1, value2 = value
 
         if not value1:
             value1 = b"\x00" * 20
@@ -1462,9 +1462,9 @@ class _Bytes16ValuesMixin(object):
 
 
 class _UuidSetValuesMixin(object):
-    def _serialize_value(self, value_set):
-        assert type(value_set) == set
-        return b"".join([value.bytes for value in value_set])
+    def _serialize_value(self, value):
+        assert type(value) == set
+        return b"".join([item.bytes for item in value])
 
     def _deserialize_value(self, data):
         VLEN = 16

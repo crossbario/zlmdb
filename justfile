@@ -1672,7 +1672,6 @@ check-typing venv="": (install-tools venv) (install-dev venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
     # Only check core zlmdb package, exclude tests and vendored packages
-    # missing-union-attribute and lost-keyword-for-regular-parameter: new in ty 0.0.100, ignored until their sites are fixed (#211).
     #
     # CI installs the newest ty, on purpose: we follow it as it moves (#210). ty
     # renames rules now and then, and an --ignore naming an old name then silences
@@ -1708,8 +1707,6 @@ check-typing venv="": (install-tools venv) (install-dev venv)
         --ignore deprecated \
         --ignore unused-type-ignore-comment \
         --ignore possibly-missing-submodule \
-        --ignore missing-union-attribute \
-        --ignore lost-keyword-for-regular-parameter \
         src/zlmdb/ 2>&1 | tee "${TY_OUT}"
     rc=${PIPESTATUS[0]}
     set -e

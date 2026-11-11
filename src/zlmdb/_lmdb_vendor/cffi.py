@@ -32,6 +32,7 @@ import inspect
 import os
 import sys
 import threading
+from typing import Any
 
 is_win32 = sys.platform == 'win32'
 if is_win32:
@@ -402,11 +403,11 @@ if not _reading_docs():
     # with the LMDB 0.9 engine only, for source builds where the precompiled
     # extensions are absent.
     _libs = []
-    _ffi = None
+    _precompiled_ffi = None
     try:
         from zlmdb._lmdb_vendor import _lmdb_cffi  # type: ignore[attr-defined]
 
-        _ffi = _lmdb_cffi.ffi
+        _precompiled_ffi = _lmdb_cffi.ffi
         _libs.append(_lmdb_cffi.lib)
         from zlmdb._lmdb_vendor import _lmdb1_cffi  # type: ignore[attr-defined]
 
@@ -414,9 +415,14 @@ if not _reading_docs():
     except ImportError:
         pass
 
-    if _ffi is None:
+    # zlmdb adaptation: _ffi is assigned once, never None, so everything that
+    # uses it sees an FFI (zlmdb#211).
+    if _precompiled_ffi is not None:
+        _ffi = _precompiled_ffi
+    else:
         _ffi = cffi.FFI()
         _ffi.cdef(_CFFI_CDEF)
+    del _precompiled_ffi
 
     if not _libs:
         _libs.append(_ffi.verify(_CFFI_VERIFY,
@@ -437,6 +443,12 @@ if not _reading_docs():
         data_version=(
             3 if _l.MDB_VERSION_MAJOR >= 1 else 1),  # type: ignore[attr-defined]
     ) for _l in _libs]
+    # The newest engine's error table is a superset of the others', with
+    # identical messages for the shared codes; use it for strerror and
+    # engine-independent constants. zlmdb adaptation: taken from the list,
+    # which is _engines[-1]['lib'], so it is typed as the library and not as
+    # the engine dict's other values, ints (zlmdb#211).
+    _lib = _libs[-1]
     del _libs
 
     # Engine used for new environments when lib_version= is unspecified:
@@ -458,10 +470,6 @@ if not _reading_docs():
                 'in this build\n' % (_want,))
         del _e
     del _want
-    # The newest engine's error table is a superset of the others', with
-    # identical messages for the shared codes; use it for strerror and
-    # engine-independent constants.
-    _lib = _engines[-1]['lib']
 
     @_ffi.callback("int(char *, void *)")
     def _msg_func(s, _):
@@ -1062,7 +1070,10 @@ class Environment:
         self.close()
 
     _env = None
-    _lib = None
+    # zlmdb adaptation: annotated, not defaulted to None. __init__ binds it
+    # before it creates _env, and close() returns early without an _env, so
+    # nothing reads it unset; a CFFI Lib is dynamic, hence Any (zlmdb#211).
+    _lib: Any
     _deps = None
     _spare_txns = None
     _dbs = None
@@ -1672,6 +1683,11 @@ class Environment:
                             or dupfixed):
             raise ValueError('May not set flags on the main database')
 
+        # zlmdb adaptation: close() sets _dbs to None. Raise the same error as
+        # every other operation on a closed environment, not an AttributeError
+        # on None (zlmdb#211).
+        if self._dbs is None:
+            raise _invalid_error()
         db = self._dbs.get(key)
         if db:
             return db
